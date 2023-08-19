@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "765868291333",
+    "project_id": "chessapp-884cc",
+    "storage_bucket": "chessapp-884cc.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:765868291333:android:5bf02eda10198926d2b36c",
+        "android_client_info": {
+          "package_name": "com.hellostranger.chess_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "765868291333-8f7ek7c775cmua3gquukqro1umt5b0jj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCrHw9jAtOKl7e40rhd4No7nJxxHc1DFWM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "765868291333-8f7ek7c775cmua3gquukqro1umt5b0jj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

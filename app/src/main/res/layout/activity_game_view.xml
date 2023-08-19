@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".activities.GameActivity">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:id="@+id/ll_p2"
+        android:padding="8dp"
+        android:layout_marginTop="16dp"
+        >
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/iv_p2_image"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_marginStart="@dimen/nav_content_margin_StartEnd"
+            android:layout_marginEnd="@dimen/nav_content_margin_StartEnd"
+            app:civ_border_color="@android:color/white"
+            app:civ_border_width="@dimen/nav_image_circular_border_width"
+            android:contentDescription="@string/image_contentDescription"
+            android:src="@drawable/ic_user_place_holder" />
+        <TextView
+            android:layout_marginStart="10dp"
+
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:id="@+id/tv_p2_name"
+            android:text="BLACK"
+            android:layout_gravity="center_horizontal"
+            android:gravity="center"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            />
+
+    </LinearLayout>
+    <com.hellostranger.chess_app.ChessView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".activities.GameActivity"
+        android:id="@+id/chess_view"
+        android:layout_gravity="center"/>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:id="@+id/ll_p1"
+        android:padding="8dp"
+        >
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/iv_p1_image"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_marginStart="@dimen/nav_content_margin_StartEnd"
+            android:layout_marginEnd="@dimen/nav_content_margin_StartEnd"
+            app:civ_border_color="@android:color/white"
+            app:civ_border_width="@dimen/nav_image_circular_border_width"
+            android:contentDescription="@string/image_contentDescription"
+            android:src="@drawable/ic_user_place_holder" />
+        <TextView
+            android:layout_marginStart="10dp"
+
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:id="@+id/tv_p1_name"
+            android:text="WHITE"
+            android:layout_gravity="center_horizontal"
+            android:gravity="center"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            />
+
+    </LinearLayout>
+
+</LinearLayout>
