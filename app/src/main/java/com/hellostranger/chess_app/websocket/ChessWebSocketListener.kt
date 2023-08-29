@@ -17,16 +17,13 @@ import okhttp3.WebSocketListener
 class ChessWebSocketListener(private val moveListener: MoveListener) : WebSocketListener() {
     private lateinit var webSocket: WebSocket
 
-    fun connectWebSocket() {
-        val client = OkHttpClient()
-        val request = Request.Builder().url("ws://10.0.2.2:8080/chess").build()
-        webSocket = client.newWebSocket(request, this)
-        Log.e("TAG", "here")
-    }
 
-    fun connectWebSocket(path : String) {
-        val client = OkHttpClient()
-        val request = Request.Builder().url("ws://10.0.2.2:8080/chess/$path").build()
+    fun connectWebSocket(path : String, token : String) {
+        val client = OkHttpClient.Builder().build()
+        val request = Request.Builder()
+            .url("ws://10.0.2.2:8080/chess/$path")
+            .addHeader("Authorization", "Bearer $token")
+            .build()
         webSocket = client.newWebSocket(request, this)
         Log.e("TAG", "connectToWebSocket")
     }
@@ -48,7 +45,7 @@ class ChessWebSocketListener(private val moveListener: MoveListener) : WebSocket
     }
 
     override fun onMessage(webSocket: WebSocket, text: String) {
-        val gson : Gson = Gson()
+        val gson = Gson()
         val message : WebSocketMessage = gson.fromJson(text, WebSocketMessage::class.java)
         Log.e("TAG", "onMessage, text is: $text. msgType is: ${message.messageType}")
 
@@ -59,8 +56,13 @@ class ChessWebSocketListener(private val moveListener: MoveListener) : WebSocket
             }
             MessageType.START ->{
                 val startMessage : GameStartMessage = gson.fromJson(text, GameStartMessage::class.java)
-                Log.e("TAG", "Start Message. text: $text. startmessage: $startMessage")
-                moveListener.startGame(startMessage.whiteName, startMessage.blackName, startMessage.whiteUid, startMessage.blackUid)
+                Log.e("TAG", "Start Message. text: $text. startMessage: $startMessage")
+                moveListener.startGame(startMessage.whiteName,
+                    startMessage.blackName,
+                    startMessage.whiteEmail,
+                    startMessage.blackEmail,
+                    startMessage.whiteElo,
+                    startMessage.blackElo)
             }
             MessageType.END ->{
                 val endMessage : GameEndMessage = gson.fromJson(text, GameEndMessage::class.java)
@@ -90,7 +92,7 @@ class ChessWebSocketListener(private val moveListener: MoveListener) : WebSocket
 interface MoveListener {
     fun onMoveReceived(moveMessage: MoveMessage)
 
-    fun startGame(whiteName : String, blackName : String, whiteUid: String, blackUid : String)
+    fun startGame(whiteName : String, blackName : String, whiteEmail: String, blackEmail : String, whiteElo : Int, blackElo : Int)
 
     fun onGameEnding(result : GameState)
 

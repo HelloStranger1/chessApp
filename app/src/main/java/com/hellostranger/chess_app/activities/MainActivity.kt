@@ -1,27 +1,30 @@
 package com.hellostranger.chess_app.activities
 
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.MenuItem
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.GravityCompat
 import com.bumptech.glide.Glide
 import com.google.android.material.navigation.NavigationView
-import com.google.firebase.auth.FirebaseAuth
+import com.hellostranger.chess_app.MyApp
 import com.hellostranger.chess_app.R
+import com.hellostranger.chess_app.TokenManager
 import com.hellostranger.chess_app.chess_models.Game
-import com.hellostranger.chess_app.chess_models.Player
 import com.hellostranger.chess_app.databinding.ActivityMainBinding
-import com.hellostranger.chess_app.firebase.FirestoreClass
+import com.hellostranger.chess_app.dto.JoinRequest
 import com.hellostranger.chess_app.models.User
-import com.hellostranger.chess_app.retrofit.RetrofitClient
+import com.hellostranger.chess_app.retrofit.auth.AuthRetrofitClient
+import com.hellostranger.chess_app.retrofit.general.GeneralRetrofitClient
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
 class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedListener {
@@ -29,49 +32,42 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
     private lateinit var binding: ActivityMainBinding
     private lateinit var toolbarMainActivity : Toolbar
 
-
+    private var tokenManager : TokenManager = MyApp.tokenManager
+    @OptIn(DelicateCoroutinesApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         setupActionBar()
-
         binding.navView.setNavigationItemSelectedListener(this)
 
-        FirestoreClass().signInUser(this)
-
-        binding.appBarMain.mainContent.btnCreate.setOnClickListener {
-            val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable ->
-                throwable.printStackTrace()
-            }
-            val scope = CoroutineScope(Dispatchers.IO + coroutineExceptionHandler)
-            showProgressDialog("Creating game...")
-            scope.launch {
-                val response =
-                    RetrofitClient.instance.createGame()
-                if(response.isSuccessful && response.body() != null){
-                    Log.e("TAG", "Game started, body: ${response.body()}")
-                    Game.setInstance(response.body()!!)
-                    runOnUiThread {
-                        hideProgressDialog()
-                    }
+        val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable ->
+            throwable.printStackTrace()
+        }
+        GlobalScope.launch(Dispatchers.IO + coroutineExceptionHandler) {
+            Log.e("TAG", "user email is: ${tokenManager.getUserEmail()}")
+            val response =
+                GeneralRetrofitClient.instance.getUserByEmail(tokenManager.getUserEmail())
+            Log.e("TAG", "response is: $response and the body is: ${response.body()}")
+            if(response.isSuccessful && response.body() != null){
+                runOnUiThread {
+                    updateNavigationUserDetails(response.body()!!)
                 }
             }
-            Toast.makeText(this@MainActivity, "Game Created. you can now join.", Toast.LENGTH_LONG).show()
+
+
         }
 
+
         binding.appBarMain.mainContent.btnJoinRandom.setOnClickListener {
-            var playerName = findViewById<TextView>(R.id.tv_username).text.toString()
-            var playerId = getCurrentUserID()
-            val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable ->
-                throwable.printStackTrace()
-            }
-            val scope = CoroutineScope(Dispatchers.IO + coroutineExceptionHandler)
+            val playerEmail = tokenManager.getUserEmail()
+
             showProgressDialog("Joining random game...")
-            scope.launch {
+            GlobalScope.launch(Dispatchers.IO + coroutineExceptionHandler) {
                 val response =
-                    RetrofitClient.instance.joinRandomGame(Player(playerId, playerName))
+                    GeneralRetrofitClient.instance.joinRandomGame(JoinRequest(playerEmail))
+                Log.e("TAG", "Response is: $response and is it successful? ${response.isSuccessful}")
                 if(response.isSuccessful && response.body() != null){
                     Log.e("TAG", "Game joined, body: ${response.body()}")
                     Game.setInstance(response.body()!!)
@@ -87,11 +83,25 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         }
 
 
+
+
         binding.appBarMain.mainContent.etGameId
         binding.appBarMain.mainContent.btnJoinSpecific
     }
-    fun updateNavigationUserDetails(user : User){
-        findViewById<TextView>(R.id.tv_username).text = user.name
+    private fun updateNavigationUserDetails(user : User){
+        val headerView =  binding.navView.getHeaderView(0)
+
+        val navUserImage = headerView.findViewById<ImageView>(R.id.iv_user_image)
+
+        Glide
+            .with(this@MainActivity)
+            .load(user.image)
+            .centerCrop()
+            .placeholder(R.drawable.ic_user_place_holder)
+            .into(navUserImage)
+
+
+        headerView.findViewById<TextView>(R.id.tv_username).text = user.name
     }
     private fun setupActionBar(){
         toolbarMainActivity = binding.appBarMain.toolbarMainActivity
@@ -123,11 +133,17 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
         when(item.itemId){
             R.id.nav_my_profile ->{
-                Toast.makeText(this@MainActivity,"My Profile", Toast.LENGTH_SHORT).show()
+                startActivity(Intent(this, ProfileActivity::class.java))
             }
             R.id.nav_sign_out ->{
-                FirebaseAuth.getInstance().signOut()
-
+                tokenManager.clearSession()
+                val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable ->
+                    throwable.printStackTrace()
+                }
+                val scope = CoroutineScope(Dispatchers.IO + coroutineExceptionHandler)
+                scope.launch {
+                    AuthRetrofitClient.instance.logout()
+                }
                 val intent = Intent(this, IntroActivity::class.java)
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
                 startActivity(intent)

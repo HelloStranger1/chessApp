@@ -1,24 +1,29 @@
 package com.hellostranger.chess_app.activities
 
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
+import android.os.Build
 import android.os.Bundle
 import android.text.TextUtils
 import android.util.Log
+import android.view.WindowInsets
 import android.view.WindowManager
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.widget.AppCompatButton
 import androidx.appcompat.widget.Toolbar
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
+import com.hellostranger.chess_app.MyApp
 import com.hellostranger.chess_app.R
+import com.hellostranger.chess_app.dto.AuthenticateRequest
 import com.hellostranger.chess_app.models.User
+import com.hellostranger.chess_app.retrofit.auth.AuthRetrofitClient
+import com.hellostranger.chess_app.retrofit.general.GeneralRetrofitClient
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class SignInActivity : BaseActivity() {
 
-    private lateinit var auth: FirebaseAuth
 
     private var etEmail : EditText? = null
     private var etPass : EditText? = null
@@ -28,16 +33,21 @@ class SignInActivity : BaseActivity() {
 
         setContentView(R.layout.activity_sign_in)
 
-        auth = Firebase.auth
+       /* auth = Firebase.auth*/
 
         etEmail = findViewById(R.id.et_email_sign_in)
         etPass = findViewById(R.id.et_password_sign_in)
         btnSignIn = findViewById(R.id.btn_sign_in)
 
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_FULLSCREEN,
-            WindowManager.LayoutParams.FLAG_FULLSCREEN,
-        )
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
+            window.insetsController?.hide(WindowInsets.Type.statusBars())
+        }else{
+            @Suppress("DEPRECATION")
+            window.setFlags(
+                WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN,
+            )
+        }
 
         btnSignIn?.setOnClickListener{
             signInRegisteredUser()
@@ -67,26 +77,33 @@ class SignInActivity : BaseActivity() {
 
         if(validateForm(email, password)){
             showProgressDialog(resources.getString(R.string.please_wait))
-            auth.signInWithEmailAndPassword(email, password)
-                .addOnCompleteListener(this) { task ->
-                    if (task.isSuccessful) {
+            val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable ->
+                throwable.printStackTrace()
+            }
+            val scope = CoroutineScope(Dispatchers.IO + coroutineExceptionHandler)
+            scope.launch {
+                val response =
+                    AuthRetrofitClient.instance.authenticate(AuthenticateRequest(email, password))
+                if(response.isSuccessful && response.body() != null){
+                    Log.e("TAG", "Logged in the user. response: " + response.body())
+                    MyApp.tokenManager.saveAccessToken(response.body()!!.accessToken, response.body()!!.accessExpiresIn)
+                    MyApp.tokenManager.saveRefreshToken(response.body()!!.refreshToken, response.body()!!.refreshExpiresIn)
+                    MyApp.tokenManager.saveUserEmail(email)
+                    runOnUiThread {
                         hideProgressDialog()
-                        // Sign in success, update UI with the signed-in user's information
-                        Log.d("Sign In", "signInWithEmail:success")
-                        val user = auth.currentUser
-                        startActivity(Intent(this, MainActivity::class.java))
-                    } else {
-                        // If sign in fails, display a message to the user.
-                        Log.w("Sign In", "signInWithEmail:failure", task.exception)
+                        val intent = Intent(this@SignInActivity, MainActivity::class.java)
+                        startActivity(intent)
+                    }
+                } else if(!response.isSuccessful){
+                    runOnUiThread{
                         Toast.makeText(
-                            baseContext,
-                            "Authentication failed.",
-                            Toast.LENGTH_SHORT,
+                            this@SignInActivity,
+                            "Response failed, it is: ${response.message()}",
+                            Toast.LENGTH_LONG
                         ).show()
-
                     }
                 }
-
+            }
         }
 
 

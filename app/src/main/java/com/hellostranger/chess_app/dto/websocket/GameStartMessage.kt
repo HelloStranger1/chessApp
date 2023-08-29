@@ -10,14 +10,21 @@ class GameStartMessage (
     @SerializedName("blackPlayerName")
     val blackName : String,
 
-    @SerializedName("whitePlayerUid")
-    val whiteUid : String,
+    @SerializedName("whitePlayerEmail")
+    val whiteEmail : String,
 
-    @SerializedName("blackPlayerUid")
-    val blackUid : String,
+    @SerializedName("blackPlayerEmail")
+    val blackEmail : String,
+
+    @SerializedName("whiteElo")
+    val whiteElo : Int,
+
+    @SerializedName("blackElo")
+    val blackElo : Int,
+
     ) : WebSocketMessage(MessageType.START){
     override fun toString(): String {
-        return "Game Start. white name: $whiteName. black name: $blackName. white uid: $whiteUid. blackUid: $blackUid"
+        return "Game Start. white name: $whiteName. black name: $blackName. white email: $whiteEmail. black email: $blackEmail"
     }
 
 }

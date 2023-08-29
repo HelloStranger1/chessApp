@@ -3,11 +3,8 @@ package com.hellostranger.chess_app.utils
 import com.hellostranger.chess_app.R
 
 object Constants {
-
-    const val USERS : String = "Users"
     const val scaleFactor = 0.9f
-
-
+    var userEmail = ""
     val imgResIDs = setOf(
         R.drawable.ic_white_king,
         R.drawable.ic_white_queen,

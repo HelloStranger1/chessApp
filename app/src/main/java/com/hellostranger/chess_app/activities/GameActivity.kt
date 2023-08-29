@@ -5,20 +5,16 @@ import android.util.Log
 import android.widget.Toast
 import com.google.gson.Gson
 import com.hellostranger.chess_app.ChessDelegate
+import com.hellostranger.chess_app.MyApp
+import com.hellostranger.chess_app.TokenManager
 import com.hellostranger.chess_app.chess_models.Color
 import com.hellostranger.chess_app.chess_models.Game
 import com.hellostranger.chess_app.chess_models.GameState
 import com.hellostranger.chess_app.dto.websocket.MoveMessage
 import com.hellostranger.chess_app.chess_models.Piece
 import com.hellostranger.chess_app.databinding.ActivityGameViewBinding
-
-import com.hellostranger.chess_app.retrofit.RetrofitClient
 import com.hellostranger.chess_app.websocket.ChessWebSocketListener
 import com.hellostranger.chess_app.websocket.MoveListener
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import okhttp3.WebSocket
 
 
@@ -29,7 +25,11 @@ class GameActivity : BaseActivity(), ChessDelegate, MoveListener {
     private lateinit var chessWebSocket: WebSocket
     private lateinit var chessWebSocketListener :ChessWebSocketListener
 
-    private lateinit var currentPlayerName : String
+    private lateinit var currentPlayerEmail : String
+
+    private var tokenManager : TokenManager = MyApp.tokenManager
+
+    private var currentMoveDisplayed : Int = 0
 
     private var isWhite : Boolean = true
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,11 +41,26 @@ class GameActivity : BaseActivity(), ChessDelegate, MoveListener {
 
 
         chessWebSocketListener = ChessWebSocketListener(this)
-        chessWebSocketListener.connectWebSocket(Game.getInstance()!!.id)
+        chessWebSocketListener.connectWebSocket(Game.getInstance()!!.id, tokenManager.getAccessToken())
 
         chessWebSocket = chessWebSocketListener.getWebSocketInstance()
 
         binding.chessView.chessDelegate = this
+
+        binding.ibArrowBack.setOnClickListener{
+            if(currentMoveDisplayed > 0){
+                Game.getInstance()!!.board = Game.getInstance()!!.boards_history!![currentMoveDisplayed-1]
+                currentMoveDisplayed--
+                binding.chessView.invalidate()
+            }
+        }
+        binding.ibArrowForward.setOnClickListener{
+            if(currentMoveDisplayed < Game.getInstance()!!.boards_history!!.size){
+                Game.getInstance()!!.board = Game.getInstance()!!.boards_history!![currentMoveDisplayed+1]
+                currentMoveDisplayed++
+                binding.chessView.invalidate()
+            }
+        }
 
     }
 
@@ -58,30 +73,41 @@ class GameActivity : BaseActivity(), ChessDelegate, MoveListener {
 
     override fun playMove(moveMessage: MoveMessage) {
         val currentGame = Game.getInstance()!!
-        if(moveMessage.playerName.isEmpty()){
+        Log.e("TAG", "PlayMove. move msg is: $moveMessage")
+        if(moveMessage.playerEmail.isEmpty()){
+            if(currentGame.board.squaresArray[moveMessage.startRow][moveMessage.startCol].piece == null){
+                return
+            }
             if(isWhite != (currentGame.board.squaresArray
                         [moveMessage.startRow]
                         [moveMessage.startCol]
                         .piece!!.color == Color.WHITE)){
-                return;
+                return
             }
             if(currentGame.isP1turn != isWhite){
-                return;
+                return
             }
 
-            moveMessage.playerName = currentPlayerName
+            moveMessage.playerEmail = currentPlayerEmail
             temporaryMakeMove(moveMessage)
             sendMessageToServer(moveMessage)
             Log.e("TAG", "sendingMove. move is: $moveMessage")
             binding.chessView.invalidate()
         }else{
+            if(currentMoveDisplayed != currentGame.boards_history!!.size){
+                //we arent on the latest move
+                currentGame.board = currentGame.boards_history!!.last()
+            }
+            currentGame.boards_history!!.add(currentGame.board.clone())
             currentGame.board.movePiece(moveMessage)
+
             Log.e("TAG", "received move from socket. move is: $moveMessage")
             binding.chessView.invalidate()
+            currentMoveDisplayed = currentGame.board.halfMoveCount
             if(isWhite){
-                Game.getInstance()!!.isP1turn = moveMessage.playerName != currentPlayerName
+                Game.getInstance()!!.isP1turn = moveMessage.playerEmail != currentPlayerEmail
             }else{
-                Game.getInstance()!!.isP1turn = moveMessage.playerName == currentPlayerName
+                Game.getInstance()!!.isP1turn = moveMessage.playerEmail == currentPlayerEmail
             }
         }
 
@@ -105,25 +131,26 @@ class GameActivity : BaseActivity(), ChessDelegate, MoveListener {
             moveMessage.startCol == 4 && moveMessage.startRow == 0
         ){
             if(moveMessage.endCol == 7 && moveMessage.endRow == 0){
-                currentGame.board.movePiece(MoveMessage(moveMessage.playerName, moveMessage.startCol, 0, moveMessage.startCol+2, 0))
-                currentGame.board.movePiece(MoveMessage(moveMessage.playerName, moveMessage.endCol, 0, moveMessage.startCol+1, 0))
+                currentGame.board.movePiece(MoveMessage(moveMessage.playerEmail, moveMessage.startCol, 0, moveMessage.startCol+2, 0))
+                currentGame.board.movePiece(MoveMessage(moveMessage.playerEmail, moveMessage.endCol, 0, moveMessage.startCol+1, 0))
             }else{
-                currentGame.board.movePiece(MoveMessage(moveMessage.playerName, moveMessage.startCol, 0, moveMessage.startCol-2, 0))
-                currentGame.board.movePiece(MoveMessage(moveMessage.playerName, moveMessage.endCol, 0, moveMessage.startCol-1, 0))
+                currentGame.board.movePiece(MoveMessage(moveMessage.playerEmail, moveMessage.startCol, 0, moveMessage.startCol-2, 0))
+                currentGame.board.movePiece(MoveMessage(moveMessage.playerEmail, moveMessage.endCol, 0, moveMessage.startCol-1, 0))
             }
         }else if(!isWhite &&
             moveMessage.startCol == 4 && moveMessage.startRow == 7
         ){
             if(moveMessage.endCol == 7 && moveMessage.endRow == 7){
-                currentGame.board.movePiece(MoveMessage(moveMessage.playerName, moveMessage.startCol, 7, moveMessage.startCol+2, 7))
-                currentGame.board.movePiece(MoveMessage(moveMessage.playerName, moveMessage.endCol, 0, moveMessage.startCol+1, 7))
+                currentGame.board.movePiece(MoveMessage(moveMessage.playerEmail, moveMessage.startCol, 7, moveMessage.startCol+2, 7))
+                currentGame.board.movePiece(MoveMessage(moveMessage.playerEmail, moveMessage.endCol, 0, moveMessage.startCol+1, 7))
             }else{
-                currentGame.board.movePiece(MoveMessage(moveMessage.playerName, moveMessage.startCol, 7, moveMessage.startCol-2, 7))
-                currentGame.board.movePiece(MoveMessage(moveMessage.playerName, moveMessage.endCol, 7, moveMessage.startCol-1, 7))
+                currentGame.board.movePiece(MoveMessage(moveMessage.playerEmail, moveMessage.startCol, 7, moveMessage.startCol-2, 7))
+                currentGame.board.movePiece(MoveMessage(moveMessage.playerEmail, moveMessage.endCol, 7, moveMessage.startCol-1, 7))
             }
         }else{
             currentGame.board.movePiece(moveMessage)
         }
+        currentGame.boards_history!!.add(currentGame.board)
         Log.e("TAG", "Copied board to prev_board and played the move")
     }
 
@@ -138,47 +165,41 @@ class GameActivity : BaseActivity(), ChessDelegate, MoveListener {
         playMove(moveMessage)
     }
 
-    private fun updatePlayerOne(name: String, uid: String) {
-        var fullName = "$name (White)"
+    private fun updatePlayerOne(name: String, email: String, elo : Int) {
+        val fullName = "$name (White) ($elo)"
         if(isWhite){
-            Log.e("TAG", "fullname before: $fullName")
-            fullName = "$fullName (You)"
-            Log.e("TAG", "fullname after: $fullName")
-
-            currentPlayerName = name
+            currentPlayerEmail = email
         }
         binding.tvP1Name.text = fullName
 
 
 
-
-        //TODO: use the uid to update the profile pic
     }
 
-    private fun updatePlayerTwo(name: String, uid: String) {
-        var fullName = "$name (Black)"
+    private fun updatePlayerTwo(name: String, email: String, elo : Int) {
+        var fullName = "$name (Black) ($elo)"
         if(!isWhite){
-            fullName = "$name (You)"
-            currentPlayerName = name
+            fullName = "$fullName (You)"
+            currentPlayerEmail = email
         }
         binding.tvP2Name.text = fullName
 
 
 
-        //TODO: use the uid to update the profile pic
+
     }
 
-    override fun startGame(whiteName : String, blackName : String, whiteUid: String, blackUid : String) {
+    override fun startGame(whiteName : String, blackName : String, whiteEmail: String, blackEmail : String, whiteElo : Int, blackElo : Int) {
         hideProgressDialog()
-        checkIfPlayingWhite(whiteUid)
+        checkIfPlayingWhite(whiteEmail)
         val playerColor : Color = if(isWhite){
             Color.WHITE
         }else{
             Color.BLACK
         }
         runOnUiThread{
-            updatePlayerOne(whiteName, whiteUid)
-            updatePlayerTwo(blackName, blackUid)
+            updatePlayerOne(whiteName, whiteEmail, whiteElo)
+            updatePlayerTwo(blackName, blackEmail, blackElo)
             Toast.makeText(this@GameActivity, "Game started! You are playing $playerColor", Toast.LENGTH_SHORT).show()
         }
 
@@ -194,13 +215,14 @@ class GameActivity : BaseActivity(), ChessDelegate, MoveListener {
     override fun undoLastMove() {
         val currentGame = Game.getInstance()!!
         Log.e("TAG", "Undid move. prev_board was: ${currentGame.prev_board} \n and the invalid change was to: ${currentGame.board}")
+        currentGame.boards_history!!.removeAt(currentGame.board.halfMoveCount)
         currentGame.board = currentGame.prev_board!!
-
+        currentMoveDisplayed = currentGame.board.halfMoveCount
         binding.chessView.invalidate()
     }
 
-    private fun checkIfPlayingWhite(whiteUid: String) {
-        isWhite = whiteUid == getCurrentUserID()
+    private fun checkIfPlayingWhite(whiteEmail: String) {
+        isWhite = whiteEmail == tokenManager.getUserEmail()
     }
 
 

@@ -4,7 +4,8 @@ import com.google.gson.Gson
 import com.hellostranger.chess_app.dto.websocket.MoveMessage
 
 data class Board(
-    val squaresArray: List<List<Square>>
+    val squaresArray: List<List<Square>>,
+    var halfMoveCount : Int = 0
 ) : Cloneable{
 
     fun movePiece(move : MoveMessage){
@@ -30,6 +31,7 @@ data class Board(
         endSquare.piece = movingPiece
         startSquare.piece = null
         movingPiece.hasMoved = true
+        halfMoveCount++
     }
 
     override fun toString(): String {

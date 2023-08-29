@@ -1,15 +1,13 @@
 package com.hellostranger.chess_app.activities
 
+import android.app.AlertDialog
 import android.app.Dialog
 import androidx.appcompat.app.AppCompatActivity
-import android.os.Bundle
 import android.os.Handler
-import android.util.Log
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.google.android.material.snackbar.Snackbar
-import com.google.firebase.auth.FirebaseAuth
 import com.hellostranger.chess_app.R
 import com.hellostranger.chess_app.chess_models.Color
 import com.hellostranger.chess_app.chess_models.Game
@@ -19,22 +17,20 @@ open class BaseActivity : AppCompatActivity() {
 
     private var doubleBackToExitPressedOnce = false
 
-
     private lateinit var mProgressDialog: Dialog
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+    fun showRationaleDialog(
+        title: String,
+        message: String,
+    ) {
+        val builder: AlertDialog.Builder = AlertDialog.Builder(this)
+        builder.setTitle(title)
+            .setMessage(message)
+            .setPositiveButton("Cancel") { dialog, _ ->
+                dialog.dismiss()
+            }
+        builder.create().show()
     }
-
-    /*fun getCurrentGame() : Game?{
-        Log.e("TAG", "Current game is: $currentGame")
-        return currentGame
-    }
-
-    fun setCurrentGame(updatedGame : Game){
-        currentGame = updatedGame
-        Log.e("TAG", "Updated game to: $currentGame")
-    }*/
 
     fun updatePiecesResId(){
         for(squaresRow in Game.getInstance()!!.board.squaresArray){
@@ -81,9 +77,6 @@ open class BaseActivity : AppCompatActivity() {
         mProgressDialog.dismiss()
     }
 
-    fun getCurrentUserID(): String {
-        return FirebaseAuth.getInstance().currentUser!!.uid
-    }
 
     fun doubleBackToExit() {
         if (doubleBackToExitPressedOnce) {

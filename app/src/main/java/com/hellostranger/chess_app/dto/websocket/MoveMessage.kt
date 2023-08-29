@@ -1,7 +1,7 @@
 package com.hellostranger.chess_app.dto.websocket
 
 class MoveMessage(
-     var playerName : String,
+     var playerEmail : String,
      val startCol : Int,
      val startRow: Int,
      val endCol : Int,
@@ -9,6 +9,6 @@ class MoveMessage(
      ) : WebSocketMessage(MessageType.MOVE){
 
      override fun toString(): String {
-          return "MoveMessage. Name = $playerName, startCol = $startCol, startRow = $startRow, endCol = $endCol, endRow = $endRow"
+          return "MoveMessage. Name = $playerEmail, startCol = $startCol, startRow = $startRow, endCol = $endCol, endRow = $endRow"
      }
 }

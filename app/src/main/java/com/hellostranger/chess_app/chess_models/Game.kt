@@ -5,7 +5,9 @@ data class Game(
     val id: String,
     var isP1turn: Boolean,
     var gameState: GameState,
-    var prev_board : Board? = null
+    var prev_board : Board? = null,
+    var boards_history : MutableList<Board>? =null,
+
 ){
 
     companion object {
@@ -17,7 +19,12 @@ data class Game(
         }
 
         fun setInstance(game: Game) {
+            if(game.boards_history == null){
+                game.boards_history = ArrayList()
+            }
             instance = game
+
         }
     }
+
 }

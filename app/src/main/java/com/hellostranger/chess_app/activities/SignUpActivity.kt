@@ -1,33 +1,34 @@
 package com.hellostranger.chess_app.activities
 
+import android.content.Intent
 import android.os.Build
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.TextUtils
 import android.util.Log
 import android.view.WindowInsets
 import android.view.WindowManager
 import android.widget.Toast
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
+import com.hellostranger.chess_app.MyApp
 import com.hellostranger.chess_app.R
 import com.hellostranger.chess_app.databinding.ActivitySignUpBinding
-import com.hellostranger.chess_app.firebase.FirestoreClass
-import com.hellostranger.chess_app.models.User
+import com.hellostranger.chess_app.dto.RegisterRequest
+import com.hellostranger.chess_app.retrofit.auth.AuthRetrofitClient
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 class SignUpActivity : BaseActivity() {
 
-    private lateinit var auth: FirebaseAuth
+
     private var binding: ActivitySignUpBinding? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySignUpBinding.inflate(layoutInflater)
         setContentView(binding!!.root)
-
-        auth = Firebase.auth
 
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R){
             window.insetsController?.hide(WindowInsets.Type.statusBars())
@@ -55,6 +56,7 @@ class SignUpActivity : BaseActivity() {
         binding?.toolbarSignUpActivity?.setNavigationOnClickListener { onBackPressed() }
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
     private fun registerUser(){
         val name: String = binding?.etNameSignUp?.text.toString().trim{ it <= ' ' }
         val email: String = binding?.etEmailSignUp?.text.toString().trim{ it <= ' ' }
@@ -62,21 +64,33 @@ class SignUpActivity : BaseActivity() {
 
         if(validateForm(name, email, password)){
             showProgressDialog(resources.getString(R.string.please_wait))
-            auth.createUserWithEmailAndPassword(email, password)
-                .addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        val firebaseUser: FirebaseUser = task.result!!.user!!
-                        val registeredEmail = firebaseUser.email!!
-                        val user = User(firebaseUser.uid, name, registeredEmail)
-                        FirestoreClass().registerUser(this, user)
-                    } else {
+
+            val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable ->
+                throwable.printStackTrace()
+            }
+            GlobalScope.launch (Dispatchers.IO + coroutineExceptionHandler) {
+                val response =
+                    AuthRetrofitClient.instance.register(RegisterRequest(name, email, password))
+                if(response.isSuccessful && response.body() != null){
+                    Log.e("TAG", "registered the user. response: " + response.body())
+                    MyApp.tokenManager.saveAccessToken(response.body()!!.accessToken, response.body()!!.accessExpiresIn)
+                    MyApp.tokenManager.saveRefreshToken(response.body()!!.refreshToken, response.body()!!.refreshExpiresIn)
+                    MyApp.tokenManager.saveUserEmail(email)
+                    runOnUiThread {
+                        hideProgressDialog()
+                        val intent = Intent(this@SignUpActivity, MainActivity::class.java)
+                        startActivity(intent)
+                    }
+                } else if(!response.isSuccessful){
+                    runOnUiThread{
                         Toast.makeText(
-                            this,
-                            task.exception!!.message, Toast.LENGTH_SHORT
+                            this@SignUpActivity,
+                            "Response failed, it is: ${response.message()}",
+                            Toast.LENGTH_LONG
                         ).show()
                     }
-
                 }
+            }
 
         }
     }
@@ -109,7 +123,6 @@ class SignUpActivity : BaseActivity() {
         ).show()
 
         hideProgressDialog()
-        auth.signOut()
         finish()
     }
 
