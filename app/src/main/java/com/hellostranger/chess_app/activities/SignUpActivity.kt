@@ -8,16 +8,14 @@ import android.util.Log
 import android.view.WindowInsets
 import android.view.WindowManager
 import android.widget.Toast
-import com.hellostranger.chess_app.MyApp
+import com.hellostranger.chess_app.utils.MyApp
 import com.hellostranger.chess_app.R
 import com.hellostranger.chess_app.databinding.ActivitySignUpBinding
 import com.hellostranger.chess_app.dto.RegisterRequest
-import com.hellostranger.chess_app.retrofit.auth.AuthRetrofitClient
+import com.hellostranger.chess_app.network.retrofit.auth.AuthRetrofitClient
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
 class SignUpActivity : BaseActivity() {
@@ -56,7 +54,6 @@ class SignUpActivity : BaseActivity() {
         binding?.toolbarSignUpActivity?.setNavigationOnClickListener { onBackPressed() }
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
     private fun registerUser(){
         val name: String = binding?.etNameSignUp?.text.toString().trim{ it <= ' ' }
         val email: String = binding?.etEmailSignUp?.text.toString().trim{ it <= ' ' }
@@ -68,7 +65,7 @@ class SignUpActivity : BaseActivity() {
             val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable ->
                 throwable.printStackTrace()
             }
-            GlobalScope.launch (Dispatchers.IO + coroutineExceptionHandler) {
+            CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
                 val response =
                     AuthRetrofitClient.instance.register(RegisterRequest(name, email, password))
                 if(response.isSuccessful && response.body() != null){

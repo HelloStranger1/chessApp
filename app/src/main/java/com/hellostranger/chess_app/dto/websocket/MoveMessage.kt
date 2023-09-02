@@ -5,7 +5,8 @@ class MoveMessage(
      val startCol : Int,
      val startRow: Int,
      val endCol : Int,
-     val endRow: Int
+     val endRow: Int,
+     val isSecondCastleMove : Boolean = false
      ) : WebSocketMessage(MessageType.MOVE){
 
      override fun toString(): String {

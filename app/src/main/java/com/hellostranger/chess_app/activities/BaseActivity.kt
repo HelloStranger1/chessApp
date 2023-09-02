@@ -9,9 +9,9 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.google.android.material.snackbar.Snackbar
 import com.hellostranger.chess_app.R
-import com.hellostranger.chess_app.chess_models.Color
-import com.hellostranger.chess_app.chess_models.Game
-import com.hellostranger.chess_app.chess_models.PieceType
+import com.hellostranger.chess_app.models.gameModels.enums.Color
+import com.hellostranger.chess_app.models.gameModels.Game
+import com.hellostranger.chess_app.models.gameModels.enums.PieceType
 
 open class BaseActivity : AppCompatActivity() {
 
@@ -33,7 +33,7 @@ open class BaseActivity : AppCompatActivity() {
     }
 
     fun updatePiecesResId(){
-        for(squaresRow in Game.getInstance()!!.board.squaresArray){
+        for(squaresRow in Game.getInstance()!!.board!!.squaresArray){
             for(square in squaresRow){
                 if(square.piece != null){
                     val isWhite = square.piece!!.color == Color.WHITE
