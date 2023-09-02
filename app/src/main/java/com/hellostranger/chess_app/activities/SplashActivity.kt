@@ -8,7 +8,7 @@ import android.os.Handler
 import android.view.WindowInsets
 import android.view.WindowManager
 import android.widget.TextView
-import com.hellostranger.chess_app.MyApp
+import com.hellostranger.chess_app.utils.MyApp
 import com.hellostranger.chess_app.R
 
 class SplashActivity : AppCompatActivity() {

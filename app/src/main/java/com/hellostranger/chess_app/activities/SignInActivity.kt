@@ -11,12 +11,11 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.widget.AppCompatButton
 import androidx.appcompat.widget.Toolbar
-import com.hellostranger.chess_app.MyApp
+import com.hellostranger.chess_app.utils.MyApp
 import com.hellostranger.chess_app.R
 import com.hellostranger.chess_app.dto.AuthenticateRequest
-import com.hellostranger.chess_app.models.User
-import com.hellostranger.chess_app.retrofit.auth.AuthRetrofitClient
-import com.hellostranger.chess_app.retrofit.general.GeneralRetrofitClient
+import com.hellostranger.chess_app.models.entites.User
+import com.hellostranger.chess_app.network.retrofit.auth.AuthRetrofitClient
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

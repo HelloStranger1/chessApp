@@ -11,20 +11,19 @@ import androidx.appcompat.widget.Toolbar
 import androidx.core.view.GravityCompat
 import com.bumptech.glide.Glide
 import com.google.android.material.navigation.NavigationView
-import com.hellostranger.chess_app.MyApp
+import com.hellostranger.chess_app.utils.MyApp
 import com.hellostranger.chess_app.R
-import com.hellostranger.chess_app.TokenManager
-import com.hellostranger.chess_app.chess_models.Game
+import com.hellostranger.chess_app.utils.TokenManager
+import com.hellostranger.chess_app.models.gameModels.Game
 import com.hellostranger.chess_app.databinding.ActivityMainBinding
 import com.hellostranger.chess_app.dto.JoinRequest
-import com.hellostranger.chess_app.models.User
-import com.hellostranger.chess_app.retrofit.auth.AuthRetrofitClient
-import com.hellostranger.chess_app.retrofit.general.GeneralRetrofitClient
+import com.hellostranger.chess_app.models.entites.User
+import com.hellostranger.chess_app.network.retrofit.auth.AuthRetrofitClient
+import com.hellostranger.chess_app.network.retrofit.general.GeneralRetrofitClient
+import com.hellostranger.chess_app.utils.Constants
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
 class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedListener {
@@ -33,7 +32,6 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
     private lateinit var toolbarMainActivity : Toolbar
 
     private var tokenManager : TokenManager = MyApp.tokenManager
-    @OptIn(DelicateCoroutinesApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -45,7 +43,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable ->
             throwable.printStackTrace()
         }
-        GlobalScope.launch(Dispatchers.IO + coroutineExceptionHandler) {
+        CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
             Log.e("TAG", "user email is: ${tokenManager.getUserEmail()}")
             val response =
                 GeneralRetrofitClient.instance.getUserByEmail(tokenManager.getUserEmail())
@@ -64,7 +62,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
             val playerEmail = tokenManager.getUserEmail()
 
             showProgressDialog("Joining random game...")
-            GlobalScope.launch(Dispatchers.IO + coroutineExceptionHandler) {
+            CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
                 val response =
                     GeneralRetrofitClient.instance.joinRandomGame(JoinRequest(playerEmail))
                 Log.e("TAG", "Response is: $response and is it successful? ${response.isSuccessful}")
@@ -75,6 +73,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
                     runOnUiThread {
                         hideProgressDialog()
                         val intent = Intent(this@MainActivity, GameActivity::class.java)
+                        intent.putExtra("MODE", Constants.ONLINE_MODE)
                         startActivity(intent)
                     }
                 }

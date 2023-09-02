@@ -15,16 +15,16 @@ import androidx.core.app.ActivityCompat
 import com.bumptech.glide.Glide
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
-import com.hellostranger.chess_app.MyApp
+import com.hellostranger.chess_app.utils.MyApp
 import com.hellostranger.chess_app.R
-import com.hellostranger.chess_app.TokenManager
+import com.hellostranger.chess_app.utils.TokenManager
 import com.hellostranger.chess_app.databinding.ActivityUpdateProfileBinding
 import com.hellostranger.chess_app.dto.UpdateRequest
-import com.hellostranger.chess_app.models.User
-import com.hellostranger.chess_app.retrofit.general.GeneralRetrofitClient
+import com.hellostranger.chess_app.models.entites.User
+import com.hellostranger.chess_app.network.retrofit.general.GeneralRetrofitClient
 import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.io.IOException
 
@@ -44,15 +44,6 @@ class UpdateProfileActivity : BaseActivity() {
         setContentView(binding.root)
         setUpActionBar()
         currentUser = intent.getParcelableExtra("USER")!!
-        val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable ->
-            throwable.printStackTrace()
-        }
-        GlobalScope.launch(Dispatchers.IO + coroutineExceptionHandler) {
-            val response =
-                GeneralRetrofitClient.instance.getUserByEmail(tokenManager.getUserEmail())
-            if (response.isSuccessful && response.body() != null) {
-            }
-        }
         setUserDataInUI()
         binding.ivUserImage.setOnClickListener {
             requestStoragePermission()
@@ -89,7 +80,7 @@ class UpdateProfileActivity : BaseActivity() {
             throwable.printStackTrace()
         }
         if(binding.etName.text!!.isNotEmpty() && binding.etName.text!!.toString() != currentUser.name){
-            GlobalScope.launch(Dispatchers.IO + coroutineExceptionHandler) {
+            CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
                 val response = GeneralRetrofitClient.instance.updateUserName(tokenManager.getUserEmail(), UpdateRequest(binding.etName.text!!.toString()))
                 if(response.isSuccessful && response.body() != null){
                     Log.i("SaveData", "Saved name to the backend server. response is: ${response.body()}")
@@ -101,7 +92,7 @@ class UpdateProfileActivity : BaseActivity() {
         }
         Log.i("TAG", "mProfileImageURL: $mProfileImageURL and userimage: ${currentUser.image}")
         if(mProfileImageURL != currentUser.image){
-            GlobalScope.launch(Dispatchers.IO + coroutineExceptionHandler) {
+            CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
                 Log.i("TAG", mProfileImageURL)
                 val response = GeneralRetrofitClient.instance.uploadProfileImage(tokenManager.getUserEmail(), UpdateRequest(mProfileImageURL))
                 if(response.isSuccessful && response.body() != null){
