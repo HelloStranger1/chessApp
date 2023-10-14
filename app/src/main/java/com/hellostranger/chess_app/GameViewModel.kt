@@ -47,9 +47,12 @@ class GameViewModel(private val currentGame : Game) : ViewModel() {
         Log.e("TAG", "moveMessage is: $moveMessage")
         if(!isOurTurn
             || board.squaresArray[moveMessage.startRow][moveMessage.startCol].piece == null
-            || isWhite ==(board.squaresArray[moveMessage.startRow][moveMessage.startCol].piece!!.color == Color.WHITE)){
+            || isWhite !=(board.squaresArray[moveMessage.startRow][moveMessage.startCol].piece!!.color == Color.WHITE)){
                 return false;
             }
+        Log.e("TAG", "Move is valid. it is our turn: $isOurTurn the moving piece isn't null: " +
+                "${board.squaresArray[moveMessage.startRow][moveMessage.startCol].piece} and our color (are we white? $isWhite) matches the piece color: " +
+                "${board.squaresArray[moveMessage.startRow][moveMessage.startCol].piece!!.color}")
         return true
     }
 
@@ -104,7 +107,9 @@ class GameViewModel(private val currentGame : Game) : ViewModel() {
         if(boardsHistory.isEmpty()){
             boardsHistory.add(_currentBoard.value!!)
         }
+        Log.e("TAG", "PlayMoveFromServer, before Playing move. currentBoard: ${_currentBoard.value}. last of boardsHistory is: ${boardsHistory.last()}")
         _currentBoard.value = boardsHistory.last().clone().movePiece(moveMessage)
+        Log.e("TAG", "PlayMoveFromServer, after Playing move. currentBoard: ${_currentBoard.value}. last of boardsHistory is: ${boardsHistory.last()}")
         boardsHistory.add(_currentBoard.value!!)
         currentMoveShown = boardsHistory.size - 1
         isOurTurn = (moveMessage.playerEmail != tokenManager.getUserEmail())
@@ -115,7 +120,7 @@ class GameViewModel(private val currentGame : Game) : ViewModel() {
             boardsHistory.add(_currentBoard.value!!)
         }
         if(validateMove(moveMessage)){
-            _currentBoard.value = boardsHistory.last().movePiece(moveMessage)
+            _currentBoard.value = boardsHistory.last().clone().movePiece(moveMessage)
         }
     }
 

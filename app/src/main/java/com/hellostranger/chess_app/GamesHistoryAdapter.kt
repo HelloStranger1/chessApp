@@ -26,13 +26,16 @@ class GamesHistoryAdapter(
         : RecyclerView.ViewHolder(binding.root) {
         val saveImageView : ImageView = binding.ivSaveGame
         fun bind(gameHistory: GameHistory?){
+            val opponentImage = if(gameHistory?.opponentColor == Color.WHITE) gameHistory.whiteImage else gameHistory?.blackImage
+            val opponentName = if(gameHistory?.opponentColor == Color.WHITE) gameHistory.whiteName else gameHistory?.blackName
+            val opponentElo = if(gameHistory?.opponentColor == Color.WHITE) gameHistory.whiteElo else gameHistory?.blackElo
             Glide
                 .with(binding.ivOpponentImage)
-                .load(gameHistory?.opponentImage)
+                .load(opponentImage)
                 .centerCrop()
                 .placeholder(R.drawable.ic_user_place_holder)
                 .into(binding.ivOpponentImage)
-            binding.tvOpponentUsernameAndElo.text = "${gameHistory?.opponentName} (${gameHistory?.opponentElo})"
+            binding.tvOpponentUsernameAndElo.text = "${opponentName} (${opponentElo})"
 
             if(gameHistory?.isSaved == true){
                 binding.ivSaveGame.setImageResource(R.drawable.ic_save_filled)

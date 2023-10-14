@@ -30,7 +30,7 @@ import com.hellostranger.chess_app.network.retrofit.general.GeneralRetrofitClien
 import com.hellostranger.chess_app.utils.Constants
 import com.hellostranger.chess_app.database.GameHistoryDatabase
 
-class ProfileActivity : AppCompatActivity() {
+class ProfileActivity : BaseActivity() {
     private lateinit var binding : ActivityProfileBinding
     private var currentUser : User? = null
     private var tokenManager : TokenManager = MyApp.tokenManager
@@ -46,6 +46,7 @@ class ProfileActivity : AppCompatActivity() {
             applicationContext,
             GameHistoryDatabase::class.java, "favorite-games-database"
         ).build()
+
         viewModel = ViewModelProvider(this,
             ProfileViewModelFactory(
                 GameHistoryRepository(GeneralRetrofitClient.instance, tokenManager),
@@ -57,8 +58,16 @@ class ProfileActivity : AppCompatActivity() {
         adapter = GamesHistoryAdapter(
             GamesHistoryAdapter.OnClickListener(
                 {
-                    var startMessage : GameStartMessage
-                    if(it.opponentColor == Color.WHITE){
+                    var startMessage : GameStartMessage = GameStartMessage(
+                        whiteName = it.whiteName,
+                        blackName = it.blackName,
+                        whiteEmail = "", blackEmail = "",
+                        blackImage = it.blackImage,
+                        whiteImage = it.whiteImage,
+                        whiteElo = it.whiteElo,
+                        blackElo = it.blackElo
+                    )
+                    /*if(it.opponentColor == Color.WHITE){
                         startMessage = GameStartMessage(
                             whiteName = it.opponentName,
                             blackName = currentUser!!.name,
@@ -76,13 +85,15 @@ class ProfileActivity : AppCompatActivity() {
                             whiteImage = currentUser!!.image,
                             blackElo = it.opponentElo,
                             whiteElo = currentUser!!.elo)
-                    }
+                    }*/
                     val gson = Gson()
-                    val game : Game = Game(currentMove = 0 ,board = gson.fromJson(it.boardsHistoryRepresentation[0],  Board::class.java), id = "",gameState= it.result)
+                    val game : Game = Game(currentMove = 0 ,board = gson.fromJson(it.startBoardJson,  Board::class.java), id = "",gameState= it.result)
                     Game.setInstance(game)
+                    updatePiecesResId()
                     val intent = Intent(this@ProfileActivity, GameActivity::class.java)
                     intent.putExtra("MODE", Constants.ANALYSIS_MODE)
-                    intent.putExtra("BOARDS", arrayListOf(it.boardsHistoryRepresentation))
+                    intent.putExtra("MOVES", it.gameMoves)
+                    intent.putExtra("START", startMessage)
                     startActivity(intent)
 
                 },

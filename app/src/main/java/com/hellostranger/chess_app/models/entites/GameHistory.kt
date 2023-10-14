@@ -9,12 +9,17 @@ import com.hellostranger.chess_app.models.gameModels.enums.GameState
 data class GameHistory(
     @PrimaryKey(autoGenerate = false)
     val id : Int = 0,
-    val opponentImage : String,
-    val opponentName : String,
-    val opponentElo : Int,
+    val whiteImage : String,
+    val blackImage : String,
+    val whiteName : String,
+    val blackName : String,
+    val blackElo : Int,
+    val whiteElo : Int,
     val opponentColor : Color,
     val gameDate : String,
     val result : GameState,
-    val boardsHistoryRepresentation : List<String> = ArrayList(),
+    val startBoardJson : String,
+    val gameMoves : String,
     var isSaved : Boolean = false
 )
+  

@@ -1,5 +1,6 @@
 package com.hellostranger.chess_app.models.gameModels
 
+import android.util.Log
 import com.google.gson.Gson
 import com.hellostranger.chess_app.models.gameModels.enums.PieceType
 import com.hellostranger.chess_app.models.gameModels.enums.Color
@@ -9,11 +10,15 @@ data class Board(
     val squaresArray: List<List<Square>>,
 ) : Cloneable{
 
-    fun movePiece(move : MoveMessage) : Board? {
+    fun movePiece(move : MoveMessage) : Board {
         val startSquare = squaresArray[move.startRow][move.startCol]
         val endSquare = squaresArray[move.endRow][move.endCol]
 
-        val movingPiece = startSquare.piece ?: return null
+        val movingPiece = startSquare.piece
+        if(movingPiece == null){
+            Log.e("TAG", "You can't move this!! No Piece to move.")
+            return this
+        }
 
         if(movingPiece.color == Color.WHITE && movingPiece.pieceType == PieceType.PAWN){
             if(move.endRow - move.startRow == 1 &&

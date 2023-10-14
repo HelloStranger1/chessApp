@@ -1,10 +1,12 @@
 package com.hellostranger.chess_app.activities
 
 import android.app.AlertDialog
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.widget.PopupMenu
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModelProvider
 import com.bumptech.glide.Glide
 import com.google.gson.Gson
@@ -41,11 +43,10 @@ class GameActivity : BaseActivity(), ChessGameInterface {
 
     private lateinit var currentPlayerEmail : String
 
-    private var isWhite : Boolean = true
-
-    lateinit var viewModel: GameViewModel
+    private lateinit var viewModel: GameViewModel
     private lateinit var gameMode : String
     private val TAG = "GameActivity"
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityGameViewBinding.inflate(layoutInflater)
@@ -56,27 +57,41 @@ class GameActivity : BaseActivity(), ChessGameInterface {
 
         viewModel = ViewModelProvider(this, GameViewModelFactory(Game.getInstance()!!))[GameViewModel::class.java]
         gameMode = intent.getStringExtra("MODE")!!
+        binding.chessView.chessGameInterface = this
+        binding.chessView.gameMode = gameMode
+        currentPlayerEmail = tokenManager.getUserEmail()
         if(gameMode == Constants.ANALYSIS_MODE){
-            val boardsHistoryJson = intent.getStringArrayListExtra("BOARDS")
-            if (boardsHistoryJson != null) {
-                val gson = Gson()
-                for(boardJson in boardsHistoryJson){
-                    viewModel.addBoardToList(gson.fromJson(boardJson, Board::class.java))
-                }
+            val startData = intent.getParcelableExtra("START", GameStartMessage::class.java)!!
+            val moves : String = intent.getStringExtra("MOVES")!!
+
+            for(i in 0 until moves.length step 4){
+                val move : String = moves.substring(i, i + 4)
+                val moveMessage : MoveMessage = MoveMessage(
+                    "",
+                    startCol = move[0].digitToInt(),
+                    startRow = move[1].digitToInt(),
+                    endCol = move[2].digitToInt(),
+                    endRow = move[3].digitToInt()
+                )
+
+                viewModel.playMoveFromServer(moveMessage)
             }
+            startGame(startData)
         } else if(gameMode == Constants.ONLINE_MODE){
             //Connecting to websocket
             chessWebSocketListener = ChessWebSocketListener(viewModel)
             chessWebSocketListener!!.connectWebSocket(Game.getInstance()!!.id, tokenManager.getAccessToken())
             chessWebSocket = chessWebSocketListener!!.getWebSocketInstance()
         }
-        binding.chessView.chessGameInterface = this
-        binding.chessView.gameMode = gameMode
+
         viewModel.socketStatus.observe(this){
             Log.e(TAG, "socketStatus changed to: $it")
         }
         viewModel.gameStatus.observe(this){
             Toast.makeText(this@GameActivity, "GameStatus changed to: $it", Toast.LENGTH_LONG).show()
+            if(it != GameState.NEW && it != GameState.WAITING){
+
+            }
             Log.e(TAG, "gameStatus changed to: $it")
         }
         viewModel.startMessageData.observe(this){
@@ -194,8 +209,6 @@ class GameActivity : BaseActivity(), ChessGameInterface {
         if(gameMode == Constants.ONLINE_MODE){
             sendMessageToServer(updatedMoveMessage)
         }
-
-
     }
 
     override fun isOnLastMove(): Boolean {
@@ -235,9 +248,19 @@ class GameActivity : BaseActivity(), ChessGameInterface {
     Sets information for the player at The Bottom
      */
     private fun setPlayerOneData(name: String, email: String, image : String, elo : Int) {
-        val fullName = "$name (White) ($elo)"
-        if(isWhite){
-            currentPlayerEmail = email
+        var fullName = "";
+        if(viewModel.isWhite){
+            if(email == currentPlayerEmail){
+                fullName = "$name (White) ($elo)"
+            } else{
+                fullName = "$name (Black) ($elo)"
+            }
+        } else{
+            if(email == currentPlayerEmail){
+                fullName = "$name (Black) ($elo)"
+            } else{
+                fullName = "$name (White) ($elo)"
+            }
         }
         binding.tvP1Name.text = fullName
 
@@ -255,9 +278,19 @@ class GameActivity : BaseActivity(), ChessGameInterface {
     Sets information for the player at The Top
      */
     private fun setPlayerTwoData(name: String, email: String, image: String, elo : Int) {
-        val fullName = "$name (Black) ($elo)"
-        if(!isWhite){
-            currentPlayerEmail = email
+        var fullName = ""
+        if(!viewModel.isWhite){
+            if(email == currentPlayerEmail){
+                fullName = "$name (White) ($elo)"
+            } else{
+                fullName = "$name (Black) ($elo)"
+            }
+        } else {
+            if (email == currentPlayerEmail) {
+                fullName = "$name (Black) ($elo)"
+            } else {
+                fullName = "$name (White) ($elo)"
+            }
         }
         binding.tvP2Name.text = fullName
         Glide
@@ -283,7 +316,9 @@ class GameActivity : BaseActivity(), ChessGameInterface {
         runOnUiThread{
             setPlayerOneData(startMessage.whiteName, startMessage.whiteEmail, startMessage.whiteImage, startMessage.whiteElo)
             setPlayerTwoData(startMessage.blackName, startMessage.blackEmail, startMessage.blackImage, startMessage.blackElo)
-            Toast.makeText(this@GameActivity, "Game started! You are playing $playerColor", Toast.LENGTH_SHORT).show()
+            if(gameMode != Constants.ANALYSIS_MODE){
+                Toast.makeText(this@GameActivity, "Game started! You are playing $playerColor", Toast.LENGTH_SHORT).show()
+            }
         }
 
 
