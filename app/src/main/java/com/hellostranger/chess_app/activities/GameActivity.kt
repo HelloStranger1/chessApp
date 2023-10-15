@@ -4,6 +4,7 @@ import android.app.AlertDialog
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.Menu
 import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.annotation.RequiresApi
@@ -27,6 +28,7 @@ import com.hellostranger.chess_app.dto.websocket.ConcedeGameMessage
 import com.hellostranger.chess_app.dto.websocket.GameStartMessage
 import com.hellostranger.chess_app.dto.websocket.WebSocketMessage
 import com.hellostranger.chess_app.models.gameModels.Board
+import com.hellostranger.chess_app.models.gameModels.enums.PieceType
 import com.hellostranger.chess_app.network.websocket.ChessWebSocketListener
 import com.hellostranger.chess_app.network.websocket.MoveListener
 import com.hellostranger.chess_app.utils.Constants
@@ -202,7 +204,24 @@ class GameActivity : BaseActivity(), ChessGameInterface {
                 )
             Log.e(TAG, "PlayMove, Flipped. flipped move msg is: $updatedMoveMessage")
         }
-        viewModel.temporaryPlayMove(updatedMoveMessage)
+        var chosenPromotion : PieceType? = null
+        if(viewModel.isWhite){
+            if(updatedMoveMessage.endRow == 7 && viewModel.currentBoard.value!!.squaresArray[updatedMoveMessage.startRow][updatedMoveMessage.startCol].piece!!.pieceType == PieceType.PAWN) {
+                chosenPromotion = setPiecePromotionMenu()
+            }
+        } else{
+            if(updatedMoveMessage.endRow == 0 && viewModel.currentBoard.value!!.squaresArray[updatedMoveMessage.startRow][updatedMoveMessage.startCol].piece!!.pieceType == PieceType.PAWN) {
+                chosenPromotion = setPiecePromotionMenu()
+            }
+        }
+        if(chosenPromotion == null) {
+            viewModel.temporaryPlayMove(updatedMoveMessage)
+        }else{
+            updatedMoveMessage.promotionType = chosenPromotion
+            viewModel.temporaryPlayMove(updatedMoveMessage)
+        }
+
+
        /* if(!gameService.validateMove(updatedMoveMessage)) return
 
         gameService.temporaryMakeMove(updatedMoveMessage)*/ //Instead of waiting for the server to validate the move, we play it temporarily and undo it if the server says it is invalid.
@@ -210,6 +229,41 @@ class GameActivity : BaseActivity(), ChessGameInterface {
             sendMessageToServer(updatedMoveMessage)
         }
     }
+
+    private fun setPiecePromotionMenu() : PieceType?{
+        val popupMenu = PopupMenu(this@GameActivity, binding.llPlayer2)
+        var chosenPromotion : PieceType? = null
+        if(viewModel.isWhite){
+            popupMenu.menuInflater.inflate(R.menu.popup_white_promotion_options, popupMenu.menu)
+        } else{
+            popupMenu.menuInflater.inflate(R.menu.popup_black_promotion_options, popupMenu.menu)
+        }
+        popupMenu.setOnMenuItemClickListener { menuItem ->
+            when (menuItem.itemId){
+                R.id.queen -> {
+                    chosenPromotion = PieceType.QUEEN
+                    return@setOnMenuItemClickListener true
+                }
+                R.id.rook -> {
+                    chosenPromotion = PieceType.ROOK
+                    return@setOnMenuItemClickListener true
+                }
+                R.id.bishop -> {
+                    chosenPromotion = PieceType.BISHOP
+                    return@setOnMenuItemClickListener true
+                }R.id.knight -> {
+                chosenPromotion = PieceType.KNIGHT
+                return@setOnMenuItemClickListener true
+            }
+                else -> {return@setOnMenuItemClickListener false}
+            }
+        }
+        popupMenu.show()
+        Log.e(TAG, "Chosen promotion is: $chosenPromotion")
+        return chosenPromotion
+    }
+
+
 
     override fun isOnLastMove(): Boolean {
         return viewModel.isOnLastMove()

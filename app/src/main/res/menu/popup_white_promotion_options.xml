@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/queen"
+        android:icon="@drawable/ic_white_queen"
+        android:title="Queen" />
+    <item
+        android:id="@+id/rook"
+        android:icon="@drawable/ic_white_rook"
+        android:title="Rook" />
+    <item
+        android:id="@+id/bishop"
+        android:icon="@drawable/ic_white_bishop"
+        android:title="Bishop" />
+    <item
+        android:id="@+id/knight"
+        android:icon="@drawable/ic_white_knight"
+        android:title="Knight" />
+</menu>

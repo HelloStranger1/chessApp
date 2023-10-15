@@ -83,6 +83,8 @@ class GameViewModel(private val currentGame : Game) : ViewModel() {
         _currentBoard.value = boardsHistory.last()
     }
 
+
+
     fun startGame(startMessage: GameStartMessage) = viewModelScope.launch(Dispatchers.Main){
         _startMessageData.value = startMessage
         isWhite = startMessage.whiteEmail == tokenManager.getUserEmail()
@@ -107,9 +109,7 @@ class GameViewModel(private val currentGame : Game) : ViewModel() {
         if(boardsHistory.isEmpty()){
             boardsHistory.add(_currentBoard.value!!)
         }
-        Log.e("TAG", "PlayMoveFromServer, before Playing move. currentBoard: ${_currentBoard.value}. last of boardsHistory is: ${boardsHistory.last()}")
         _currentBoard.value = boardsHistory.last().clone().movePiece(moveMessage)
-        Log.e("TAG", "PlayMoveFromServer, after Playing move. currentBoard: ${_currentBoard.value}. last of boardsHistory is: ${boardsHistory.last()}")
         boardsHistory.add(_currentBoard.value!!)
         currentMoveShown = boardsHistory.size - 1
         isOurTurn = (moveMessage.playerEmail != tokenManager.getUserEmail())

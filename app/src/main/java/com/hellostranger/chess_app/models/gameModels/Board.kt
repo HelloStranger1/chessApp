@@ -2,9 +2,11 @@ package com.hellostranger.chess_app.models.gameModels
 
 import android.util.Log
 import com.google.gson.Gson
+import com.hellostranger.chess_app.R
 import com.hellostranger.chess_app.models.gameModels.enums.PieceType
 import com.hellostranger.chess_app.models.gameModels.enums.Color
 import com.hellostranger.chess_app.dto.websocket.MoveMessage
+import com.hellostranger.chess_app.utils.Constants
 
 data class Board(
     val squaresArray: List<List<Square>>,
@@ -32,6 +34,44 @@ data class Board(
                 endSquare.piece == null
             ) {
                 squaresArray[move.startRow][move.endCol].piece = null
+            }
+        }
+        if(move.promotionType != null){
+            movingPiece.pieceType = move.promotionType!!
+            if(movingPiece.color == Color.WHITE){
+                when(move.promotionType){
+                    PieceType.QUEEN ->{
+                        movingPiece.resID = R.drawable.ic_white_queen
+                    }
+                    PieceType.ROOK ->{
+                        movingPiece.resID = R.drawable.ic_white_rook
+                    }
+                    PieceType.BISHOP ->{
+                        movingPiece.resID = R.drawable.ic_white_bishop
+                    }
+                    PieceType.KNIGHT ->{
+                        movingPiece.resID = R.drawable.ic_white_knight
+                    }else ->{
+                        Log.e("TAG", "Tried to promote to: ${move.promotionType} but you can't promote to that.")
+                    }
+                }
+            }else{
+                when(move.promotionType){
+                    PieceType.QUEEN ->{
+                        movingPiece.resID = R.drawable.ic_black_queen
+                    }
+                    PieceType.ROOK ->{
+                        movingPiece.resID = R.drawable.ic_black_rook
+                    }
+                    PieceType.BISHOP ->{
+                        movingPiece.resID = R.drawable.ic_black_bishop
+                    }
+                    PieceType.KNIGHT ->{
+                        movingPiece.resID = R.drawable.ic_black_knight
+                    }else ->{
+                    Log.e("TAG", "Tried to promote to: ${move.promotionType} but you can't promote to that.")
+                }
+                }
             }
         }
         endSquare.piece = movingPiece
