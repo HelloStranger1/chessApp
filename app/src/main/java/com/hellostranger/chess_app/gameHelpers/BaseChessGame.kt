@@ -1,11 +1,6 @@
 package com.hellostranger.chess_app.gameHelpers
 
-import android.util.Log
-import com.hellostranger.chess_app.models.gameModels.enums.Color
 import com.hellostranger.chess_app.models.gameModels.Game
-import com.hellostranger.chess_app.models.gameModels.Piece
-import com.hellostranger.chess_app.models.gameModels.enums.PieceType
-import com.hellostranger.chess_app.dto.websocket.MoveMessage
 
 class BaseChessGame(
     protected val currentGame : Game,

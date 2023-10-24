@@ -58,7 +58,7 @@ class ProfileViewModel(
                 event.gameHistory.isSaved = false
                 val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable -> throwable.printStackTrace() }
                 CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch{
-                    gameHistoryDao.deleteGameHistory(event.gameHistory)
+                    gameHistoryDao.deleteGameHistory(event.gameHistory.localId)
                 }
             }
         }

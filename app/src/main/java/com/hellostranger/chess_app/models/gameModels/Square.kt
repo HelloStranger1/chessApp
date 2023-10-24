@@ -1,5 +1,7 @@
 package com.hellostranger.chess_app.models.gameModels
 
+import com.hellostranger.chess_app.models.gameModels.pieces.Piece
+
 data class Square(
     val colIndex: Int,
     var piece: Piece?,

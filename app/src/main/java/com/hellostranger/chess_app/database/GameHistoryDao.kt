@@ -13,8 +13,8 @@ interface GameHistoryDao {
     @Upsert
     suspend fun upsertGameHistory(gameHistory: GameHistory)
 
-    @Delete
-    suspend fun deleteGameHistory(gameHistory: GameHistory)
+    @Query("DELETE FROM GameHistory WHERE localId = :gameHistoryLocalId")
+    suspend fun deleteGameHistory(gameHistoryLocalId: Int)
 
     @Query("SELECT * FROM GameHistory ORDER BY gameDate ASC")
     fun getGames() : LiveData<List<GameHistory>>

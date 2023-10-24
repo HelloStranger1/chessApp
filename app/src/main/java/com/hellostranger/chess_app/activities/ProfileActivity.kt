@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.room.Room
 import com.bumptech.glide.Glide
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import com.hellostranger.chess_app.GameHistoryEvent
 import com.hellostranger.chess_app.GameHistoryRepository
 import com.hellostranger.chess_app.GamesHistoryAdapter
@@ -29,6 +30,8 @@ import com.hellostranger.chess_app.models.gameModels.enums.GameState
 import com.hellostranger.chess_app.network.retrofit.general.GeneralRetrofitClient
 import com.hellostranger.chess_app.utils.Constants
 import com.hellostranger.chess_app.database.GameHistoryDatabase
+import com.hellostranger.chess_app.models.gameModels.pieces.Piece
+import com.hellostranger.chess_app.models.gameModels.pieces.PieceJsonDeserializer
 
 class ProfileActivity : BaseActivity() {
     private lateinit var binding : ActivityProfileBinding
@@ -45,7 +48,9 @@ class ProfileActivity : BaseActivity() {
         val favoriteGamesDb = Room.databaseBuilder(
             applicationContext,
             GameHistoryDatabase::class.java, "favorite-games-database"
-        ).build()
+        )
+            .fallbackToDestructiveMigration()
+            .build()
 
         viewModel = ViewModelProvider(this,
             ProfileViewModelFactory(
@@ -86,7 +91,10 @@ class ProfileActivity : BaseActivity() {
                             blackElo = it.opponentElo,
                             whiteElo = currentUser!!.elo)
                     }*/
-                    val gson = Gson()
+                    val gson = GsonBuilder()
+                        .setLenient()
+                        .registerTypeAdapter(Piece::class.java, PieceJsonDeserializer())
+                        .create()
                     val game : Game = Game(currentMove = 0 ,board = gson.fromJson(it.startBoardJson,  Board::class.java), id = "",gameState= it.result)
                     Game.setInstance(game)
                     updatePiecesResId()

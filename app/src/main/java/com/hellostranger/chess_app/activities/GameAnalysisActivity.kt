@@ -1,19 +1,5 @@
 package com.hellostranger.chess_app.activities
 
-import android.os.Build
-import android.os.Bundle
-import android.util.Log
-import androidx.annotation.RequiresApi
-import com.bumptech.glide.Glide
-import com.hellostranger.chess_app.R
-
-import com.hellostranger.chess_app.databinding.ActivityGameAnalysisBinding
-import com.hellostranger.chess_app.dto.websocket.GameStartMessage
-import com.hellostranger.chess_app.dto.websocket.MoveMessage
-import com.hellostranger.chess_app.gameHelpers.ChessGameInterface
-import com.hellostranger.chess_app.gameHelpers.BaseChessGame
-import com.hellostranger.chess_app.models.gameModels.Piece
-
 class GameAnalysisActivity : BaseActivity()/*, ChessGameInterface {
     private lateinit var binding : ActivityGameAnalysisBinding
     private lateinit var gameService: BaseChessGame

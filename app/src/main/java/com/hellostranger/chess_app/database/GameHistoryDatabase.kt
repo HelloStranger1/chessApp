@@ -7,7 +7,8 @@ import com.hellostranger.chess_app.models.entites.GameHistory
 
 @Database(
     entities = [GameHistory::class],
-    version = 1
+    version = 3,
+    exportSchema = false
 )
 /*@TypeConverters(Converters::class)*/
 abstract class GameHistoryDatabase : RoomDatabase() {

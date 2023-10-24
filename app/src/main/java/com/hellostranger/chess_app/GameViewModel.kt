@@ -11,12 +11,14 @@ import com.hellostranger.chess_app.models.gameModels.Board
 import com.hellostranger.chess_app.models.gameModels.Game
 import com.hellostranger.chess_app.models.gameModels.enums.Color
 import com.hellostranger.chess_app.models.gameModels.enums.GameState
+import com.hellostranger.chess_app.models.gameModels.enums.MoveType
 import com.hellostranger.chess_app.utils.MyApp
 import com.hellostranger.chess_app.utils.TokenManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class GameViewModel(private val currentGame : Game) : ViewModel() {
+    private val TAG = "GameViewModel"
 
     private val tokenManager = MyApp.tokenManager
 
@@ -44,13 +46,26 @@ class GameViewModel(private val currentGame : Game) : ViewModel() {
 
     private fun validateMove(moveMessage: MoveMessage) : Boolean{
         val board = _currentBoard.value!!
-        Log.e("TAG", "moveMessage is: $moveMessage")
-        if(!isOurTurn
-            || board.squaresArray[moveMessage.startRow][moveMessage.startCol].piece == null
-            || isWhite !=(board.squaresArray[moveMessage.startRow][moveMessage.startCol].piece!!.color == Color.WHITE)){
-                return false;
-            }
-        Log.e("TAG", "Move is valid. it is our turn: $isOurTurn the moving piece isn't null: " +
+        Log.e(TAG, "moveMessage is: $moveMessage")
+        if(!isOurTurn) {
+            Log.e(TAG, "Move is invalid because it is not our turn")
+            return false;
+        }
+        val startSquare = board.getSquareAt(moveMessage.startCol, moveMessage.startRow)!!
+        if(startSquare.piece == null){
+            Log.e(TAG, "Moving piece is null so the move is invalid")
+            return false
+        }
+        if(isWhite !=( startSquare.piece!!.color == Color.WHITE)){
+            Log.e(TAG, "Moving piece is not our color so the move is invalid. are we white? $isWhite. and the piece colro is: ${startSquare.piece!!.color}")
+            return false
+        }
+        val endSquare = board.getSquareAt(moveMessage.endCol, moveMessage.endRow)
+        if(!board.isValidMove(startSquare, endSquare!!)){
+            Log.e(TAG, "Move is invalid")
+            return false
+        }
+        Log.e(TAG, "Move is valid. it is our turn: $isOurTurn the moving piece isn't null: " +
                 "${board.squaresArray[moveMessage.startRow][moveMessage.startCol].piece} and our color (are we white? $isWhite) matches the piece color: " +
                 "${board.squaresArray[moveMessage.startRow][moveMessage.startCol].piece!!.color}")
         return true
@@ -86,8 +101,9 @@ class GameViewModel(private val currentGame : Game) : ViewModel() {
 
 
     fun startGame(startMessage: GameStartMessage) = viewModelScope.launch(Dispatchers.Main){
-        _startMessageData.value = startMessage
+
         isWhite = startMessage.whiteEmail == tokenManager.getUserEmail()
+        Log.e(TAG, "StartGame. isWhite: $isWhite. the whiteEmail is: ${startMessage.whiteEmail} and our email is: ${tokenManager.getUserEmail()}")
         isOurTurn = isWhite
         if(currentGame.gameState == GameState.WAITING){
             _gameStatus.value = GameState.ACTIVE
@@ -97,6 +113,7 @@ class GameViewModel(private val currentGame : Game) : ViewModel() {
         if(boardsHistory.isEmpty()){
             boardsHistory.add(_currentBoard.value!!)
         }
+        _startMessageData.value = startMessage
 
     }
 
@@ -106,10 +123,19 @@ class GameViewModel(private val currentGame : Game) : ViewModel() {
 
     }
     fun playMoveFromServer(moveMessage: MoveMessage) = viewModelScope.launch(Dispatchers.Main){
+
         if(boardsHistory.isEmpty()){
             boardsHistory.add(_currentBoard.value!!)
         }
-        _currentBoard.value = boardsHistory.last().clone().movePiece(moveMessage)
+        if(moveMessage.playerEmail == currentPlayerEmail){
+            val tempBoard = boardsHistory.last().clone().movePiece(moveMessage)
+            if(tempBoard != _currentBoard.value){
+                Log.e(TAG, "Guess we changed something. tempBoard is: $tempBoard \n \n and currentBoard is: ${_currentBoard.value}. ")
+                _currentBoard.value = tempBoard
+            }
+        }else{
+            _currentBoard.value = boardsHistory.last().clone().movePiece(moveMessage)
+        }
         boardsHistory.add(_currentBoard.value!!)
         currentMoveShown = boardsHistory.size - 1
         isOurTurn = (moveMessage.playerEmail != tokenManager.getUserEmail())
@@ -121,9 +147,20 @@ class GameViewModel(private val currentGame : Game) : ViewModel() {
         }
         if(validateMove(moveMessage)){
             _currentBoard.value = boardsHistory.last().clone().movePiece(moveMessage)
+            Log.e(TAG, "Temporary play move. board is now: ${_currentBoard.value}")
+        } else{
+            Log.e(TAG, "Tempmove is invalid.")
         }
-    }
 
+    }
+    fun isCastlingMove(moveMessage: MoveMessage) : Boolean{
+        val startSquare = _currentBoard.value!!.getSquareAt(moveMessage.startCol, moveMessage.startRow)
+        val endSquare = _currentBoard.value!!.getSquareAt(moveMessage.endCol, moveMessage.endRow)
+        if(startSquare == null && endSquare == null){
+            return false
+        }
+        return _currentBoard.value!!.isCastlingMove(startSquare!!, endSquare!!)
+    }
     fun goToLatestMove() = viewModelScope.launch(Dispatchers.Main){
         if(boardsHistory.isEmpty()){
             boardsHistory.add(_currentBoard.value!!)

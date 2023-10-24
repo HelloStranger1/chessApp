@@ -2,6 +2,8 @@ package com.hellostranger.chess_app.network.retrofit.general
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.hellostranger.chess_app.models.gameModels.pieces.Piece
+import com.hellostranger.chess_app.models.gameModels.pieces.PieceJsonDeserializer
 import com.hellostranger.chess_app.network.retrofit.AuthInterceptor
 import com.hellostranger.chess_app.network.retrofit.auth.AuthRetrofitClient
 import okhttp3.OkHttpClient
@@ -14,6 +16,7 @@ object GeneralRetrofitClient {
 
     private var gson: Gson = GsonBuilder()
         .setLenient()
+        .registerTypeAdapter(Piece::class.java, PieceJsonDeserializer())
         .create()
     val instance: ApiService by lazy {
         val okHttpClient = OkHttpClient.Builder()

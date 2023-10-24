@@ -29,7 +29,7 @@
         <deviceKey>
           <Key>
             <type value="VIRTUAL_DEVICE_PATH" />
-            <value value="C:\Users\eyalb\.android\avd\Secondary_Pixel_7_TIR_.avd" />
+            <value value="C:\Users\eyalb\.android\avd\Pixel_3a_API_34_extension_level_7_x86_64.avd" />
           </Key>
         </deviceKey>
       </Target>

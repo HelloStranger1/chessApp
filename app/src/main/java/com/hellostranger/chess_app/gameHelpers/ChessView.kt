@@ -13,7 +13,8 @@ import android.view.View
 import androidx.core.content.ContextCompat
 import com.hellostranger.chess_app.R
 import com.hellostranger.chess_app.dto.websocket.MoveMessage
-import com.hellostranger.chess_app.models.gameModels.Piece
+import com.hellostranger.chess_app.models.gameModels.enums.MoveType
+import com.hellostranger.chess_app.models.gameModels.pieces.Piece
 import com.hellostranger.chess_app.utils.Constants
 import com.hellostranger.chess_app.utils.Constants.imgResIDs
 import com.hellostranger.chess_app.utils.Constants.scaleFactor
@@ -85,7 +86,7 @@ class ChessView(context : Context?, attrs : AttributeSet?) : View(context, attrs
                 val col = ((event.x - originX) / cellSide).toInt()
                 val row = 7 - ((event.y - originY) / cellSide).toInt()
                 if(fromCol != col || fromRow != row){
-                    val moveMessage = MoveMessage("", fromCol, fromRow, col, row)
+                    val moveMessage = MoveMessage("", fromCol, fromRow, col, row, MoveType.REGULAR)
                     chessGameInterface?.playMove(moveMessage, isFlipped)
                 }
                 fromCol = -1

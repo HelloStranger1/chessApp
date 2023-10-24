@@ -4,7 +4,6 @@ import android.app.AlertDialog
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import android.view.Menu
 import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.annotation.RequiresApi
@@ -13,25 +12,23 @@ import com.bumptech.glide.Glide
 import com.google.gson.Gson
 import com.hellostranger.chess_app.GameViewModel
 import com.hellostranger.chess_app.GameViewModelFactory
-import com.hellostranger.chess_app.gameHelpers.ChessGameInterface
-import com.hellostranger.chess_app.gameHelpers.BaseChessGame
-import com.hellostranger.chess_app.utils.MyApp
 import com.hellostranger.chess_app.R
-import com.hellostranger.chess_app.utils.TokenManager
-import com.hellostranger.chess_app.models.gameModels.enums.Color
-import com.hellostranger.chess_app.models.gameModels.Game
-import com.hellostranger.chess_app.models.gameModels.enums.GameState
-import com.hellostranger.chess_app.dto.websocket.MoveMessage
-import com.hellostranger.chess_app.models.gameModels.Piece
 import com.hellostranger.chess_app.databinding.ActivityGameViewBinding
 import com.hellostranger.chess_app.dto.websocket.ConcedeGameMessage
 import com.hellostranger.chess_app.dto.websocket.GameStartMessage
+import com.hellostranger.chess_app.dto.websocket.MoveMessage
 import com.hellostranger.chess_app.dto.websocket.WebSocketMessage
-import com.hellostranger.chess_app.models.gameModels.Board
+import com.hellostranger.chess_app.gameHelpers.ChessGameInterface
+import com.hellostranger.chess_app.models.gameModels.Game
+import com.hellostranger.chess_app.models.gameModels.enums.Color
+import com.hellostranger.chess_app.models.gameModels.enums.GameState
+import com.hellostranger.chess_app.models.gameModels.enums.MoveType
 import com.hellostranger.chess_app.models.gameModels.enums.PieceType
+import com.hellostranger.chess_app.models.gameModels.pieces.Piece
 import com.hellostranger.chess_app.network.websocket.ChessWebSocketListener
-import com.hellostranger.chess_app.network.websocket.MoveListener
 import com.hellostranger.chess_app.utils.Constants
+import com.hellostranger.chess_app.utils.MyApp
+import com.hellostranger.chess_app.utils.TokenManager
 import okhttp3.WebSocket
 
 
@@ -66,19 +63,20 @@ class GameActivity : BaseActivity(), ChessGameInterface {
             val startData = intent.getParcelableExtra("START", GameStartMessage::class.java)!!
             val moves : String = intent.getStringExtra("MOVES")!!
 
-            for(i in 0 until moves.length step 4){
-                val move : String = moves.substring(i, i + 4)
+            for(i in moves.indices step 5){
+                val move : String = moves.substring(i, i + 5)
                 val moveMessage : MoveMessage = MoveMessage(
                     "",
                     startCol = move[0].digitToInt(),
                     startRow = move[1].digitToInt(),
                     endCol = move[2].digitToInt(),
-                    endRow = move[3].digitToInt()
+                    endRow = move[3].digitToInt(),
+                    moveType = matchCharToMoveType(move[4])
                 )
 
                 viewModel.playMoveFromServer(moveMessage)
             }
-            startGame(startData)
+            viewModel.startGame(startData)
         } else if(gameMode == Constants.ONLINE_MODE){
             //Connecting to websocket
             chessWebSocketListener = ChessWebSocketListener(viewModel)
@@ -113,7 +111,7 @@ class GameActivity : BaseActivity(), ChessGameInterface {
             binding.chessView.flipBoard()
             binding.chessView.invalidate()
             val gameStartData = viewModel.startMessageData.value!!
-            if(binding.chessView.isFlipped){
+            if(!binding.chessView.isFlipped){
                 setPlayerOneData(gameStartData.whiteName, gameStartData.whiteEmail, gameStartData.whiteImage, gameStartData.whiteElo)
                 setPlayerTwoData(gameStartData.blackName, gameStartData.blackEmail, gameStartData.blackImage, gameStartData.blackElo)
             } else{
@@ -140,6 +138,17 @@ class GameActivity : BaseActivity(), ChessGameInterface {
                 //TODO: Add extra settings for analysis, like adding a comment
             }
 
+        }
+    }
+    private fun matchCharToMoveType(char : Char): MoveType {
+        return when (char) {
+            'O' -> MoveType.REGULAR
+            'C' -> MoveType.CASTLE
+            'Q' -> MoveType.PROMOTION_QUEEN
+            'R' -> MoveType.PROMOTION_ROOK
+            'B' -> MoveType.PROMOTION_BISHOP
+            'K' -> MoveType.PROMOTION_KNIGHT
+            else -> {MoveType.REGULAR}
         }
     }
 
@@ -200,7 +209,8 @@ class GameActivity : BaseActivity(), ChessGameInterface {
                 7 - moveMessage.startCol,
                 7 - moveMessage.startRow,
                 7 - moveMessage.endCol,
-                7 - moveMessage.endRow
+                7 - moveMessage.endRow,
+                moveMessage.moveType
                 )
             Log.e(TAG, "PlayMove, Flipped. flipped move msg is: $updatedMoveMessage")
         }
@@ -215,9 +225,19 @@ class GameActivity : BaseActivity(), ChessGameInterface {
             }
         }
         if(chosenPromotion == null) {
+            if(viewModel.isCastlingMove(moveMessage)){
+                    updatedMoveMessage.moveType = MoveType.CASTLE
+            }
             viewModel.temporaryPlayMove(updatedMoveMessage)
         }else{
-            updatedMoveMessage.promotionType = chosenPromotion
+            updatedMoveMessage.moveType = when(chosenPromotion){
+                PieceType.PAWN, PieceType.KING -> MoveType.REGULAR
+                PieceType.QUEEN -> MoveType.PROMOTION_QUEEN
+                PieceType.KNIGHT -> MoveType.PROMOTION_KNIGHT
+                PieceType.ROOK -> MoveType.PROMOTION_ROOK
+                PieceType.BISHOP -> MoveType.PROMOTION_BISHOP
+
+            }
             viewModel.temporaryPlayMove(updatedMoveMessage)
         }
 
@@ -334,13 +354,13 @@ class GameActivity : BaseActivity(), ChessGameInterface {
     private fun setPlayerTwoData(name: String, email: String, image: String, elo : Int) {
         var fullName = ""
         if(!viewModel.isWhite){
-            if(email == currentPlayerEmail){
+            if(email != currentPlayerEmail){
                 fullName = "$name (White) ($elo)"
             } else{
                 fullName = "$name (Black) ($elo)"
             }
         } else {
-            if (email == currentPlayerEmail) {
+            if (email != currentPlayerEmail) {
                 fullName = "$name (Black) ($elo)"
             } else {
                 fullName = "$name (White) ($elo)"
