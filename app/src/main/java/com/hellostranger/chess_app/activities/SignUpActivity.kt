@@ -112,15 +112,5 @@ class SignUpActivity : BaseActivity() {
 
         }
     }
-    fun userRegisteredSuccess(){
-        Toast.makeText(
-            this@SignUpActivity,
-            "Successfully registered",
-            Toast.LENGTH_LONG
-        ).show()
-
-        hideProgressDialog()
-        finish()
-    }
 
 }

@@ -14,7 +14,6 @@ import androidx.appcompat.widget.Toolbar
 import com.hellostranger.chess_app.utils.MyApp
 import com.hellostranger.chess_app.R
 import com.hellostranger.chess_app.dto.AuthenticateRequest
-import com.hellostranger.chess_app.models.entites.User
 import com.hellostranger.chess_app.network.retrofit.auth.AuthRetrofitClient
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -105,13 +104,6 @@ class SignInActivity : BaseActivity() {
             }
         }
 
-
-    }
-
-    fun signInSuccess(user : User){
-        hideProgressDialog()
-        startActivity(Intent(this, MainActivity::class.java))
-        finish()
 
     }
 

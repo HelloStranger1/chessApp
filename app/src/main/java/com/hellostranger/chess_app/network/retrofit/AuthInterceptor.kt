@@ -32,22 +32,20 @@ class AuthInterceptor(private val authApiService: AuthApiService) : Interceptor 
 
             }
 
-            if (refreshedToken != null) {
-                // Create a new request with the refreshed access token
-                val newRequest = originalRequest.newBuilder()
-                    .header("Authorization", "Bearer $refreshedToken")
-                    .build()
+            // Create a new request with the refreshed access token
+            val newRequest = originalRequest.newBuilder()
+                .header("Authorization", "Bearer $refreshedToken")
+                .build()
 
-                // Retry the request with the new access token
-                return chain.proceed(newRequest)
-            }
+            // Retry the request with the new access token
+            return chain.proceed(newRequest)
         }
 
         // Add the access token to the request header
         val authorizedRequest = originalRequest.newBuilder()
             .header("Authorization", "Bearer $accessToken")
             .build()
-        Log.e("TAG", "Intecepted and corrected. authorizedRequest is: $authorizedRequest ")
+        Log.e("TAG", "Intercepted and corrected. authorizedRequest is: $authorizedRequest ")
 
         return chain.proceed(authorizedRequest)
     }

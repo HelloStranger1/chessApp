@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.RectF
 import android.util.AttributeSet
@@ -13,6 +14,7 @@ import android.view.View
 import androidx.core.content.ContextCompat
 import com.hellostranger.chess_app.R
 import com.hellostranger.chess_app.dto.websocket.MoveMessage
+import com.hellostranger.chess_app.models.gameModels.Square
 import com.hellostranger.chess_app.models.gameModels.enums.MoveType
 import com.hellostranger.chess_app.models.gameModels.pieces.Piece
 import com.hellostranger.chess_app.utils.Constants
@@ -22,6 +24,8 @@ import com.hellostranger.chess_app.utils.Constants.scaleFactor
 class ChessView(context : Context?, attrs : AttributeSet?) : View(context, attrs) {
     private var lightColor = ContextCompat.getColor(context!!, R.color.lightSquare)
     private var darkColor = ContextCompat.getColor(context!!, R.color.darkSquare)
+    private var tintedLightColor = ContextCompat.getColor(context!!, R.color.tintedLightSquare)
+    private var tintedDarkColor = ContextCompat.getColor(context!!, R.color.tintedDarkSquare)
 
     private val paint = Paint()
     private val pieceBitmaps = mutableMapOf<Int, Bitmap>()
@@ -33,11 +37,12 @@ class ChessView(context : Context?, attrs : AttributeSet?) : View(context, attrs
     private var fromRow : Int = -1
     private var movingPieceX : Float = -1f
     private var movingPieceY : Float = -1f
+    private var movingPieceMoves : ArrayList<Square>? = null
 
     var isFlipped : Boolean = false
-    var originX = 20f
-    var originY = 200f
-    var cellSide : Float = 130f
+    private var originX = 20f
+    private var originY = 200f
+    private var cellSide : Float = 130f
     var gameMode : String =""
     var chessGameInterface : ChessGameInterface? = null
 
@@ -79,7 +84,7 @@ class ChessView(context : Context?, attrs : AttributeSet?) : View(context, attrs
                 chessGameInterface?.pieceAt(fromCol, fromRow, isFlipped)?.let{
                     movingPiece = it
                     movingPieceBitmap = pieceBitmaps[it.resID]
-
+                    movingPieceMoves=chessGameInterface?.getPiecesMoves(it)
                 }
             }
             MotionEvent.ACTION_UP ->{
@@ -93,6 +98,7 @@ class ChessView(context : Context?, attrs : AttributeSet?) : View(context, attrs
                 fromRow = -1
                 movingPieceBitmap = null
                 movingPiece = null
+                movingPieceMoves = null
                 invalidate()
             }
             MotionEvent.ACTION_MOVE ->{
@@ -147,6 +153,8 @@ class ChessView(context : Context?, attrs : AttributeSet?) : View(context, attrs
                 originY + ((7-row) + 1) * cellSide),
             paint
         )
+
+
     }
 
     private fun drawChessBoard(canvas: Canvas?){
@@ -159,18 +167,18 @@ class ChessView(context : Context?, attrs : AttributeSet?) : View(context, attrs
 
     private fun drawSquareAt(canvas: Canvas?, col : Int,row : Int, isDark : Boolean){
         canvas ?: return
-
+        val isChosenSquare : Boolean = (col == fromCol && row == (7-fromRow))
         if(isDark){
             if(isFlipped){
-                paint.color = lightColor
+                paint.color = if(isChosenSquare) tintedLightColor else lightColor
             } else{
-                paint.color = darkColor
+                paint.color = if(isChosenSquare) tintedDarkColor else darkColor
             }
         }else{
             if(isFlipped){
-                paint.color = darkColor
+                paint.color = if(isChosenSquare) tintedDarkColor else darkColor
             } else{
-                paint.color = lightColor
+                paint.color = if(isChosenSquare) tintedLightColor else lightColor
             }
         }
         canvas.drawRect(
@@ -180,6 +188,48 @@ class ChessView(context : Context?, attrs : AttributeSet?) : View(context, attrs
             originY + (row + 1) * cellSide,
             paint
         )
+
+        if(isSquareInMovesList(col, 7-row)){
+            val targetedPaint = Paint()
+            targetedPaint.color = Color.GRAY
+            if(chessGameInterface!!.pieceAt(col,7-row,isFlipped) == null){
+
+                canvas.drawCircle(
+                    originX + (col + 0.5f)*cellSide,
+                    originY + ((row) + 0.5f)*cellSide,
+                    20f,
+                    targetedPaint
+                )
+            } else{
+                targetedPaint.style = Paint.Style.STROKE
+                targetedPaint.strokeWidth = 6f
+                canvas.drawCircle(
+                    originX + (col + 0.5f)*cellSide,
+                    originY + ((row) + 0.5f)*cellSide,
+                    (cellSide-targetedPaint.strokeWidth)/2,
+                    targetedPaint
+                )
+            }
+        }
+
+    }
+    private fun isSquareInMovesList(col : Int, row : Int) : Boolean{
+        movingPieceMoves ?: return false
+        if(isFlipped){
+            for (square : Square in movingPieceMoves!!){
+                if(square.colIndex == (7-col) && square.rowIndex == (7-row)){
+                    return true
+                }
+            }
+        }else{
+            for (square : Square in movingPieceMoves!!){
+                if(square.colIndex == col && square.rowIndex == row){
+                    return true
+                }
+            }
+        }
+
+        return false
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {

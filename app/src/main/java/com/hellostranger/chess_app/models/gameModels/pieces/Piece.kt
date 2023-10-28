@@ -1,11 +1,9 @@
 package com.hellostranger.chess_app.models.gameModels.pieces
 
-import android.util.Log
 import com.google.gson.JsonDeserializationContext
 import com.google.gson.JsonDeserializer
 import com.google.gson.JsonElement
 import com.google.gson.JsonParseException
-import com.google.gson.JsonSerializer
 import com.hellostranger.chess_app.models.gameModels.Board
 import com.hellostranger.chess_app.models.gameModels.Square
 import com.hellostranger.chess_app.models.gameModels.enums.Color
@@ -37,9 +35,8 @@ class PieceJsonDeserializer : JsonDeserializer<Piece> {
         context: JsonDeserializationContext?
     ): Piece {
         val jsonObject  = json?.asJsonObject
-        val pieceType : String = jsonObject?.get("pieceType")!!.asString
 
-        return when(pieceType){
+        return when(val pieceType : String = jsonObject?.get("pieceType")!!.asString){
             "KING" -> context!!.deserialize(jsonObject, King::class.java)
             "QUEEN" -> context!!.deserialize(jsonObject, Queen::class.java)
             "ROOK" -> context!!.deserialize(jsonObject, Rook::class.java)

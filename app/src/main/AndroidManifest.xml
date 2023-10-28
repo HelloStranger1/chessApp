@@ -7,7 +7,8 @@
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:requestLegacyExternalStorage="true" />
+        android:requestLegacyExternalStorage="true"
+        android:maxSdkVersion="32" />
 
     <application
         android:name=".utils.MyApp"
@@ -21,9 +22,6 @@
         android:theme="@style/Theme.ChessApp"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
-        <activity
-            android:name=".activities.GameAnalysisActivity"
-            android:exported="false" />
         <activity
             android:name=".activities.ProfileActivity"
             android:exported="false"

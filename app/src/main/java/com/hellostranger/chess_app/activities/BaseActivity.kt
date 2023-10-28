@@ -33,7 +33,7 @@ open class BaseActivity : AppCompatActivity() {
     }
 
     fun updatePiecesResId(){
-        for(squaresRow in Game.getInstance()!!.board!!.squaresArray){
+        for(squaresRow in Game.getInstance()!!.board.squaresArray){
             for(square in squaresRow){
                 if(square.piece != null){
                     val isWhite = square.piece!!.color == Color.WHITE

@@ -2,7 +2,6 @@ package com.hellostranger.chess_app.database
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
-import androidx.room.TypeConverters
 import com.hellostranger.chess_app.models.entites.GameHistory
 
 @Database(

@@ -12,5 +12,9 @@
 
     <color name="snackbar_error_color">#F72400</color>
     <color name="lightSquare">#EEEEEE</color>
-    <color name="darkSquare">#CFCECE</color>
+    <color name="darkSquare">#bfbdbd</color>
+    <color name="tintedDarkSquare">#bfbdfa</color>
+    <color name="tintedLightSquare">#c8c8fe</color>
+    <!--<color name="darkSquare">#CFCECE</color>-->
+
 </resources>

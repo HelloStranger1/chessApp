@@ -16,7 +16,7 @@ class GamesHistoryAdapter(
     )
     : RecyclerView.Adapter<GamesHistoryAdapter.GamesHistoryViewHolder>(){
 
-    var gameHistoryList = mutableListOf<GameHistory>()
+    private var gameHistoryList = mutableListOf<GameHistory>()
     fun updateGameHistoryList(updateGameHistoryList : List<GameHistory>){
         this.gameHistoryList = updateGameHistoryList.toMutableList()
         notifyDataSetChanged()
@@ -35,7 +35,7 @@ class GamesHistoryAdapter(
                 .centerCrop()
                 .placeholder(R.drawable.ic_user_place_holder)
                 .into(binding.ivOpponentImage)
-            binding.tvOpponentUsernameAndElo.text = "${opponentName} (${opponentElo})"
+            binding.tvOpponentUsernameAndElo.text = "$opponentName ($opponentElo)"
 
             if(gameHistory?.isSaved == true){
                 binding.ivSaveGame.setImageResource(R.drawable.ic_save_filled)
@@ -72,10 +72,10 @@ class GamesHistoryAdapter(
     }
 
     override fun getItemCount(): Int {
-        if(gameHistoryList.size  > MAX_ITEMS && MAX_ITEMS != -1){
-            return MAX_ITEMS
+        return if(gameHistoryList.size  > MAX_ITEMS && MAX_ITEMS != -1){
+            MAX_ITEMS
         } else{
-            return gameHistoryList.size
+            gameHistoryList.size
         }
     }
 

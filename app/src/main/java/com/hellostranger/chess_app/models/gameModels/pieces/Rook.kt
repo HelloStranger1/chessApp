@@ -7,6 +7,7 @@ import com.hellostranger.chess_app.models.gameModels.enums.PieceType
 
 class Rook(color: Color, hasMoved: Boolean,  colIndex : Int, rowIndex : Int, resID : Int = -1) :
     Piece(color, hasMoved, PieceType.ROOK, colIndex, rowIndex, resID) {
+    constructor(color: Color, hasMoved: Boolean, square: Square, resID: Int = -1) : this(color, hasMoved, square.colIndex, square.rowIndex, resID)
     companion object{
         val BEAM_INCREMENTS =
             arrayOf(intArrayOf(0, 1), intArrayOf(0, -1), intArrayOf(1, 0), intArrayOf(-1, 0))

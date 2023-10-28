@@ -4,7 +4,10 @@ import android.app.AlertDialog
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.MenuItem
+
 import android.widget.PopupMenu
+import android.widget.PopupMenu.OnMenuItemClickListener
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModelProvider
@@ -20,8 +23,8 @@ import com.hellostranger.chess_app.dto.websocket.MoveMessage
 import com.hellostranger.chess_app.dto.websocket.WebSocketMessage
 import com.hellostranger.chess_app.gameHelpers.ChessGameInterface
 import com.hellostranger.chess_app.models.gameModels.Game
+import com.hellostranger.chess_app.models.gameModels.Square
 import com.hellostranger.chess_app.models.gameModels.enums.Color
-import com.hellostranger.chess_app.models.gameModels.enums.GameState
 import com.hellostranger.chess_app.models.gameModels.enums.MoveType
 import com.hellostranger.chess_app.models.gameModels.enums.PieceType
 import com.hellostranger.chess_app.models.gameModels.pieces.Piece
@@ -31,8 +34,8 @@ import com.hellostranger.chess_app.utils.MyApp
 import com.hellostranger.chess_app.utils.TokenManager
 import okhttp3.WebSocket
 
-
-class GameActivity : BaseActivity(), ChessGameInterface {
+private const val TAG = "GameActivity"
+class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener {
 
     private lateinit var binding : ActivityGameViewBinding
     private var tokenManager : TokenManager = MyApp.tokenManager
@@ -44,7 +47,8 @@ class GameActivity : BaseActivity(), ChessGameInterface {
 
     private lateinit var viewModel: GameViewModel
     private lateinit var gameMode : String
-    private val TAG = "GameActivity"
+    private var heldMoveMessage : MoveMessage? = null //To hold the move message while waiting for the player to chose promotion
+
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,17 +59,17 @@ class GameActivity : BaseActivity(), ChessGameInterface {
         setUpActionBar()
 
         viewModel = ViewModelProvider(this, GameViewModelFactory(Game.getInstance()!!))[GameViewModel::class.java]
-        gameMode = intent.getStringExtra("MODE")!!
+        gameMode = intent.getStringExtra(Constants.MODE)!!
         binding.chessView.chessGameInterface = this
         binding.chessView.gameMode = gameMode
         currentPlayerEmail = tokenManager.getUserEmail()
         if(gameMode == Constants.ANALYSIS_MODE){
-            val startData = intent.getParcelableExtra("START", GameStartMessage::class.java)!!
-            val moves : String = intent.getStringExtra("MOVES")!!
+            val startData = intent.getParcelableExtra(Constants.START_DATA, GameStartMessage::class.java)!!
+            val moves : String = intent.getStringExtra(Constants.MOVES_LIST)!!
 
             for(i in moves.indices step 5){
                 val move : String = moves.substring(i, i + 5)
-                val moveMessage : MoveMessage = MoveMessage(
+                val moveMessage = MoveMessage(
                     "",
                     startCol = move[0].digitToInt(),
                     startRow = move[1].digitToInt(),
@@ -89,9 +93,6 @@ class GameActivity : BaseActivity(), ChessGameInterface {
         }
         viewModel.gameStatus.observe(this){
             Toast.makeText(this@GameActivity, "GameStatus changed to: $it", Toast.LENGTH_LONG).show()
-            if(it != GameState.NEW && it != GameState.WAITING){
-
-            }
             Log.e(TAG, "gameStatus changed to: $it")
         }
         viewModel.startMessageData.observe(this){
@@ -196,6 +197,18 @@ class GameActivity : BaseActivity(), ChessGameInterface {
 
     }
 
+    override fun getPiecesMoves(piece: Piece): ArrayList<Square> {
+        val movableSquares : ArrayList<Square> = ArrayList()
+        val startSquare : Square = viewModel.currentBoard.value!!.getSquareAt(piece.colIndex, piece.rowIndex)!!
+        for(square : Square in piece.getMovableSquares(viewModel.currentBoard.value!!)){
+            if(viewModel.currentBoard.value!!.isValidMove(startSquare, square)){
+                movableSquares.add(square)
+            }
+        }
+        Log.i(TAG, "the move's of piece: $piece are: $movableSquares")
+        return movableSquares
+    }
+
     /*
     Called by ChessView when the player makes a move. Takes in a MoveMessage object.
     Performs a basic check that the move is valid (actually moving a piece, piece is owned by the player, etc). Backend server will validate the move.
@@ -205,82 +218,50 @@ class GameActivity : BaseActivity(), ChessGameInterface {
         var updatedMoveMessage = moveMessage
         if(isFlipped){
             updatedMoveMessage = MoveMessage(
-                moveMessage.playerEmail,
-                7 - moveMessage.startCol,
-                7 - moveMessage.startRow,
-                7 - moveMessage.endCol,
-                7 - moveMessage.endRow,
-                moveMessage.moveType
-                )
-            Log.e(TAG, "PlayMove, Flipped. flipped move msg is: $updatedMoveMessage")
+                moveMessage.playerEmail, 7 - moveMessage.startCol, 7 - moveMessage.startRow, 7 - moveMessage.endCol, 7 - moveMessage.endRow, moveMessage.moveType
+            )
         }
-        var chosenPromotion : PieceType? = null
         if(viewModel.isWhite){
-            if(updatedMoveMessage.endRow == 7 && viewModel.currentBoard.value!!.squaresArray[updatedMoveMessage.startRow][updatedMoveMessage.startCol].piece!!.pieceType == PieceType.PAWN) {
-                chosenPromotion = setPiecePromotionMenu()
+            if(updatedMoveMessage.endRow == 7 &&
+                viewModel.currentBoard.value!!.squaresArray[updatedMoveMessage.startRow][updatedMoveMessage.startCol].piece!!.pieceType == PieceType.PAWN &&
+                heldMoveMessage == null) {
+                heldMoveMessage = updatedMoveMessage
+                setPiecePromotionMenu()
+                return
             }
         } else{
-            if(updatedMoveMessage.endRow == 0 && viewModel.currentBoard.value!!.squaresArray[updatedMoveMessage.startRow][updatedMoveMessage.startCol].piece!!.pieceType == PieceType.PAWN) {
-                chosenPromotion = setPiecePromotionMenu()
+            if(updatedMoveMessage.endRow == 0 &&
+                viewModel.currentBoard.value!!.squaresArray[updatedMoveMessage.startRow][updatedMoveMessage.startCol].piece!!.pieceType == PieceType.PAWN &&
+                heldMoveMessage == null) {
+                heldMoveMessage = updatedMoveMessage
+                setPiecePromotionMenu()
+                return
             }
         }
-        if(chosenPromotion == null) {
-            if(viewModel.isCastlingMove(moveMessage)){
-                    updatedMoveMessage.moveType = MoveType.CASTLE
-            }
-            viewModel.temporaryPlayMove(updatedMoveMessage)
-        }else{
-            updatedMoveMessage.moveType = when(chosenPromotion){
-                PieceType.PAWN, PieceType.KING -> MoveType.REGULAR
-                PieceType.QUEEN -> MoveType.PROMOTION_QUEEN
-                PieceType.KNIGHT -> MoveType.PROMOTION_KNIGHT
-                PieceType.ROOK -> MoveType.PROMOTION_ROOK
-                PieceType.BISHOP -> MoveType.PROMOTION_BISHOP
-
-            }
-            viewModel.temporaryPlayMove(updatedMoveMessage)
+        if(viewModel.isCastlingMove(updatedMoveMessage)){
+            updatedMoveMessage.moveType = MoveType.CASTLE
         }
+        val isValidMove : Boolean = viewModel.validateMove(updatedMoveMessage)
+        viewModel.temporaryPlayMove(updatedMoveMessage)
 
 
        /* if(!gameService.validateMove(updatedMoveMessage)) return
 
         gameService.temporaryMakeMove(updatedMoveMessage)*/ //Instead of waiting for the server to validate the move, we play it temporarily and undo it if the server says it is invalid.
-        if(gameMode == Constants.ONLINE_MODE){
+        if(gameMode == Constants.ONLINE_MODE && isValidMove){
             sendMessageToServer(updatedMoveMessage)
         }
     }
 
-    private fun setPiecePromotionMenu() : PieceType?{
+    private fun setPiecePromotionMenu(){
         val popupMenu = PopupMenu(this@GameActivity, binding.llPlayer2)
-        var chosenPromotion : PieceType? = null
         if(viewModel.isWhite){
             popupMenu.menuInflater.inflate(R.menu.popup_white_promotion_options, popupMenu.menu)
         } else{
             popupMenu.menuInflater.inflate(R.menu.popup_black_promotion_options, popupMenu.menu)
         }
-        popupMenu.setOnMenuItemClickListener { menuItem ->
-            when (menuItem.itemId){
-                R.id.queen -> {
-                    chosenPromotion = PieceType.QUEEN
-                    return@setOnMenuItemClickListener true
-                }
-                R.id.rook -> {
-                    chosenPromotion = PieceType.ROOK
-                    return@setOnMenuItemClickListener true
-                }
-                R.id.bishop -> {
-                    chosenPromotion = PieceType.BISHOP
-                    return@setOnMenuItemClickListener true
-                }R.id.knight -> {
-                chosenPromotion = PieceType.KNIGHT
-                return@setOnMenuItemClickListener true
-            }
-                else -> {return@setOnMenuItemClickListener false}
-            }
-        }
+        popupMenu.setOnMenuItemClickListener(this@GameActivity)
         popupMenu.show()
-        Log.e(TAG, "Chosen promotion is: $chosenPromotion")
-        return chosenPromotion
     }
 
 
@@ -322,18 +303,17 @@ class GameActivity : BaseActivity(), ChessGameInterface {
     Sets information for the player at The Bottom
      */
     private fun setPlayerOneData(name: String, email: String, image : String, elo : Int) {
-        var fullName = "";
-        if(viewModel.isWhite){
+        val fullName : String = if(viewModel.isWhite){
             if(email == currentPlayerEmail){
-                fullName = "$name (White) ($elo)"
+                "$name (White) ($elo)"
             } else{
-                fullName = "$name (Black) ($elo)"
+                "$name (Black) ($elo)"
             }
         } else{
             if(email == currentPlayerEmail){
-                fullName = "$name (Black) ($elo)"
+                "$name (Black) ($elo)"
             } else{
-                fullName = "$name (White) ($elo)"
+                "$name (White) ($elo)"
             }
         }
         binding.tvP1Name.text = fullName
@@ -352,18 +332,17 @@ class GameActivity : BaseActivity(), ChessGameInterface {
     Sets information for the player at The Top
      */
     private fun setPlayerTwoData(name: String, email: String, image: String, elo : Int) {
-        var fullName = ""
-        if(!viewModel.isWhite){
+        val fullName : String = if(!viewModel.isWhite){
             if(email != currentPlayerEmail){
-                fullName = "$name (White) ($elo)"
+                "$name (White) ($elo)"
             } else{
-                fullName = "$name (Black) ($elo)"
+                "$name (Black) ($elo)"
             }
         } else {
             if (email != currentPlayerEmail) {
-                fullName = "$name (Black) ($elo)"
+                "$name (Black) ($elo)"
             } else {
-                fullName = "$name (White) ($elo)"
+                "$name (White) ($elo)"
             }
         }
         binding.tvP2Name.text = fullName
@@ -380,7 +359,7 @@ class GameActivity : BaseActivity(), ChessGameInterface {
     Runs when 2 players joined into the game.
     Sets the Data in the ui and informs the user the game has started.
      */
-    fun startGame(startMessage: GameStartMessage) {
+    private fun startGame(startMessage: GameStartMessage) {
         hideProgressDialog()
         val playerColor : Color = if(viewModel.isWhite){
             Color.WHITE
@@ -398,30 +377,37 @@ class GameActivity : BaseActivity(), ChessGameInterface {
 
     }
 
-
-     fun onGameEnding(result: GameState) {
-        chessWebSocketListener!!.disconnectWebSocket()
-        runOnUiThread {
-            Toast.makeText(this@GameActivity, "Game ended. result is: $result", Toast.LENGTH_LONG).show()
-        }
-        Log.e(TAG, "Game ended. result is: $result")
-
-    }
-
-    /*
-    Gets called when the player tried to play an illegal move and it was invalidated by the server.
-     */
-   /* override fun undoLastMove() {
-        gameService.undoMove()
-        binding.chessView.invalidate()
-    }*/
-
-    /*private fun checkIfPlayingWhite(whiteEmail: String) {
-        isWhite = whiteEmail == tokenManager.getUserEmail()
-    }*/
-
     override fun goToLastMove(){
         viewModel.goToLatestMove()
+    }
+
+    override fun onMenuItemClick(menuItem: MenuItem): Boolean {
+        if(heldMoveMessage == null){
+            Log.e(TAG, "held Move message is null")
+            return false
+        }
+        when (menuItem.itemId){
+            R.id.queen -> {
+                heldMoveMessage!!.moveType = MoveType.PROMOTION_QUEEN
+                playMove(heldMoveMessage!!, false)
+                return true
+            }
+            R.id.rook -> {
+                heldMoveMessage!!.moveType = MoveType.PROMOTION_ROOK
+                playMove(heldMoveMessage!!, false)
+                return true
+            }
+            R.id.bishop -> {
+                heldMoveMessage!!.moveType = MoveType.PROMOTION_BISHOP
+                playMove(heldMoveMessage!!, false)
+                return true
+            }R.id.knight -> {
+                heldMoveMessage!!.moveType = MoveType.PROMOTION_KNIGHT
+                playMove(heldMoveMessage!!, false)
+                return true
+            }
+            else -> {return false}
+        }
     }
 
 

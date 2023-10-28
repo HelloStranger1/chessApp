@@ -7,7 +7,6 @@ import android.os.Bundle
 import android.os.Handler
 import android.view.WindowInsets
 import android.view.WindowManager
-import android.widget.TextView
 import com.hellostranger.chess_app.utils.MyApp
 import com.hellostranger.chess_app.R
 
@@ -28,11 +27,10 @@ class SplashActivity : AppCompatActivity() {
 
 
 
-        val tvAppName : TextView = findViewById(R.id.tv_app_name)
+
 
         Handler().postDelayed({
-            //TODO: Add logging in a user that has only left the app
-            if(!MyApp.tokenManager.isRefreshTokenExpired() || 1 != 1){
+            if(!MyApp.tokenManager.isRefreshTokenExpired()){
                 startActivity(Intent(this, MainActivity::class.java))
             }else{
                 startActivity(Intent(this, IntroActivity::class.java))

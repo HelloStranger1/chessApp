@@ -2,7 +2,6 @@ package com.hellostranger.chess_app.database
 
 import androidx.lifecycle.LiveData
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Query
 import androidx.room.Upsert
 import com.hellostranger.chess_app.models.entites.GameHistory

@@ -5,8 +5,4 @@ import com.google.gson.annotations.SerializedName
 open class WebSocketMessage(
     @SerializedName("messageType")
     var messageType : MessageType
-) {
-
-
-
-}
+)

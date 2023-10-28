@@ -2,8 +2,8 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/resign"
-        android:title="Resign"/>
+        android:title="@string/resign"/>
     <item
         android:id="@+id/draw"
-        android:title="Offer Draw"/>
+        android:title="@string/offer_draw"/>
 </menu>

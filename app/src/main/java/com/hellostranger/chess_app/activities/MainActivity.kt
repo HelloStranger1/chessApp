@@ -26,6 +26,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
+private const val TAG = "MainActivity"
 class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedListener {
 
     private lateinit var binding: ActivityMainBinding
@@ -44,30 +45,27 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
             throwable.printStackTrace()
         }
         CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
-            Log.e("TAG", "user email is: ${tokenManager.getUserEmail()}")
+            Log.e(TAG, "(Fetching User) user email is: ${tokenManager.getUserEmail()}")
             val response =
                 GeneralRetrofitClient.instance.getUserByEmail(tokenManager.getUserEmail())
-            Log.e("TAG", "response is: $response and the body is: ${response.body()}")
+            Log.e(TAG, "(Fetching User) response is: $response and the body is: ${response.body()}")
             if(response.isSuccessful && response.body() != null){
                 runOnUiThread {
                     updateNavigationUserDetails(response.body()!!)
                 }
             }
-
-
         }
 
 
         binding.appBarMain.mainContent.btnJoinRandom.setOnClickListener {
             val playerEmail = tokenManager.getUserEmail()
-
             showProgressDialog("Joining random game...")
             CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
                 val response =
                     GeneralRetrofitClient.instance.joinRandomGame(JoinRequest(playerEmail))
-                Log.e("TAG", "Response is: $response and is it successful? ${response.isSuccessful}")
+                Log.e(TAG, "(Joining Random Game) Response is: $response and is it successful? ${response.isSuccessful}")
                 if(response.isSuccessful && response.body() != null){
-                    Log.e("TAG", "Game joined, body: ${response.body()}")
+                    Log.e(TAG, "Game joined, body: ${response.body()}")
                     Game.setInstance(response.body()!!)
                     updatePiecesResId()
                     runOnUiThread {
@@ -80,8 +78,6 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
             }
             Toast.makeText(this@MainActivity, "Game Joined", Toast.LENGTH_SHORT).show()
         }
-
-
 
 
         binding.appBarMain.mainContent.etGameId

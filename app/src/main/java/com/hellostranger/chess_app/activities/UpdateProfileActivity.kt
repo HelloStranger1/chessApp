@@ -90,7 +90,7 @@ class UpdateProfileActivity : BaseActivity() {
             }
 
         }
-        Log.i("TAG", "mProfileImageURL: $mProfileImageURL and userimage: ${currentUser.image}")
+        Log.i("TAG", "mProfileImageURL: $mProfileImageURL and user image: ${currentUser.image}")
         if(mProfileImageURL != currentUser.image){
             CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
                 Log.i("TAG", mProfileImageURL)
@@ -170,7 +170,7 @@ class UpdateProfileActivity : BaseActivity() {
         }
         else {
             // You can directly ask for the permission.
-            requestPermission.launch(arrayOf(neededPermission,))
+            requestPermission.launch(arrayOf(neededPermission))
         }
     }
     private fun setUpActionBar(){

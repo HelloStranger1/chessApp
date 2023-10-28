@@ -25,4 +25,20 @@
     <string name="mobile">Mobile</string>
     <string name="update">UPDATE</string>
     <string name="my_profile">My Profile</string>
+    <string name="image_arrow_back">image_arrow_back</string>
+    <string name="image_arrow_forward">image_arrow_forward</string>
+    <string name="black">BLACK</string>
+    <string name="white">WHITE</string>
+    <string name="elo">Elo</string>
+    <string name="games">Games</string>
+    <string name="wins">Wins</string>
+    <string name="loses">Loses</string>
+    <string name="recent_games">Recent Games</string>
+    <string name="draws">Draws</string>
+    <string name="rook">Rook</string>
+    <string name="queen">Queen</string>
+    <string name="bishop">Bishop</string>
+    <string name="knight">Knight</string>
+    <string name="resign">Resign</string>
+    <string name="offer_draw">Offer Draw</string>
 </resources>

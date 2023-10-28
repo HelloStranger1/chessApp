@@ -1,10 +1,8 @@
 package com.hellostranger.chess_app
 
 import android.util.Log
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.hellostranger.chess_app.models.entites.GameHistory
 import com.hellostranger.chess_app.models.entites.User
 import com.hellostranger.chess_app.database.GameHistoryDao
@@ -12,7 +10,6 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import okhttp3.internal.notify
 
 class ProfileViewModel(
     private val gameHistoryRepository: GameHistoryRepository,

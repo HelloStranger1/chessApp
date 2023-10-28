@@ -6,4 +6,8 @@ data class Square(
     val colIndex: Int,
     var piece: Piece?,
     val rowIndex: Int
-)
+){
+    override fun toString(): String {
+        return "($colIndex, $rowIndex). Piece: $piece"
+    }
+}

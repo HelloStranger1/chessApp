@@ -3,7 +3,6 @@ package com.hellostranger.chess_app.network.websocket
 import android.util.Log
 import com.google.gson.Gson
 import com.hellostranger.chess_app.GameViewModel
-import com.hellostranger.chess_app.models.gameModels.enums.GameState
 import com.hellostranger.chess_app.dto.websocket.GameEndMessage
 import com.hellostranger.chess_app.dto.websocket.GameStartMessage
 import com.hellostranger.chess_app.dto.websocket.MessageType
@@ -15,9 +14,10 @@ import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 
+private const val TAG = "ChessWebSocketListener"
 class ChessWebSocketListener(private val viewModel: GameViewModel) : WebSocketListener() {
     private lateinit var webSocket: WebSocket
-    private val TAG = "ChessWebSocketListener"
+
 
     fun connectWebSocket(path : String, token : String) {
         val client = OkHttpClient.Builder().build()
@@ -91,15 +91,4 @@ class ChessWebSocketListener(private val viewModel: GameViewModel) : WebSocketLi
     override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
         Log.e(TAG, t.message ?: "Unknown error")
     }
-}
-
-interface MoveListener {
-    fun onMoveReceived(moveMessage: MoveMessage)
-
-    fun startGame(startMessage: GameStartMessage)
-
-    fun onGameEnding(result : GameState)
-
-    fun undoLastMove()
-
 }

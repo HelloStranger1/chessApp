@@ -11,21 +11,25 @@ import com.hellostranger.chess_app.models.gameModels.enums.PieceType
 import com.hellostranger.chess_app.models.gameModels.pieces.King
 import com.hellostranger.chess_app.models.gameModels.pieces.Piece
 import com.hellostranger.chess_app.models.gameModels.pieces.PieceJsonDeserializer
+import kotlin.math.abs
 
 
+private const val TAG = "BoardClass"
 data class Board(
-    val squaresArray: List<List<Square>>,
+    var squaresArray: Array<Array<Square>>,
     var whiteKing : King? = null,
     var blackKing : King? = null,
-    private var phantomPawnSquare : Square? = null
+    var phantomPawnSquare : Square? = null
 ) : Cloneable{
-    private val TAG = "BoardClass"
+
     companion object{
-        val gson = GsonBuilder()
+        val gson: Gson = GsonBuilder()
             .setLenient()
             .registerTypeAdapter(Piece::class.java, PieceJsonDeserializer())
             .create()
     }
+
+
 
     init {
         for (squaresRow in squaresArray){
@@ -106,10 +110,11 @@ data class Board(
                     PieceType.KNIGHT ->{
                         movingPiece.resID = R.drawable.ic_black_knight
                     }else ->{
-                    Log.e(TAG, "Tried to promote to: ${movingPiece.pieceType} but you can't promote to that.")
-                }
+                        Log.e(TAG, "Tried to promote to: ${movingPiece.pieceType} but you can't promote to that.")
+                    }
                 }
             }
+            movePiece(startSquare, endSquare)
         }
 
         return this
@@ -130,7 +135,7 @@ data class Board(
         if (startPiece.hasMoved || endPiece.hasMoved) {
             return false
         }
-        if (endPiece.pieceType !== PieceType.ROOK || startPiece.pieceType !== PieceType.KING) {
+        if (endPiece.pieceType != PieceType.ROOK || startPiece.pieceType != PieceType.KING) {
             return false
         }
         if (endPiece.color !== startPiece.color) {
@@ -157,9 +162,8 @@ data class Board(
         } else {
             movePieceTemp(start, end)
         }
-        var isLegalMove = true
 
-        isLegalMove = !isKingInCheck(movingPiece.color === Color.WHITE)
+        val isLegalMove = !isKingInCheck(movingPiece.color === Color.WHITE)
 
         if (isCastlingMove) {
             undoCastlingMove(start, end)
@@ -178,8 +182,8 @@ data class Board(
 
     private fun canPieceMoveTo(piece: Piece, square: Square): Boolean {
         var result = false
-        for (movebleSquare in piece.getMovableSquares(this)) {
-            if (movebleSquare == square) {
+        for (movableSquare in piece.getMovableSquares(this)) {
+            if (movableSquare == square) {
                 result = true
                 break
             }
@@ -189,8 +193,8 @@ data class Board(
 
     private fun canPieceThreatenSquare(piece: Piece, square: Square): Boolean {
         var result = false
-        for (movebleSquare in piece.getThreatenedSquares(this)) {
-            if (movebleSquare == square) {
+        for (movableSquare in piece.getThreatenedSquares(this)) {
+            if (movableSquare == square) {
                 result = true
                 break
             }
@@ -222,11 +226,13 @@ data class Board(
     }
 
     fun isKingInCheck(isWhite: Boolean): Boolean {
-        val kingSquare: Square
-        if (isWhite) {
-            kingSquare = whiteKing?.let { getSquareAt(it.colIndex, it.rowIndex) }!!
+        if(whiteKing == null || blackKing == null){
+            Log.e(TAG, "isKingInCheck won't work cause one of the kings is null. black: $blackKing, white: $whiteKing")
+        }
+        val kingSquare: Square = if (isWhite) {
+            whiteKing?.let { getSquareAt(it.colIndex, it.rowIndex) }!!
         } else {
-            kingSquare = blackKing?.let { getSquareAt(it.colIndex, it.rowIndex) }!!
+            blackKing?.let { getSquareAt(it.colIndex, it.rowIndex) }!!
         }
         for (row in 0..7) {
             for (col in 0..7) {
@@ -241,7 +247,12 @@ data class Board(
         }
         return false
     }
-    fun movePiece(start: Square, end: Square) {
+
+    fun setPieceAt(col: Int, row: Int, piece: Piece?) {
+        val square = squaresArray[row][col]
+        square.piece = piece
+    }
+    private fun movePiece(start: Square, end: Square) {
         //this function does not care if the move is legal. just makes it (assumes piece at start isn't null).
         val movingPiece = start.piece
         if (movingPiece!!.pieceType === PieceType.PAWN && start.colIndex != end.colIndex) {
@@ -251,22 +262,31 @@ data class Board(
         }
         movePieceTemp(start, end)
         phantomPawnSquare =
-            if (movingPiece!!.pieceType === PieceType.PAWN && Math.abs(start.rowIndex - end.rowIndex) == 2) {
+            if (movingPiece!!.pieceType === PieceType.PAWN && abs(start.rowIndex - end.rowIndex) == 2) {
                 squaresArray[(start.rowIndex + end.rowIndex) / 2][start.colIndex]
             } else {
                 null
             }
     }
 
-    fun movePieceTemp(start: Square, end: Square) {
+    private fun movePieceTemp(start: Square, end: Square) {
         //this function does not care if the move is legal. just makes it (assumes piece at start isn't null).
+
         val movingPiece = start.piece
         movingPiece!!.hasMoved = true
+
         start.piece = null
         end.piece = movingPiece
         movingPiece.move(end)
+        if(movingPiece.pieceType == PieceType.KING){
+            if(movingPiece.color == Color.WHITE){
+                whiteKing = movingPiece as King
+            }else{
+                blackKing = movingPiece as King
+            }
+        }
     }
-    fun makeCastlingMove(start: Square, end: Square) {
+    private fun makeCastlingMove(start: Square, end: Square) {
         //doesn't care if the move is legal. start -> king, end -> rook
         if (end.colIndex > start.colIndex) {
             //O-O
@@ -279,7 +299,7 @@ data class Board(
         }
     }
 
-    fun undoCastlingMove(start: Square, end: Square) {
+    private fun undoCastlingMove(start: Square, end: Square) {
         //doesn't care if the move is legal. start -> king, end -> rook
         if (end.colIndex > start.colIndex) {
             //O-O
@@ -323,7 +343,7 @@ data class Board(
         }
         val curSquare = squaresArray[curRow][curCol]
         val curPiece = curSquare.piece
-        if (isAttacking && curPiece == null && phantomPawnSquare === curSquare) {
+        if (isAttacking && curPiece == null && phantomPawnSquare == curSquare) {
             return curSquare
         }
         if (curPiece != null) {
@@ -410,6 +430,7 @@ data class Board(
             }
             desc +="\n"
         }
+        desc += "\n And phantom square is: ${phantomPawnSquare.toString()}"
         return desc
     }
 
@@ -423,12 +444,12 @@ data class Board(
     }
 
     override fun equals(other: Any?): Boolean {
-        if(other != null && other is Board){
+        return if(other != null && other is Board){
             val thisJson = gson.toJson(this)
             val otherJson = gson.toJson(other)
-            return thisJson.equals(otherJson)
+            thisJson.equals(otherJson)
         }else{
-            return super.equals(other)
+            super.equals(other)
         }
 
     }
@@ -440,4 +461,6 @@ data class Board(
         result = 31 * result + (phantomPawnSquare?.hashCode() ?: 0)
         return result
     }
+
+
 }

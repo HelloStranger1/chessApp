@@ -1,7 +1,6 @@
 package com.hellostranger.chess_app.dto.websocket
 
 import com.hellostranger.chess_app.models.gameModels.enums.MoveType
-import com.hellostranger.chess_app.models.gameModels.enums.PieceType
 
 class MoveMessage(
      var playerEmail : String,
@@ -10,8 +9,6 @@ class MoveMessage(
      val endCol : Int,
      val endRow: Int,
      var moveType: MoveType
-     /*val isSecondCastleMove : Boolean = false,
-     var promotionType : PieceType? = null*/
      ) : WebSocketMessage(MessageType.MOVE){
 
      override fun toString(): String {

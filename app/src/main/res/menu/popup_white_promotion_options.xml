@@ -3,17 +3,17 @@
     <item
         android:id="@+id/queen"
         android:icon="@drawable/ic_white_queen"
-        android:title="Queen" />
+        android:title="@string/queen" />
     <item
         android:id="@+id/rook"
         android:icon="@drawable/ic_white_rook"
-        android:title="Rook" />
+        android:title="@string/rook" />
     <item
         android:id="@+id/bishop"
         android:icon="@drawable/ic_white_bishop"
-        android:title="Bishop" />
+        android:title="@string/bishop" />
     <item
         android:id="@+id/knight"
         android:icon="@drawable/ic_white_knight"
-        android:title="Knight" />
+        android:title="@string/knight" />
 </menu>
