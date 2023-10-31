@@ -41,4 +41,8 @@
     <string name="knight">Knight</string>
     <string name="resign">Resign</string>
     <string name="offer_draw">Offer Draw</string>
+    <string name="joined_at">Joined at: %1$s</string>
+    <string name="challenge_to_a_game">Challange to a game</string>
+    <string name="send_friend_request">Send friend request</string>
+    <string name="unfriend">Unfriend</string>
 </resources>

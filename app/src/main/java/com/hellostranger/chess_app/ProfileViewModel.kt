@@ -3,9 +3,9 @@ package com.hellostranger.chess_app
 import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.hellostranger.chess_app.models.entites.GameHistory
 import com.hellostranger.chess_app.models.entites.User
-import com.hellostranger.chess_app.database.GameHistoryDao
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -13,21 +13,21 @@ import kotlinx.coroutines.launch
 
 class ProfileViewModel(
     private val gameHistoryRepository: GameHistoryRepository,
-    private val gameHistoryDao: GameHistoryDao,
-    private val userRepository: UserRepository
 ) : ViewModel() {
     val gameHistoryList = MutableLiveData<List<GameHistory>>()
 
     var favoriteGamesList = MutableLiveData<List<GameHistory>>()
     val userDetails = MutableLiveData<User>()
+    var isFriendsWithUser = MutableLiveData(false)
 
     val failed = MutableLiveData<String>()
 
+    private val coroutineExceptionHandler = CoroutineExceptionHandler{ _, throwable -> throwable.printStackTrace() }
 
-    fun getUserDetails(){
-        val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable -> throwable.printStackTrace() }
-        CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
-            val response = userRepository.getUser()
+    fun getUserDetails(email : String){
+
+        viewModelScope.launch(Dispatchers.IO + coroutineExceptionHandler) {
+            val response = gameHistoryRepository.getUserByEmail(email)
             if(response.isSuccessful){
                 userDetails.postValue(response.body())
             } else{
@@ -37,6 +37,27 @@ class ProfileViewModel(
         }
     }
 
+    fun areFriendsWithUser(friendEmail : String)  {
+        viewModelScope.launch(Dispatchers.IO + coroutineExceptionHandler){
+            val response = gameHistoryRepository.getFriends()
+            if(response.isSuccessful && response.body() != null){
+                val userFriends : List<User> = response.body()!!
+                for(friend : User in userFriends){
+                    if(friend.email == friendEmail){
+                        isFriendsWithUser.postValue(true)
+                    }
+                }
+            } else if(response.isSuccessful){
+                Log.e("TAG", "Guess you just don't have any friends lol")
+            } else{
+                Log.e("TAG", "Couldn't get friends-details. response: $response, body: ${response.body()}")
+                failed.postValue(response.body().toString())
+            }
+        }
+    }
+    fun sendFriendRequest(email: String) = viewModelScope.launch(Dispatchers.IO + coroutineExceptionHandler){ gameHistoryRepository.sendFriendRequest(email) }
+
+    fun removeFriend(email : String) = viewModelScope.launch(Dispatchers.IO + coroutineExceptionHandler){gameHistoryRepository.deleteFriend(email) }
     fun onEvent(event: GameHistoryEvent){
         when(event){
             is GameHistoryEvent.OpenGame ->{
@@ -44,30 +65,27 @@ class ProfileViewModel(
             }
             is GameHistoryEvent.SaveGame ->{
                 event.gameHistory.isSaved = true
-                val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable -> throwable.printStackTrace() }
                 CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch{
-                    gameHistoryDao.upsertGameHistory(event.gameHistory)
+                    gameHistoryRepository.upsertFavoriteGameHistory(event.gameHistory)
                 }
 
             }
 
             is GameHistoryEvent.DeleteGame -> {
                 event.gameHistory.isSaved = false
-                val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable -> throwable.printStackTrace() }
                 CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch{
-                    gameHistoryDao.deleteGameHistory(event.gameHistory.localId)
+                    gameHistoryRepository.removeGameHistoryFromFavorites(event.gameHistory)
                 }
             }
         }
     }
 
-    fun getAllGameHistories(){
-        val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable -> throwable.printStackTrace() }
-        CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
-            val response = gameHistoryRepository.getAllGameHistories()
+    fun getAllGameHistories(email : String){
+        viewModelScope.launch(Dispatchers.IO + coroutineExceptionHandler) {
+            val response = gameHistoryRepository.getAllGameHistoriesByEmail(email)
             if(response.isSuccessful){
                 for(gameHistory in response.body()!!){
-                    if(gameHistoryDao.getSpecificGame(gameHistoryId = gameHistory.id) != null){
+                    if(gameHistoryRepository.getFavoriteGameHistoryById(gameHistoryId = gameHistory.id) != null){
                         gameHistory.isSaved = true
                     }
                 }
@@ -80,7 +98,7 @@ class ProfileViewModel(
     }
 
     fun getFavoriteGameHistories(){
-        favoriteGamesList = gameHistoryDao.getGames() as MutableLiveData<List<GameHistory>>
+        favoriteGamesList = gameHistoryRepository.getFavoriteGameHistories() as MutableLiveData<List<GameHistory>>
     }
 
 

@@ -81,7 +81,12 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
 
 
         binding.appBarMain.mainContent.etGameId
-        binding.appBarMain.mainContent.btnJoinSpecific
+        binding.appBarMain.mainContent.btnJoinSpecific.setOnClickListener{
+            Log.e(TAG, "email is: ${binding.appBarMain.mainContent.etGameId.text}")
+            val intent = Intent(this, ProfileActivity::class.java)
+            intent.putExtra(Constants.GUEST_EMAIL, binding.appBarMain.mainContent.etGameId.text.toString() )
+            startActivity(intent)
+        }
     }
     private fun updateNavigationUserDetails(user : User){
         val headerView =  binding.navView.getHeaderView(0)

@@ -16,6 +16,9 @@ object Constants {
     const val START_DATA = "Start"
     const val MOVES_LIST = "MOVES"
 
+    //To see profile of another user
+    const val GUEST_EMAIL = "Email"
+
     const val FAVORITE_GAMES_DB = "favorite-games-database"
     val imgResIDs = setOf(
         R.drawable.ic_white_king,

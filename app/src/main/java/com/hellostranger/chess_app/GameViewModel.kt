@@ -139,16 +139,19 @@ class GameViewModel(private val currentGame : Game) : ViewModel() {
         }
 
     }
-    fun isCastlingMove(moveMessage: MoveMessage) : Boolean{
-        val startSquare = _currentBoard.value!!.getSquareAt(moveMessage.startCol, moveMessage.startRow)
+    fun isCastlingMove(moveMessage: MoveMessage): Boolean {
+        val startSquare =
+            _currentBoard.value!!.getSquareAt(moveMessage.startCol, moveMessage.startRow)
         val endSquare = _currentBoard.value!!.getSquareAt(moveMessage.endCol, moveMessage.endRow)
 
-        if(startSquare == null || endSquare == null){
-            Log.e(TAG, "Move isn't a castling move because one of the squares are null. moveMessage is: $moveMessage and the squares are: $startSquare, $endSquare")
+        if (startSquare == null || endSquare == null) {
+            Log.e(
+                TAG,
+                "Move isn't a castling move because one of the squares are null. moveMessage is: $moveMessage and the squares are: $startSquare, $endSquare"
+            )
             return false
         }
-        val returnedValue = _currentBoard.value!!.isCastlingMove(startSquare, endSquare)
-        return returnedValue
+        return _currentBoard.value!!.isCastlingMove(startSquare, endSquare)
     }
     fun goToLatestMove() = viewModelScope.launch(Dispatchers.Main){
         if(boardsHistory.isEmpty()){

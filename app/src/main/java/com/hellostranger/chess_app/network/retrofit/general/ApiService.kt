@@ -1,5 +1,6 @@
 package com.hellostranger.chess_app.network.retrofit.general
 
+import com.hellostranger.chess_app.dto.FriendRequest
 import com.hellostranger.chess_app.models.gameModels.Game
 import com.hellostranger.chess_app.dto.JoinRequest
 import com.hellostranger.chess_app.dto.UpdateRequest
@@ -11,6 +12,7 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface ApiService {
 
@@ -31,6 +33,22 @@ interface ApiService {
 
     @GET("/api/users/games-history/{userEmail}")
     suspend fun getGamesHistory(@Path("userEmail") userEmail: String) : Response<List<GameHistory>>
+
+    @POST("/api/users/{userEmail}/send-friend-request")
+    suspend fun sendFriendRequest(@Path("userEmail") userEmail: String, @Query("recipientEmail") recipientEmail : String) : Response<String>
+
+    @GET("/api/users/{userEmail}/get-friend-requests")
+    suspend fun getFriendRequests(@Path("userEmail") userEmail: String) : Response<List<FriendRequest>>
+
+    @POST("/api/users/{userEmail}/accept-friend-requests")
+    suspend fun acceptFriendRequest(@Path("userEmail") userEmail: String, @Query("requestId") requestId : Int) : Response<String>
+
+    @GET("/api/users/get-friends/{userEmail}")
+    suspend fun getFriends(@Path("userEmail") userEmail: String) : Response<List<User>>
+
+    @POST("/api/users/remove-friend/{userEmail}")
+    suspend fun deleteFriend(@Path("userEmail") userEmail : String, @Query("friendEmail") friendEmail : String) : Response<String>
+
 
 
 }

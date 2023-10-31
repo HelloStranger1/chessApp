@@ -51,7 +51,7 @@
             android:id="@+id/et_game_id"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Game ID"
+            android:hint="User email"
             android:inputType="textEmailAddress"
             android:textSize="@dimen/et_text_size" />
     </com.google.android.material.textfield.TextInputLayout>
@@ -69,7 +69,7 @@
         android:gravity="center"
         android:paddingTop="@dimen/btn_paddingTopBottom"
         android:paddingBottom="@dimen/btn_paddingTopBottom"
-        android:text="Join Game by game ID"
+        android:text="lookup user"
         android:textColor="@android:color/white"
         android:textSize="@dimen/btn_text_size" />
 
