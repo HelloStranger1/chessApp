@@ -16,4 +16,8 @@ interface ChessGameInterface {
 
     fun goToLastMove()
 
+    fun getLastMovePlayed() : MoveMessage?
+
+
+
 }

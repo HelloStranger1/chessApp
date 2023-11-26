@@ -18,7 +18,9 @@ class ProfileViewModel(
 
     var favoriteGamesList = MutableLiveData<List<GameHistory>>()
     val userDetails = MutableLiveData<User>()
-    var isFriendsWithUser = MutableLiveData(false)
+    val isFriendsWithUser = MutableLiveData(false)
+    val friendRequestStatus = MutableLiveData<String>("")
+
 
     val failed = MutableLiveData<String>()
 
@@ -45,8 +47,10 @@ class ProfileViewModel(
                 for(friend : User in userFriends){
                     if(friend.email == friendEmail){
                         isFriendsWithUser.postValue(true)
+                        return@launch
                     }
                 }
+                isFriendsWithUser.postValue(false)
             } else if(response.isSuccessful){
                 Log.e("TAG", "Guess you just don't have any friends lol")
             } else{
@@ -55,9 +59,21 @@ class ProfileViewModel(
             }
         }
     }
-    fun sendFriendRequest(email: String) = viewModelScope.launch(Dispatchers.IO + coroutineExceptionHandler){ gameHistoryRepository.sendFriendRequest(email) }
+    fun sendFriendRequest(email: String) = viewModelScope.launch(Dispatchers.IO + coroutineExceptionHandler){
+        val response = gameHistoryRepository.sendFriendRequest(email)
+        if(response.isSuccessful && response.body() != null){
+            friendRequestStatus.postValue(response.body())
+        } else if(!response.isSuccessful){
+            Log.e("TAG", "Friend request failed. error: $response , ${response.body()}")
+            friendRequestStatus.postValue((response.body() ?: "").toString())
+        }
+    }
 
-    fun removeFriend(email : String) = viewModelScope.launch(Dispatchers.IO + coroutineExceptionHandler){gameHistoryRepository.deleteFriend(email) }
+    fun removeFriend(email : String) = viewModelScope.launch(Dispatchers.IO + coroutineExceptionHandler){
+        val response = gameHistoryRepository.deleteFriend(email)
+        Log.e("TAG", "response from remove friend was: $response, ${response.body()}")
+        areFriendsWithUser(email)
+    }
     fun onEvent(event: GameHistoryEvent){
         when(event){
             is GameHistoryEvent.OpenGame ->{

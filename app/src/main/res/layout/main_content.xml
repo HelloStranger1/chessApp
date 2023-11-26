@@ -21,7 +21,7 @@
         android:gravity="center"
         android:paddingTop="@dimen/btn_paddingTopBottom"
         android:paddingBottom="@dimen/btn_paddingTopBottom"
-        android:text="Create game lobby"
+        android:text="Do Puzzle"
         android:textColor="@android:color/white"
         android:textSize="@dimen/btn_text_size" />
     <androidx.appcompat.widget.AppCompatButton

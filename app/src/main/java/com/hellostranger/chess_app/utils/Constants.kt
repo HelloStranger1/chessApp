@@ -11,6 +11,7 @@ object Constants {
     //Game modes
     const val ONLINE_MODE = "Online"
     const val ANALYSIS_MODE = "Analysis"
+    const val PUZZLES_MODE = "Puzzles"
 
     //For Analysis:
     const val START_DATA = "Start"
@@ -19,6 +20,8 @@ object Constants {
     //To see profile of another user
     const val GUEST_EMAIL = "Email"
 
+    const val NEW_MOVE_DURATION : Long = 600
+    const val OLD_MOVE_DURATION : Long = 500
     const val FAVORITE_GAMES_DB = "favorite-games-database"
     val imgResIDs = setOf(
         R.drawable.ic_white_king,

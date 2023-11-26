@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".activities.NotificationsActivity">
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/app_bar_notification"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:theme="@style/AppTheme.AppBarOverlay">
+
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar_my_profile_activity"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="@color/colorPrimary"
+            app:title="Notifications"
+            app:popupTheme="@style/AppTheme.PopupOverlay"/>
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.cardview.widget.CardView
+        android:layout_height="50dp"
+        android:layout_marginVertical="5dp"
+
+        android:layout_width="match_parent"
+        android:elevation="10dp"
+        android:backgroundTint="@color/greyTint"
+        >
+
+        <TextView
+            android:layout_marginEnd="10dp"
+            android:layout_marginStart="40dp"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="@string/challenges"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:gravity="center_vertical"
+            android:textColor="@color/primary_text_color"/>
+    </androidx.cardview.widget.CardView>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_game_challenges"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#fefefe"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            tools:itemCount="3"
+            tools:listitem="@layout/notification_item" />
+    </ScrollView>
+
+    <androidx.cardview.widget.CardView
+        android:layout_marginVertical="5dp"
+        android:layout_height="50dp"
+        android:layout_width="match_parent"
+        android:elevation="10dp"
+        android:backgroundTint="@color/greyTint"
+        >
+
+        <TextView
+            android:layout_marginEnd="10dp"
+            android:layout_marginStart="40dp"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="@string/friend_requests"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:gravity="center_vertical"
+            android:textColor="@color/primary_text_color"/>
+    </androidx.cardview.widget.CardView>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_friend_requests"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#fefefe"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            tools:itemCount="5"
+            tools:listitem="@layout/notification_item" />
+    </ScrollView>
+
+
+</LinearLayout>

@@ -11,7 +11,7 @@ import com.hellostranger.chess_app.databinding.GameHistoryItemBinding
 import com.hellostranger.chess_app.models.entites.GameHistory
 
 class GamesHistoryAdapter(
-    private val onClickListener: OnClickListener,
+    private val gameHistoryOnClickListener: GameHistoryOnClickListener,
     private val MAX_ITEMS : Int = -1
     )
     : RecyclerView.Adapter<GamesHistoryAdapter.GamesHistoryViewHolder>(){
@@ -82,18 +82,19 @@ class GamesHistoryAdapter(
     override fun onBindViewHolder(holder: GamesHistoryViewHolder, position: Int) {
         val gameHistory = gameHistoryList[position]
         holder.saveImageView.setOnClickListener{
-            onClickListener.onSaveClick(gameHistory)
+            gameHistoryOnClickListener.onSaveClick(gameHistory)
             notifyItemChanged(holder.layoutPosition)
         }
         holder.itemView.setOnClickListener{
-            onClickListener.onItemClick(gameHistory)
+            gameHistoryOnClickListener.onItemClick(gameHistory)
         }
         holder.bind(gameHistory)
     }
 
-    class OnClickListener(
+    class GameHistoryOnClickListener(
         val itemClickListener: (gameHistory : GameHistory) -> Unit,
         val saveClickListener: (gameHistory: GameHistory) -> Unit)
+
     {
         fun onSaveClick(gameHistory: GameHistory) = saveClickListener(gameHistory)
         fun onItemClick(gameHistory: GameHistory) = itemClickListener(gameHistory)

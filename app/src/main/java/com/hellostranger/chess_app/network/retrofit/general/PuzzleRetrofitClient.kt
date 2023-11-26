@@ -7,31 +7,30 @@ import com.hellostranger.chess_app.models.gameModels.pieces.PieceJsonDeserialize
 import com.hellostranger.chess_app.network.retrofit.AuthInterceptor
 import com.hellostranger.chess_app.network.retrofit.auth.AuthRetrofitClient
 import okhttp3.OkHttpClient
+import okhttp3.Request
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.converter.scalars.ScalarsConverterFactory
 
-
-object GeneralRetrofitClient {
-    private const val BASE_URL = "http://10.0.2.2:8080"
+object PuzzleRetrofitClient {
+    private const val BASE_URL = "https://chess-puzzles2.p.rapidapi.com"
 
     private var gson: Gson = GsonBuilder()
         .setLenient()
-        .registerTypeAdapter(Piece::class.java, PieceJsonDeserializer())
         .create()
-    val instance: ApiService by lazy {
+
+    val instance: PuzzleInterface by lazy {
         val okHttpClient = OkHttpClient.Builder()
-            .addInterceptor(AuthInterceptor(AuthRetrofitClient.instance))
             .build()
         val retrofitBuilder = Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(PuzzleRetrofitClient.BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(ScalarsConverterFactory.create())
-            .addConverterFactory(GsonConverterFactory.create(gson))
+            .addConverterFactory(GsonConverterFactory.create(PuzzleRetrofitClient.gson))
 
         val retrofit = retrofitBuilder.build()
 
-        retrofit.create(ApiService::class.java)
+        retrofit.create(PuzzleInterface::class.java)
 
     }
 }

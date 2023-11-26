@@ -8,6 +8,7 @@ import com.hellostranger.chess_app.dto.websocket.GameStartMessage
 import com.hellostranger.chess_app.dto.websocket.MessageType
 import com.hellostranger.chess_app.dto.websocket.MoveMessage
 import com.hellostranger.chess_app.dto.websocket.WebSocketMessage
+import com.hellostranger.chess_app.utils.Constants
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -89,6 +90,8 @@ class ChessWebSocketListener(private val viewModel: GameViewModel) : WebSocketLi
 
 
     override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+        viewModel.setStatus(false)
+        Log.e(TAG, "Websocket failed. msg: $response and throwable: $t")
         Log.e(TAG, t.message ?: "Unknown error")
     }
 }

@@ -7,8 +7,8 @@
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:requestLegacyExternalStorage="true"
-        android:maxSdkVersion="32" />
+        android:maxSdkVersion="32"
+        android:requestLegacyExternalStorage="true" />
 
     <application
         android:name=".utils.MyApp"
@@ -22,6 +22,13 @@
         android:theme="@style/Theme.ChessApp"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
+        <activity
+            android:name=".activities.PuzzleActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.NotificationsActivity"
+            android:exported="false" />
+
         <activity
             android:name=".activities.ProfileActivity"
             android:exported="false"

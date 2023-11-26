@@ -19,8 +19,11 @@ data class Board(
     var squaresArray: Array<Array<Square>>,
     var whiteKing : King? = null,
     var blackKing : King? = null,
-    var phantomPawnSquare : Square? = null
+    var phantomPawnSquare : Square? = null,
+    @Transient
+    var previousMove : MoveMessage? = null
 ) : Cloneable{
+
 
     companion object{
         val gson: Gson = GsonBuilder()

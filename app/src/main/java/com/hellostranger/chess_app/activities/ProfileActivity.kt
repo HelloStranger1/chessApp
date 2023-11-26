@@ -16,7 +16,6 @@ import com.hellostranger.chess_app.ProfileViewModel
 import com.hellostranger.chess_app.utils.MyApp
 import com.hellostranger.chess_app.R
 import com.hellostranger.chess_app.utils.TokenManager
-import com.hellostranger.chess_app.UserRepository
 import com.hellostranger.chess_app.ProfileViewModelFactory
 import com.hellostranger.chess_app.databinding.ActivityProfileBinding
 import com.hellostranger.chess_app.dto.websocket.GameStartMessage
@@ -102,7 +101,10 @@ class ProfileActivity : BaseActivity() {
         viewModel.getUserDetails(userEmail)
         viewModel.areFriendsWithUser(userEmail)
 
-
+        viewModel.friendRequestStatus.observe(this){
+            Log.e(TAG, "viewModel friendRequestStatus: $it")
+            Toast.makeText(this, it, Toast.LENGTH_LONG).show()
+        }
         binding.tvSendFriendRequest.setOnClickListener {
             viewModel.sendFriendRequest(userEmail)
 
@@ -111,7 +113,7 @@ class ProfileActivity : BaseActivity() {
             viewModel.removeFriend(userEmail)
             binding.tvSendFriendRequest.visibility = View.VISIBLE
             binding.tvUnfriend.visibility = View.GONE
-            viewModel.areFriendsWithUser(userEmail)
+
         }
         binding.ivToolbarOptions.setOnClickListener{
             if(currentUser != null && !isGuestUser){
@@ -125,7 +127,7 @@ class ProfileActivity : BaseActivity() {
     }
     private fun initializeGameHistoryAdapter() : GamesHistoryAdapter{
         return GamesHistoryAdapter(
-            GamesHistoryAdapter.OnClickListener(
+            GamesHistoryAdapter.GameHistoryOnClickListener(
                 {
                     val startMessage = GameStartMessage(
                         whiteName = it.whiteName, blackName = it.blackName,
@@ -140,7 +142,7 @@ class ProfileActivity : BaseActivity() {
                     val intent = Intent(this@ProfileActivity, GameActivity::class.java)
                     intent.putExtra(Constants.MODE, Constants.ANALYSIS_MODE)
                     intent.putExtra(Constants.MOVES_LIST, it.gameMoves)
-                    intent.putExtra(Constants.MOVES_LIST, startMessage)
+                    intent.putExtra(Constants.START_DATA, startMessage)
                     startActivity(intent)
 
                 },

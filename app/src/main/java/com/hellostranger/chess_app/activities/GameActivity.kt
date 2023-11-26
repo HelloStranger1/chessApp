@@ -22,6 +22,7 @@ import com.hellostranger.chess_app.dto.websocket.GameStartMessage
 import com.hellostranger.chess_app.dto.websocket.MoveMessage
 import com.hellostranger.chess_app.dto.websocket.WebSocketMessage
 import com.hellostranger.chess_app.gameHelpers.ChessGameInterface
+import com.hellostranger.chess_app.gameHelpers.ChessView
 import com.hellostranger.chess_app.models.gameModels.Game
 import com.hellostranger.chess_app.models.gameModels.Square
 import com.hellostranger.chess_app.models.gameModels.enums.Color
@@ -32,6 +33,8 @@ import com.hellostranger.chess_app.network.websocket.ChessWebSocketListener
 import com.hellostranger.chess_app.utils.Constants
 import com.hellostranger.chess_app.utils.MyApp
 import com.hellostranger.chess_app.utils.TokenManager
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import okhttp3.WebSocket
 
 private const val TAG = "GameActivity"
@@ -66,7 +69,7 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         if(gameMode == Constants.ANALYSIS_MODE){
             val startData = intent.getParcelableExtra(Constants.START_DATA, GameStartMessage::class.java)!!
             val moves : String = intent.getStringExtra(Constants.MOVES_LIST)!!
-
+            viewModel.startGame(startData)
             for(i in moves.indices step 5){
                 val move : String = moves.substring(i, i + 5)
                 val moveMessage = MoveMessage(
@@ -77,17 +80,18 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
                     endRow = move[3].digitToInt(),
                     moveType = matchCharToMoveType(move[4])
                 )
-
                 viewModel.playMoveFromServer(moveMessage)
+
             }
-            viewModel.startGame(startData)
-        } else if(gameMode == Constants.ONLINE_MODE){
+        } else if(gameMode == Constants.ONLINE_MODE) {
             //Connecting to websocket
             chessWebSocketListener = ChessWebSocketListener(viewModel)
-            chessWebSocketListener!!.connectWebSocket(Game.getInstance()!!.id, tokenManager.getAccessToken())
+            chessWebSocketListener!!.connectWebSocket(
+                Game.getInstance()!!.id,
+                tokenManager.getAccessToken()
+            )
             chessWebSocket = chessWebSocketListener!!.getWebSocketInstance()
         }
-
         viewModel.socketStatus.observe(this){
             Log.e(TAG, "socketStatus changed to: $it")
         }
@@ -100,13 +104,20 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         }
         viewModel.currentBoard.observe(this){
             binding.chessView.invalidate()
+
         }
+
         binding.ibArrowBack.setOnClickListener{
+            Log.e(TAG, "Showing previous board")
             viewModel.showPreviousBoard()
         }
         binding.ibArrowForward.setOnClickListener{
+            Log.e(TAG, "Showing next board")
             viewModel.showNextBoard()
+
+
         }
+
 
         binding.ibFlipBoard.setOnClickListener{
             binding.chessView.flipBoard()
@@ -141,6 +152,7 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
 
         }
     }
+
     private fun matchCharToMoveType(char : Char): MoveType {
         return when (char) {
             'O' -> MoveType.REGULAR
@@ -214,6 +226,7 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
     Performs a basic check that the move is valid (actually moving a piece, piece is owned by the player, etc). Backend server will validate the move.
      */
     override fun playMove(moveMessage: MoveMessage, isFlipped: Boolean) {
+
         moveMessage.playerEmail = viewModel.currentPlayerEmail //Chess View is unaware of the playerEmail, adding it to the message.
         var updatedMoveMessage = moveMessage
         if(isFlipped){
@@ -243,14 +256,20 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         }
         val isValidMove : Boolean = viewModel.validateMove(updatedMoveMessage)
         viewModel.temporaryPlayMove(updatedMoveMessage)
-
-
+        if(isValidMove){
+            binding.chessView.invalidate()
+            if(gameMode == Constants.ONLINE_MODE){
+                sendMessageToServer(updatedMoveMessage)
+            }
+        }
        /* if(!gameService.validateMove(updatedMoveMessage)) return
 
         gameService.temporaryMakeMove(updatedMoveMessage)*/ //Instead of waiting for the server to validate the move, we play it temporarily and undo it if the server says it is invalid.
-        if(gameMode == Constants.ONLINE_MODE && isValidMove){
-            sendMessageToServer(updatedMoveMessage)
-        }
+
+    }
+
+    override fun getLastMovePlayed() : MoveMessage? {
+        return viewModel.currentBoard.value?.previousMove
     }
 
     private fun setPiecePromotionMenu(){

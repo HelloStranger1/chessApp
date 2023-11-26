@@ -33,6 +33,7 @@ class GameViewModel(private val currentGame : Game) : ViewModel() {
     val startMessageData : LiveData<GameStartMessage> = _startMessageData
     private var isOurTurn = false
     var isWhite = false
+    var isOnTempMove = false
     private val boardsHistory = ArrayList<Board>()
     val currentPlayerEmail = tokenManager.getUserEmail()
 
@@ -58,6 +59,10 @@ class GameViewModel(private val currentGame : Game) : ViewModel() {
             return false
         }
         val endSquare = board.getSquareAt(moveMessage.endCol, moveMessage.endRow)
+        if(endSquare == null){
+            Log.e(TAG, "\n \n \n \n The square at ${moveMessage.endCol} , ${moveMessage.endRow} is null!!!! \n \n \n \n")
+        }
+
         if(!board.isValidMove(startSquare, endSquare!!)){
             Log.e(TAG, "(ValidateMove) Move is invalid According to Board.")
             return false
@@ -72,7 +77,15 @@ class GameViewModel(private val currentGame : Game) : ViewModel() {
         }
     }
 
+    fun getNextBoard() : Board?{
+        if(currentMoveShown < boardsHistory.size - 1){
+            return boardsHistory[currentMoveShown + 1]
+        }
+        return null
+    }
+
     fun showNextBoard() = viewModelScope.launch(Dispatchers.Main){
+        isOnTempMove = false
         if(currentMoveShown < boardsHistory.size - 1){
             currentMoveShown++
             _currentBoard.value = boardsHistory[currentMoveShown]
@@ -80,6 +93,8 @@ class GameViewModel(private val currentGame : Game) : ViewModel() {
     }
 
     fun undoMove() = viewModelScope.launch(Dispatchers.Main){
+        isOnTempMove = false
+
         _currentBoard.value = boardsHistory.last()
     }
 
@@ -108,18 +123,22 @@ class GameViewModel(private val currentGame : Game) : ViewModel() {
 
     }
     fun playMoveFromServer(moveMessage: MoveMessage) = viewModelScope.launch(Dispatchers.Main){
-
+        isOnTempMove = false
         if(boardsHistory.isEmpty()){
             boardsHistory.add(_currentBoard.value!!)
         }
         if(moveMessage.playerEmail == currentPlayerEmail){
             val tempBoard = boardsHistory.last().clone().movePiece(moveMessage)
             if(tempBoard != _currentBoard.value){
+                tempBoard.previousMove = moveMessage
                 Log.e(TAG, "Guess we changed something. tempBoard is: $tempBoard \n \n and currentBoard is: ${_currentBoard.value}. ")
                 _currentBoard.value = tempBoard
             }
         }else{
-            _currentBoard.value = boardsHistory.last().clone().movePiece(moveMessage)
+            val newBoard = boardsHistory.last().clone().movePiece(moveMessage)
+            newBoard.previousMove = moveMessage
+
+            _currentBoard.value = newBoard
         }
         boardsHistory.add(_currentBoard.value!!)
         currentMoveShown = boardsHistory.size - 1
@@ -132,7 +151,9 @@ class GameViewModel(private val currentGame : Game) : ViewModel() {
             boardsHistory.add(_currentBoard.value!!)
         }
         if(validateMove(moveMessage)){
+            isOnTempMove = true
             _currentBoard.value = boardsHistory.last().clone().movePiece(moveMessage)
+            _currentBoard.value!!.previousMove = moveMessage
             currentGame.isP1Turn = !currentGame.isP1Turn
         } else{
             Log.e(TAG, "Temp-move is invalid.")
@@ -154,6 +175,7 @@ class GameViewModel(private val currentGame : Game) : ViewModel() {
         return _currentBoard.value!!.isCastlingMove(startSquare, endSquare)
     }
     fun goToLatestMove() = viewModelScope.launch(Dispatchers.Main){
+        isOnTempMove = false
         if(boardsHistory.isEmpty()){
             boardsHistory.add(_currentBoard.value!!)
         }

@@ -9,9 +9,9 @@
             android:title="@string/nav_my_profile"/>
 
         <item
-            android:id="@+id/nav_friends"
+            android:id="@+id/nav_notifications"
             android:icon="@drawable/ic_friends_list_icon"
-            android:title="@string/nav_friends_list"/>
+            android:title="@string/nav_notifications"/>
 
 
         <item

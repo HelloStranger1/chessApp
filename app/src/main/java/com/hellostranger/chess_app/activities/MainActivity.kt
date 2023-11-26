@@ -17,9 +17,11 @@ import com.hellostranger.chess_app.utils.TokenManager
 import com.hellostranger.chess_app.models.gameModels.Game
 import com.hellostranger.chess_app.databinding.ActivityMainBinding
 import com.hellostranger.chess_app.dto.JoinRequest
+import com.hellostranger.chess_app.models.PuzzlesList
 import com.hellostranger.chess_app.models.entites.User
 import com.hellostranger.chess_app.network.retrofit.auth.AuthRetrofitClient
 import com.hellostranger.chess_app.network.retrofit.general.GeneralRetrofitClient
+import com.hellostranger.chess_app.network.retrofit.general.PuzzleRetrofitClient
 import com.hellostranger.chess_app.utils.Constants
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -80,13 +82,28 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         }
 
 
-        binding.appBarMain.mainContent.etGameId
+        binding.appBarMain.mainContent.btnCreate.setOnClickListener {
+            showProgressDialog("Fetching puzzle...")
+            CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
+                val response =
+                    PuzzleRetrofitClient.instance.getRandomPuzzle(4)
+                if(response.isSuccessful && response.body() != null){
+                    Log.e("TAG", "Got puzzles. response: ${response.body()}")
+                    PuzzlesList.instance.addPuzzles(response.body()!!)
+                    Log.e("TAG", "PuzzleList: ${PuzzlesList.instance} and the list is: ")
+                    val intent = Intent(this@MainActivity, PuzzleActivity::class.java)
+                    startActivity(intent)
+                }
+            }
+        }
         binding.appBarMain.mainContent.btnJoinSpecific.setOnClickListener{
             Log.e(TAG, "email is: ${binding.appBarMain.mainContent.etGameId.text}")
             val intent = Intent(this, ProfileActivity::class.java)
             intent.putExtra(Constants.GUEST_EMAIL, binding.appBarMain.mainContent.etGameId.text.toString() )
             startActivity(intent)
         }
+
+
     }
     private fun updateNavigationUserDetails(user : User){
         val headerView =  binding.navView.getHeaderView(0)
@@ -134,6 +151,9 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         when(item.itemId){
             R.id.nav_my_profile ->{
                 startActivity(Intent(this, ProfileActivity::class.java))
+            }
+            R.id.nav_notifications ->{
+                startActivity(Intent(this, NotificationsActivity::class.java))
             }
             R.id.nav_sign_out ->{
                 tokenManager.clearSession()

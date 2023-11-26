@@ -40,14 +40,18 @@ interface ApiService {
     @GET("/api/users/{userEmail}/get-friend-requests")
     suspend fun getFriendRequests(@Path("userEmail") userEmail: String) : Response<List<FriendRequest>>
 
-    @POST("/api/users/{userEmail}/accept-friend-requests")
+    @POST("/api/users/{userEmail}/accept-friend-request")
     suspend fun acceptFriendRequest(@Path("userEmail") userEmail: String, @Query("requestId") requestId : Int) : Response<String>
+
+    @POST("/api/users/{userEmail}/reject-friend-request")
+    suspend fun rejectFriendRequest(@Path("userEmail") userEmail: String, @Query("requestId") requestId : Int) : Response<String>
 
     @GET("/api/users/get-friends/{userEmail}")
     suspend fun getFriends(@Path("userEmail") userEmail: String) : Response<List<User>>
 
     @POST("/api/users/remove-friend/{userEmail}")
     suspend fun deleteFriend(@Path("userEmail") userEmail : String, @Query("friendEmail") friendEmail : String) : Response<String>
+
 
 
 
