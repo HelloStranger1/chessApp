@@ -11,7 +11,7 @@ import android.widget.Toast
 import com.hellostranger.chess_app.utils.MyApp
 import com.hellostranger.chess_app.R
 import com.hellostranger.chess_app.databinding.ActivitySignUpBinding
-import com.hellostranger.chess_app.dto.RegisterRequest
+import com.hellostranger.chess_app.dto.requests.RegisterRequest
 import com.hellostranger.chess_app.network.retrofit.auth.AuthRetrofitClient
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope

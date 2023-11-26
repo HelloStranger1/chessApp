@@ -7,17 +7,19 @@ import android.view.View
 import android.widget.PopupMenu
 import com.hellostranger.chess_app.R
 import com.hellostranger.chess_app.databinding.ActivityPuzzleBinding
-import com.hellostranger.chess_app.dto.Puzzle
+import com.hellostranger.chess_app.models.entities.Puzzle
 import com.hellostranger.chess_app.dto.websocket.MoveMessage
 import com.hellostranger.chess_app.gameHelpers.ChessGameInterface
 import com.hellostranger.chess_app.gameHelpers.FenConvertor
-import com.hellostranger.chess_app.models.PuzzlesList
-import com.hellostranger.chess_app.models.gameModels.Board
-import com.hellostranger.chess_app.models.gameModels.Game
-import com.hellostranger.chess_app.models.gameModels.Square
-import com.hellostranger.chess_app.models.gameModels.enums.MoveType
-import com.hellostranger.chess_app.models.gameModels.enums.PieceType
-import com.hellostranger.chess_app.models.gameModels.pieces.Piece
+import com.hellostranger.chess_app.gameHelpers.PuzzlesList
+import com.hellostranger.chess_app.gameClasses.Board
+import com.hellostranger.chess_app.gameClasses.Game
+import com.hellostranger.chess_app.gameClasses.Square
+import com.hellostranger.chess_app.dto.enums.MoveType
+import com.hellostranger.chess_app.gameClasses.enums.PieceType
+import com.hellostranger.chess_app.gameClasses.pieces.Piece
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 
 class PuzzleActivity : BaseActivity(), ChessGameInterface, PopupMenu.OnMenuItemClickListener {
     private lateinit var binding : ActivityPuzzleBinding
@@ -65,12 +67,12 @@ class PuzzleActivity : BaseActivity(), ChessGameInterface, PopupMenu.OnMenuItemC
         popupMenu.setOnMenuItemClickListener(this@PuzzleActivity)
         popupMenu.show()
     }
-    fun convertMoveToMoveMessage(move : String) : MoveMessage{
+    private fun convertMoveToMoveMessage(move : String) : MoveMessage{
         val moveMessage = MoveMessage(
             "",
-            startCol = (move[0] - 'a').toInt(),
+            startCol = (move[0] - 'a'),
             startRow = (move[1]).digitToInt() -1,
-            endCol = (move[2] - 'a').toInt(),
+            endCol = (move[2] - 'a'),
             endRow = (move[3]).digitToInt() -1,
             MoveType.REGULAR
         )
@@ -101,7 +103,7 @@ class PuzzleActivity : BaseActivity(), ChessGameInterface, PopupMenu.OnMenuItemC
             boardHistory[mCurrentBoardShown].squaresArray[row][col].piece
         }
     }
-    fun isCastlingMove(moveMessage: MoveMessage): Boolean {
+    private fun isCastlingMove(moveMessage: MoveMessage): Boolean {
         val startSquare =
             boardHistory[mCurrentBoardShown].getSquareAt(moveMessage.startCol, moveMessage.startRow)
         val endSquare = boardHistory[mCurrentBoardShown].getSquareAt(moveMessage.endCol, moveMessage.endRow)
@@ -173,13 +175,16 @@ class PuzzleActivity : BaseActivity(), ChessGameInterface, PopupMenu.OnMenuItemC
             boardHistory.add(newBoard)
             mCurrentBoardShown += 1
             binding.chessView.invalidate()
+            runBlocking {
+                delay(500)
+            }
             newBoard = boardHistory[mCurrentBoardShown].clone().movePiece(convertMoveToMoveMessage(currentPuzzle.moves[mCurrentBoardShown]))
             newBoard.previousMove = convertMoveToMoveMessage(currentPuzzle.moves[mCurrentBoardShown])
             boardHistory.add(newBoard)
             mCurrentBoardShown += 1
             binding.chessView.invalidate()
         } else{
-            Log.e(TAG, "MovePlayed: $updatedMoveMessage. the move we were expecting: ${correctMove}")
+            Log.e(TAG, "MovePlayed: $updatedMoveMessage. the move we were expecting: $correctMove")
             showWrongMoveUi()
         }
     }

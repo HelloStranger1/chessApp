@@ -4,7 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Upsert
-import com.hellostranger.chess_app.models.entites.GameHistory
+import com.hellostranger.chess_app.models.rvEntities.GameHistory
 
 @Dao
 interface GameHistoryDao {

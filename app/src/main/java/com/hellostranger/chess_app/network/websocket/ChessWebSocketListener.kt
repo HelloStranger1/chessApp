@@ -2,13 +2,12 @@ package com.hellostranger.chess_app.network.websocket
 
 import android.util.Log
 import com.google.gson.Gson
-import com.hellostranger.chess_app.GameViewModel
+import com.hellostranger.chess_app.viewModels.GameViewModel
 import com.hellostranger.chess_app.dto.websocket.GameEndMessage
 import com.hellostranger.chess_app.dto.websocket.GameStartMessage
-import com.hellostranger.chess_app.dto.websocket.MessageType
+import com.hellostranger.chess_app.dto.enums.WebsocketMessageType
 import com.hellostranger.chess_app.dto.websocket.MoveMessage
 import com.hellostranger.chess_app.dto.websocket.WebSocketMessage
-import com.hellostranger.chess_app.utils.Constants
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -54,23 +53,23 @@ class ChessWebSocketListener(private val viewModel: GameViewModel) : WebSocketLi
     override fun onMessage(webSocket: WebSocket, text: String) {
         val gson = Gson()
         val message : WebSocketMessage = gson.fromJson(text, WebSocketMessage::class.java)
-        Log.e(TAG, "onMessage, text is: $text. msgType is: ${message.messageType}")
+        Log.e(TAG, "onMessage, text is: $text. msgType is: ${message.websocketMessageType}")
 
-        when( message.messageType){
-            MessageType.MOVE ->{
+        when( message.websocketMessageType){
+            WebsocketMessageType.MOVE ->{
                 val moveMessage : MoveMessage = gson.fromJson(text, MoveMessage::class.java)
                 viewModel.playMoveFromServer(moveMessage)
             }
-            MessageType.START ->{
+            WebsocketMessageType.START ->{
                 val startMessage : GameStartMessage = gson.fromJson(text, GameStartMessage::class.java)
                 Log.e(TAG, "Start Message. text: $text. startMessage: $startMessage")
                 viewModel.startGame(startMessage)
             }
-            MessageType.END ->{
+            WebsocketMessageType.END ->{
                 val endMessage : GameEndMessage = gson.fromJson(text, GameEndMessage::class.java)
                 viewModel.onGameEnding(endMessage.state)
             }
-            MessageType.INVALID_MOVE -> {
+            WebsocketMessageType.INVALID_MOVE -> {
                 Log.e(TAG, "Invalid Move, undoing it")
                 viewModel.undoMove()
             }

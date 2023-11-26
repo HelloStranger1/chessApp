@@ -19,9 +19,9 @@ import com.hellostranger.chess_app.utils.MyApp
 import com.hellostranger.chess_app.R
 import com.hellostranger.chess_app.utils.TokenManager
 import com.hellostranger.chess_app.databinding.ActivityUpdateProfileBinding
-import com.hellostranger.chess_app.dto.UpdateRequest
-import com.hellostranger.chess_app.models.entites.User
-import com.hellostranger.chess_app.network.retrofit.general.GeneralRetrofitClient
+import com.hellostranger.chess_app.dto.requests.UpdateRequest
+import com.hellostranger.chess_app.models.entities.User
+import com.hellostranger.chess_app.network.retrofit.backend.BackendRetrofitClient
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -81,7 +81,7 @@ class UpdateProfileActivity : BaseActivity() {
         }
         if(binding.etName.text!!.isNotEmpty() && binding.etName.text!!.toString() != currentUser.name){
             CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
-                val response = GeneralRetrofitClient.instance.updateUserName(tokenManager.getUserEmail(), UpdateRequest(binding.etName.text!!.toString()))
+                val response = BackendRetrofitClient.instance.updateUserName(tokenManager.getUserEmail(), UpdateRequest(binding.etName.text!!.toString()))
                 if(response.isSuccessful && response.body() != null){
                     Log.i("SaveData", "Saved name to the backend server. response is: ${response.body()}")
                 }else{
@@ -94,7 +94,7 @@ class UpdateProfileActivity : BaseActivity() {
         if(mProfileImageURL != currentUser.image){
             CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
                 Log.i("TAG", mProfileImageURL)
-                val response = GeneralRetrofitClient.instance.uploadProfileImage(tokenManager.getUserEmail(), UpdateRequest(mProfileImageURL))
+                val response = BackendRetrofitClient.instance.uploadProfileImage(tokenManager.getUserEmail(), UpdateRequest(mProfileImageURL))
                 if(response.isSuccessful && response.body() != null){
                     Log.i("SaveData", "Saved name to the backend server. response is: ${response.body()}")
                 }else{

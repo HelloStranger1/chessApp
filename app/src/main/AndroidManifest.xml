@@ -25,6 +25,7 @@
         <activity
             android:name=".activities.PuzzleActivity"
             android:exported="false" />
+
         <activity
             android:name=".activities.NotificationsActivity"
             android:exported="false" />
@@ -81,5 +82,6 @@
             android:screenOrientation="portrait"
             android:theme="@style/NoActionBar" />
     </application>
+
 
 </manifest>

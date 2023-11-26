@@ -1,8 +1,8 @@
 package com.hellostranger.chess_app.network.retrofit.auth
 
-import com.hellostranger.chess_app.dto.AuthenticateRequest
-import com.hellostranger.chess_app.dto.AuthenticationResponse
-import com.hellostranger.chess_app.dto.RegisterRequest
+import com.hellostranger.chess_app.dto.auth.AuthenticateRequest
+import com.hellostranger.chess_app.dto.auth.AuthenticationResponse
+import com.hellostranger.chess_app.dto.requests.RegisterRequest
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.Header

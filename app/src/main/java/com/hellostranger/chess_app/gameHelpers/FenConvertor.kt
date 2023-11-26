@@ -1,23 +1,23 @@
 package com.hellostranger.chess_app.gameHelpers
 
 import android.util.Log
-import com.hellostranger.chess_app.models.gameModels.Board
-import com.hellostranger.chess_app.models.gameModels.Game
-import com.hellostranger.chess_app.models.gameModels.Square
-import com.hellostranger.chess_app.models.gameModels.enums.Color
-import com.hellostranger.chess_app.models.gameModels.enums.GameState
-import com.hellostranger.chess_app.models.gameModels.enums.PieceType
-import com.hellostranger.chess_app.models.gameModels.pieces.King
-import com.hellostranger.chess_app.models.gameModels.pieces.Piece
-import com.hellostranger.chess_app.models.gameModels.pieces.PieceFactory
+import com.hellostranger.chess_app.gameClasses.Board
+import com.hellostranger.chess_app.gameClasses.Game
+import com.hellostranger.chess_app.gameClasses.Square
+import com.hellostranger.chess_app.gameClasses.enums.Color
+import com.hellostranger.chess_app.gameClasses.enums.GameState
+import com.hellostranger.chess_app.gameClasses.enums.PieceType
+import com.hellostranger.chess_app.gameClasses.pieces.King
+import com.hellostranger.chess_app.gameClasses.pieces.Piece
+import com.hellostranger.chess_app.gameClasses.pieces.PieceFactory
 import java.util.UUID
 
 
 class FenConvertor {
-    fun convertFENToGame(fen: String): Game {
-        var fen = fen
+    fun convertFENToGame(fen1: String): Game {
+        var fen = fen1
         val pieceFactory = PieceFactory()
-        val squaresArray : Array<Array<Square>> = Array(8) {row ->
+        val squaresArray : Array<Array<Square>> = Array(8) { row ->
             Array(8) {col ->
                 Square(col, null, row)
             } }
@@ -113,7 +113,7 @@ class FenConvertor {
                 fen = fen.substring(1)
             }
         }
-        //En-pasant
+        //En-peasant
         fen = if (fen[1] == '-') {
             board.phantomPawnSquare = (null)
             fen.substring(3)

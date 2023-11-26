@@ -13,8 +13,8 @@ import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModelProvider
 import com.bumptech.glide.Glide
 import com.google.gson.Gson
-import com.hellostranger.chess_app.GameViewModel
-import com.hellostranger.chess_app.GameViewModelFactory
+import com.hellostranger.chess_app.viewModels.GameViewModel
+import com.hellostranger.chess_app.viewModels.factories.GameViewModelFactory
 import com.hellostranger.chess_app.R
 import com.hellostranger.chess_app.databinding.ActivityGameViewBinding
 import com.hellostranger.chess_app.dto.websocket.ConcedeGameMessage
@@ -22,19 +22,15 @@ import com.hellostranger.chess_app.dto.websocket.GameStartMessage
 import com.hellostranger.chess_app.dto.websocket.MoveMessage
 import com.hellostranger.chess_app.dto.websocket.WebSocketMessage
 import com.hellostranger.chess_app.gameHelpers.ChessGameInterface
-import com.hellostranger.chess_app.gameHelpers.ChessView
-import com.hellostranger.chess_app.models.gameModels.Game
-import com.hellostranger.chess_app.models.gameModels.Square
-import com.hellostranger.chess_app.models.gameModels.enums.Color
-import com.hellostranger.chess_app.models.gameModels.enums.MoveType
-import com.hellostranger.chess_app.models.gameModels.enums.PieceType
-import com.hellostranger.chess_app.models.gameModels.pieces.Piece
+import com.hellostranger.chess_app.gameClasses.Game
+import com.hellostranger.chess_app.gameClasses.Square
+import com.hellostranger.chess_app.dto.enums.MoveType
+import com.hellostranger.chess_app.gameClasses.enums.PieceType
+import com.hellostranger.chess_app.gameClasses.pieces.Piece
 import com.hellostranger.chess_app.network.websocket.ChessWebSocketListener
 import com.hellostranger.chess_app.utils.Constants
 import com.hellostranger.chess_app.utils.MyApp
 import com.hellostranger.chess_app.utils.TokenManager
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import okhttp3.WebSocket
 
 private const val TAG = "GameActivity"
@@ -45,8 +41,6 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
 
     private var chessWebSocket: WebSocket? = null
     private var chessWebSocketListener : ChessWebSocketListener? = null
-
-    private lateinit var currentPlayerEmail : String
 
     private lateinit var viewModel: GameViewModel
     private lateinit var gameMode : String
@@ -63,93 +57,104 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
 
         viewModel = ViewModelProvider(this, GameViewModelFactory(Game.getInstance()!!))[GameViewModel::class.java]
         gameMode = intent.getStringExtra(Constants.MODE)!!
-        binding.chessView.chessGameInterface = this
-        binding.chessView.gameMode = gameMode
-        currentPlayerEmail = tokenManager.getUserEmail()
-        if(gameMode == Constants.ANALYSIS_MODE){
-            val startData = intent.getParcelableExtra(Constants.START_DATA, GameStartMessage::class.java)!!
-            val moves : String = intent.getStringExtra(Constants.MOVES_LIST)!!
-            viewModel.startGame(startData)
-            for(i in moves.indices step 5){
-                val move : String = moves.substring(i, i + 5)
-                val moveMessage = MoveMessage(
-                    "",
-                    startCol = move[0].digitToInt(),
-                    startRow = move[1].digitToInt(),
-                    endCol = move[2].digitToInt(),
-                    endRow = move[3].digitToInt(),
-                    moveType = matchCharToMoveType(move[4])
-                )
-                viewModel.playMoveFromServer(moveMessage)
 
-            }
+        setUpChessView()
+
+        if(gameMode == Constants.ANALYSIS_MODE){
+            loadGameForAnalysis()
         } else if(gameMode == Constants.ONLINE_MODE) {
-            //Connecting to websocket
-            chessWebSocketListener = ChessWebSocketListener(viewModel)
-            chessWebSocketListener!!.connectWebSocket(
-                Game.getInstance()!!.id,
-                tokenManager.getAccessToken()
-            )
-            chessWebSocket = chessWebSocketListener!!.getWebSocketInstance()
+            initializeSocket()
         }
+
         viewModel.socketStatus.observe(this){
             Log.e(TAG, "socketStatus changed to: $it")
         }
+
         viewModel.gameStatus.observe(this){
             Toast.makeText(this@GameActivity, "GameStatus changed to: $it", Toast.LENGTH_LONG).show()
             Log.e(TAG, "gameStatus changed to: $it")
         }
-        viewModel.startMessageData.observe(this){
-            startGame(it)
-        }
+
         viewModel.currentBoard.observe(this){
             binding.chessView.invalidate()
-
         }
 
         binding.ibArrowBack.setOnClickListener{
-            Log.e(TAG, "Showing previous board")
             viewModel.showPreviousBoard()
         }
         binding.ibArrowForward.setOnClickListener{
-            Log.e(TAG, "Showing next board")
             viewModel.showNextBoard()
-
-
         }
 
-
         binding.ibFlipBoard.setOnClickListener{
-            binding.chessView.flipBoard()
-            binding.chessView.invalidate()
-            val gameStartData = viewModel.startMessageData.value!!
-            if(!binding.chessView.isFlipped){
-                setPlayerOneData(gameStartData.whiteName, gameStartData.whiteEmail, gameStartData.whiteImage, gameStartData.whiteElo)
-                setPlayerTwoData(gameStartData.blackName, gameStartData.blackEmail, gameStartData.blackImage, gameStartData.blackElo)
-            } else{
-                setPlayerOneData(gameStartData.blackName, gameStartData.blackEmail, gameStartData.blackImage, gameStartData.blackElo)
-                setPlayerTwoData(gameStartData.whiteName, gameStartData.whiteEmail, gameStartData.whiteImage, gameStartData.whiteElo)
-            }
+            flipUserData()
         }
 
         binding.ibExtraSettings.setOnClickListener {
             if(gameMode == Constants.ONLINE_MODE){
-                val popupMenu = PopupMenu(this@GameActivity, binding.ibExtraSettings)
-                popupMenu.menuInflater.inflate(R.menu.popup_game_options_menu, popupMenu.menu)
-                popupMenu.setOnMenuItemClickListener { menuItem ->
-                    when (menuItem.itemId){
-                        R.id.resign -> {
-                            showConcedeDialog()
-                            return@setOnMenuItemClickListener true
-                        }
-                        else -> {return@setOnMenuItemClickListener true}
-                    }
-                }
-                popupMenu.show()
+                showOnlineOptionsMenu()
             } else{
                 //TODO: Add extra settings for analysis, like adding a comment
             }
 
+        }
+    }
+    private fun showOnlineOptionsMenu(){
+        val popupMenu = PopupMenu(this@GameActivity, binding.ibExtraSettings)
+        popupMenu.menuInflater.inflate(R.menu.popup_game_options_menu, popupMenu.menu)
+        popupMenu.setOnMenuItemClickListener { menuItem ->
+            when (menuItem.itemId){
+                R.id.resign -> {
+                    showConcedeDialog()
+                    return@setOnMenuItemClickListener true
+                }
+                else -> {return@setOnMenuItemClickListener true}
+            }
+        }
+        popupMenu.show()
+    }
+    private fun flipUserData(){
+        binding.chessView.flipBoard()
+        binding.chessView.invalidate()
+        val startData = viewModel.startMessageData.value!!
+        if(!binding.chessView.isFlipped){
+            setPlayerOneData(startData.whiteName, startData.whiteEmail, startData.whiteImage, startData.whiteElo)
+            setPlayerTwoData(startData.blackName, startData.blackEmail, startData.blackImage, startData.blackElo)
+        } else{
+            setPlayerOneData(startData.blackName, startData.blackEmail, startData.blackImage, startData.blackElo)
+            setPlayerTwoData(startData.whiteName, startData.whiteEmail, startData.whiteImage, startData.whiteElo)
+        }
+
+    }
+    private fun setUpChessView(){
+        binding.chessView.chessGameInterface = this
+        binding.chessView.gameMode = gameMode
+    }
+    private fun initializeSocket(){
+        chessWebSocketListener = ChessWebSocketListener(viewModel)
+        chessWebSocketListener!!.connectWebSocket(
+            Game.getInstance()!!.id,
+            tokenManager.getAccessToken()
+        )
+        chessWebSocket = chessWebSocketListener!!.getWebSocketInstance()
+    }
+    private fun loadGameForAnalysis(){
+        val startData = intent.getParcelableExtra(Constants.START_DATA, GameStartMessage::class.java)!!
+        val moves : String = intent.getStringExtra(Constants.MOVES_LIST)!!
+
+        viewModel.startGame(startData)
+
+        for(i in moves.indices step 5){
+            val move : String = moves.substring(i, i + 5)
+            val moveMessage = MoveMessage(
+                "",
+                startCol = move[0].digitToInt(),
+                startRow = move[1].digitToInt(),
+                endCol = move[2].digitToInt(),
+                endRow = move[3].digitToInt(),
+                moveType = matchCharToMoveType(move[4])
+            )
+            viewModel.playMoveFromServer(moveMessage)
         }
     }
 
@@ -161,7 +166,8 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
             'R' -> MoveType.PROMOTION_ROOK
             'B' -> MoveType.PROMOTION_BISHOP
             'K' -> MoveType.PROMOTION_KNIGHT
-            else -> {MoveType.REGULAR}
+            else -> {
+                MoveType.REGULAR}
         }
     }
 
@@ -170,7 +176,7 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         builder.setTitle("Resign Game")
         builder.setMessage("Do you want to resign?")
         builder.setPositiveButton("Yes"){ dialog, _ ->
-            sendMessageToServer(ConcedeGameMessage(currentPlayerEmail))
+            sendMessageToServer(ConcedeGameMessage(viewModel.currentPlayerEmail))
             dialog.dismiss()
             finish()
         }
@@ -323,13 +329,13 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
      */
     private fun setPlayerOneData(name: String, email: String, image : String, elo : Int) {
         val fullName : String = if(viewModel.isWhite){
-            if(email == currentPlayerEmail){
+            if(email == viewModel.currentPlayerEmail){
                 "$name (White) ($elo)"
             } else{
                 "$name (Black) ($elo)"
             }
         } else{
-            if(email == currentPlayerEmail){
+            if(email == viewModel.currentPlayerEmail){
                 "$name (Black) ($elo)"
             } else{
                 "$name (White) ($elo)"
@@ -352,13 +358,13 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
      */
     private fun setPlayerTwoData(name: String, email: String, image: String, elo : Int) {
         val fullName : String = if(!viewModel.isWhite){
-            if(email != currentPlayerEmail){
+            if(email != viewModel.currentPlayerEmail){
                 "$name (White) ($elo)"
             } else{
                 "$name (Black) ($elo)"
             }
         } else {
-            if (email != currentPlayerEmail) {
+            if (email != viewModel.currentPlayerEmail) {
                 "$name (Black) ($elo)"
             } else {
                 "$name (White) ($elo)"
@@ -373,29 +379,6 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
             .into(binding.ivP2Image)
 
     }
-
-    /*
-    Runs when 2 players joined into the game.
-    Sets the Data in the ui and informs the user the game has started.
-     */
-    private fun startGame(startMessage: GameStartMessage) {
-        hideProgressDialog()
-        val playerColor : Color = if(viewModel.isWhite){
-            Color.WHITE
-        }else{
-            Color.BLACK
-        }
-        runOnUiThread{
-            setPlayerOneData(startMessage.whiteName, startMessage.whiteEmail, startMessage.whiteImage, startMessage.whiteElo)
-            setPlayerTwoData(startMessage.blackName, startMessage.blackEmail, startMessage.blackImage, startMessage.blackElo)
-            if(gameMode != Constants.ANALYSIS_MODE){
-                Toast.makeText(this@GameActivity, "Game started! You are playing $playerColor", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-
-    }
-
     override fun goToLastMove(){
         viewModel.goToLatestMove()
     }

@@ -2,6 +2,7 @@ package com.hellostranger.chess_app.dto.websocket
 
 import android.os.Parcelable
 import com.google.gson.annotations.SerializedName
+import com.hellostranger.chess_app.dto.enums.WebsocketMessageType
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
@@ -30,7 +31,7 @@ class GameStartMessage (
     @SerializedName("blackElo")
     val blackElo : Int,
 
-    ) : WebSocketMessage(MessageType.START), Parcelable{
+    ) : WebSocketMessage(WebsocketMessageType.START), Parcelable{
     override fun toString(): String {
         return "Game Start. white name: $whiteName. black name: $blackName. white email: $whiteEmail. black email: $blackEmail. whiteImage: $whiteImage. blackImage: $blackImage"
     }

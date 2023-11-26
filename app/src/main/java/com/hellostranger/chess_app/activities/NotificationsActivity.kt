@@ -4,12 +4,11 @@ import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import androidx.lifecycle.lifecycleScope
-import com.hellostranger.chess_app.NotificationAdapter
-import com.hellostranger.chess_app.R
+import com.hellostranger.chess_app.rv.adapters.NotificationAdapter
 import com.hellostranger.chess_app.databinding.ActivityNotificationsBinding
-import com.hellostranger.chess_app.dto.FriendRequest
-import com.hellostranger.chess_app.models.entites.Notification
-import com.hellostranger.chess_app.network.retrofit.general.GeneralRetrofitClient
+import com.hellostranger.chess_app.dto.requests.FriendRequest
+import com.hellostranger.chess_app.models.rvEntities.Notification
+import com.hellostranger.chess_app.network.retrofit.backend.BackendRetrofitClient
 import com.hellostranger.chess_app.utils.Constants
 import com.hellostranger.chess_app.utils.MyApp
 import com.hellostranger.chess_app.utils.TokenManager
@@ -61,7 +60,7 @@ class NotificationsActivity : AppCompatActivity() {
     }
 
     private suspend fun updateRequests(){
-        val response = GeneralRetrofitClient.instance.getFriendRequests(tokenManager.getUserEmail())
+        val response = BackendRetrofitClient.instance.getFriendRequests(tokenManager.getUserEmail())
         if(response.isSuccessful && response.body() != null){
             val notificationList : MutableList<Notification> = mutableListOf()
             for(friendRequest : FriendRequest in response.body()!!){
@@ -74,7 +73,7 @@ class NotificationsActivity : AppCompatActivity() {
             }
         }
     }
-    private fun initializeGamesAdapter() : NotificationAdapter{
+    private fun initializeGamesAdapter() : NotificationAdapter {
         return NotificationAdapter(
             NotificationAdapter.NotificationOnClickListener(
                 {
@@ -89,7 +88,7 @@ class NotificationsActivity : AppCompatActivity() {
             )
         )
     }
-    private fun initializeFriendsAdapter() : NotificationAdapter{
+    private fun initializeFriendsAdapter() : NotificationAdapter {
         val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable ->
             throwable.printStackTrace()
         }
@@ -97,13 +96,13 @@ class NotificationsActivity : AppCompatActivity() {
             NotificationAdapter.NotificationOnClickListener(
                 {
                     CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
-                        GeneralRetrofitClient.instance.acceptFriendRequest(tokenManager.getUserEmail(), it.id)
+                        BackendRetrofitClient.instance.acceptFriendRequest(tokenManager.getUserEmail(), it.id)
                         updateRequests()
                     }
                 },
                 {
                     CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
-                        GeneralRetrofitClient.instance.rejectFriendRequest(tokenManager.getUserEmail(), it.id)
+                        BackendRetrofitClient.instance.rejectFriendRequest(tokenManager.getUserEmail(), it.id)
                         updateRequests()
                     }
                 },

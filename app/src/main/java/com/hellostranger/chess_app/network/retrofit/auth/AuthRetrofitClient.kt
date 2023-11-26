@@ -2,8 +2,8 @@ package com.hellostranger.chess_app.network.retrofit.auth
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import com.hellostranger.chess_app.models.gameModels.pieces.Piece
-import com.hellostranger.chess_app.models.gameModels.pieces.PieceJsonDeserializer
+import com.hellostranger.chess_app.gameClasses.pieces.Piece
+import com.hellostranger.chess_app.gameClasses.pieces.PieceJsonDeserializer
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 

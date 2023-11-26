@@ -13,7 +13,7 @@ import androidx.appcompat.widget.AppCompatButton
 import androidx.appcompat.widget.Toolbar
 import com.hellostranger.chess_app.utils.MyApp
 import com.hellostranger.chess_app.R
-import com.hellostranger.chess_app.dto.AuthenticateRequest
+import com.hellostranger.chess_app.dto.auth.AuthenticateRequest
 import com.hellostranger.chess_app.network.retrofit.auth.AuthRetrofitClient
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope

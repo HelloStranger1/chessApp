@@ -1,8 +1,8 @@
 package com.hellostranger.chess_app.gameHelpers
 
 import com.hellostranger.chess_app.dto.websocket.MoveMessage
-import com.hellostranger.chess_app.models.gameModels.Square
-import com.hellostranger.chess_app.models.gameModels.pieces.Piece
+import com.hellostranger.chess_app.gameClasses.Square
+import com.hellostranger.chess_app.gameClasses.pieces.Piece
 
 
 interface ChessGameInterface {

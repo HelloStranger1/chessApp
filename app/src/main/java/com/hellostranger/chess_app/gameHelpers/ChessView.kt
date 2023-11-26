@@ -1,8 +1,5 @@
 package com.hellostranger.chess_app.gameHelpers
 
-import android.animation.Animator
-import android.animation.AnimatorSet
-import android.animation.ObjectAnimator
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -14,24 +11,15 @@ import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
-import android.view.animation.Animation
-import android.view.animation.LinearInterpolator
-import android.view.animation.Transformation
 import androidx.core.content.ContextCompat
 import com.hellostranger.chess_app.R
 import com.hellostranger.chess_app.dto.websocket.MoveMessage
-import com.hellostranger.chess_app.models.gameModels.Square
-import com.hellostranger.chess_app.models.gameModels.enums.MoveType
-import com.hellostranger.chess_app.models.gameModels.pieces.Piece
+import com.hellostranger.chess_app.gameClasses.Square
+import com.hellostranger.chess_app.dto.enums.MoveType
+import com.hellostranger.chess_app.gameClasses.pieces.Piece
 import com.hellostranger.chess_app.utils.Constants
 import com.hellostranger.chess_app.utils.Constants.imgResIDs
 import com.hellostranger.chess_app.utils.Constants.scaleFactor
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
-import java.util.concurrent.TimeUnit
-import kotlin.math.abs
-import kotlin.math.max
-import kotlin.math.min
 
 class ChessView(context : Context?, attrs : AttributeSet?) : View(context, attrs) {
     private var lightColor = ContextCompat.getColor(context!!, R.color.lightSquare)

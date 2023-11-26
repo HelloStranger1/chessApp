@@ -9,24 +9,24 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.room.Room
 import com.bumptech.glide.Glide
 import com.google.gson.GsonBuilder
-import com.hellostranger.chess_app.GameHistoryEvent
-import com.hellostranger.chess_app.GameHistoryRepository
-import com.hellostranger.chess_app.GamesHistoryAdapter
-import com.hellostranger.chess_app.ProfileViewModel
+import com.hellostranger.chess_app.rv.GameHistoryEvent
+import com.hellostranger.chess_app.database.UserRepository
+import com.hellostranger.chess_app.rv.adapters.GamesHistoryAdapter
+import com.hellostranger.chess_app.viewModels.ProfileViewModel
 import com.hellostranger.chess_app.utils.MyApp
 import com.hellostranger.chess_app.R
 import com.hellostranger.chess_app.utils.TokenManager
-import com.hellostranger.chess_app.ProfileViewModelFactory
+import com.hellostranger.chess_app.viewModels.factories.ProfileViewModelFactory
 import com.hellostranger.chess_app.databinding.ActivityProfileBinding
 import com.hellostranger.chess_app.dto.websocket.GameStartMessage
-import com.hellostranger.chess_app.models.entites.User
-import com.hellostranger.chess_app.models.gameModels.Board
-import com.hellostranger.chess_app.models.gameModels.Game
-import com.hellostranger.chess_app.network.retrofit.general.GeneralRetrofitClient
+import com.hellostranger.chess_app.models.entities.User
+import com.hellostranger.chess_app.gameClasses.Board
+import com.hellostranger.chess_app.gameClasses.Game
+import com.hellostranger.chess_app.network.retrofit.backend.BackendRetrofitClient
 import com.hellostranger.chess_app.utils.Constants
 import com.hellostranger.chess_app.database.GameHistoryDatabase
-import com.hellostranger.chess_app.models.gameModels.pieces.Piece
-import com.hellostranger.chess_app.models.gameModels.pieces.PieceJsonDeserializer
+import com.hellostranger.chess_app.gameClasses.pieces.Piece
+import com.hellostranger.chess_app.gameClasses.pieces.PieceJsonDeserializer
 
 private const val TAG = "ProfileActivity"
 class ProfileActivity : BaseActivity() {
@@ -65,7 +65,7 @@ class ProfileActivity : BaseActivity() {
         }
 
         viewModel = ViewModelProvider(this,
-            ProfileViewModelFactory(GameHistoryRepository(GeneralRetrofitClient.instance, tokenManager, favoriteGamesDb.dao))
+            ProfileViewModelFactory(UserRepository(BackendRetrofitClient.instance, tokenManager, favoriteGamesDb.dao))
         )[ProfileViewModel::class.java]
 
         adapter = initializeGameHistoryAdapter()
@@ -125,7 +125,7 @@ class ProfileActivity : BaseActivity() {
 
         binding.ivToolbarBack.setOnClickListener { onBackPressed() }
     }
-    private fun initializeGameHistoryAdapter() : GamesHistoryAdapter{
+    private fun initializeGameHistoryAdapter() : GamesHistoryAdapter {
         return GamesHistoryAdapter(
             GamesHistoryAdapter.GameHistoryOnClickListener(
                 {

@@ -9,9 +9,9 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.google.android.material.snackbar.Snackbar
 import com.hellostranger.chess_app.R
-import com.hellostranger.chess_app.models.gameModels.enums.Color
-import com.hellostranger.chess_app.models.gameModels.Game
-import com.hellostranger.chess_app.models.gameModels.enums.PieceType
+import com.hellostranger.chess_app.gameClasses.enums.Color
+import com.hellostranger.chess_app.gameClasses.Game
+import com.hellostranger.chess_app.gameClasses.enums.PieceType
 
 open class BaseActivity : AppCompatActivity() {
 
@@ -23,6 +23,7 @@ open class BaseActivity : AppCompatActivity() {
         title: String,
         message: String,
     ) {
+
         val builder: AlertDialog.Builder = AlertDialog.Builder(this)
         builder.setTitle(title)
             .setMessage(message)

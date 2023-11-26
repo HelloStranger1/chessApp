@@ -14,14 +14,14 @@ import com.google.android.material.navigation.NavigationView
 import com.hellostranger.chess_app.utils.MyApp
 import com.hellostranger.chess_app.R
 import com.hellostranger.chess_app.utils.TokenManager
-import com.hellostranger.chess_app.models.gameModels.Game
+import com.hellostranger.chess_app.gameClasses.Game
 import com.hellostranger.chess_app.databinding.ActivityMainBinding
-import com.hellostranger.chess_app.dto.JoinRequest
-import com.hellostranger.chess_app.models.PuzzlesList
-import com.hellostranger.chess_app.models.entites.User
+import com.hellostranger.chess_app.dto.requests.JoinRequest
+import com.hellostranger.chess_app.gameHelpers.PuzzlesList
+import com.hellostranger.chess_app.models.entities.User
 import com.hellostranger.chess_app.network.retrofit.auth.AuthRetrofitClient
-import com.hellostranger.chess_app.network.retrofit.general.GeneralRetrofitClient
-import com.hellostranger.chess_app.network.retrofit.general.PuzzleRetrofitClient
+import com.hellostranger.chess_app.network.retrofit.backend.BackendRetrofitClient
+import com.hellostranger.chess_app.network.retrofit.puzzleApi.PuzzleRetrofitClient
 import com.hellostranger.chess_app.utils.Constants
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -49,7 +49,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
             Log.e(TAG, "(Fetching User) user email is: ${tokenManager.getUserEmail()}")
             val response =
-                GeneralRetrofitClient.instance.getUserByEmail(tokenManager.getUserEmail())
+                BackendRetrofitClient.instance.getUserByEmail(tokenManager.getUserEmail())
             Log.e(TAG, "(Fetching User) response is: $response and the body is: ${response.body()}")
             if(response.isSuccessful && response.body() != null){
                 runOnUiThread {
@@ -64,7 +64,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
             showProgressDialog("Joining random game...")
             CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
                 val response =
-                    GeneralRetrofitClient.instance.joinRandomGame(JoinRequest(playerEmail))
+                    BackendRetrofitClient.instance.joinRandomGame(JoinRequest(playerEmail))
                 Log.e(TAG, "(Joining Random Game) Response is: $response and is it successful? ${response.isSuccessful}")
                 if(response.isSuccessful && response.body() != null){
                     Log.e(TAG, "Game joined, body: ${response.body()}")
