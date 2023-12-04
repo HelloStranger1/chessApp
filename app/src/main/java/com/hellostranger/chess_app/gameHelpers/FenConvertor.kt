@@ -88,7 +88,8 @@ class FenConvertor {
         fen = fen.substring(2)
         game.isP1Turn = (curChar == 'w')
         curChar = fen[1]
-        fen = fen.substring(2)
+        fen = fen.substring(1)
+        Log.e("TAG","fen before checking castle is: $fen and cur char is: $curChar")
         if (curChar != '-') {
             while (curChar != ' ') {
                 when (curChar) {
@@ -111,9 +112,14 @@ class FenConvertor {
                 }
                 curChar = fen[1]
                 fen = fen.substring(1)
+                Log.e("TAG","FEN $fen, crchar $curChar")
             }
+        } else{
+            fen = fen.substring(1)
         }
         //En-peasant
+
+        Log.e("TAG", "FEN before en passant is: $fen")
         fen = if (fen[1] == '-') {
             board.phantomPawnSquare = (null)
             fen.substring(3)

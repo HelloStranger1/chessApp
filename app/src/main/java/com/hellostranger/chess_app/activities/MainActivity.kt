@@ -17,6 +17,7 @@ import com.hellostranger.chess_app.utils.TokenManager
 import com.hellostranger.chess_app.gameClasses.Game
 import com.hellostranger.chess_app.databinding.ActivityMainBinding
 import com.hellostranger.chess_app.dto.requests.JoinRequest
+import com.hellostranger.chess_app.gameHelpers.FenConvertor
 import com.hellostranger.chess_app.gameHelpers.PuzzlesList
 import com.hellostranger.chess_app.models.entities.User
 import com.hellostranger.chess_app.network.retrofit.auth.AuthRetrofitClient
@@ -42,7 +43,8 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
 
         setupActionBar()
         binding.navView.setNavigationItemSelectedListener(this)
-
+        val fenConvertor = FenConvertor()
+        fenConvertor.convertFENToGame("r3k3/pp2np1Q/3B4/5b2/1P3n2/5N2/P1PK1PPP/q4B1R w q - 1 22")
         val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable ->
             throwable.printStackTrace()
         }
@@ -90,7 +92,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
                 if(response.isSuccessful && response.body() != null){
                     Log.e("TAG", "Got puzzles. response: ${response.body()}")
                     PuzzlesList.instance.addPuzzles(response.body()!!)
-                    Log.e("TAG", "PuzzleList: ${PuzzlesList.instance} and the list is: ")
+                    Log.e("TAG", "PuzzleList: ${PuzzlesList.instance}")
                     val intent = Intent(this@MainActivity, PuzzleActivity::class.java)
                     startActivity(intent)
                 }

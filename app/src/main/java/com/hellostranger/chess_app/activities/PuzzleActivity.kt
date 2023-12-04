@@ -2,9 +2,11 @@ package com.hellostranger.chess_app.activities
 
 import android.os.Bundle
 import android.util.Log
+import android.view.Display
 import android.view.MenuItem
 import android.view.View
 import android.widget.PopupMenu
+import android.widget.Toast
 import com.hellostranger.chess_app.R
 import com.hellostranger.chess_app.databinding.ActivityPuzzleBinding
 import com.hellostranger.chess_app.models.entities.Puzzle
@@ -18,8 +20,13 @@ import com.hellostranger.chess_app.gameClasses.Square
 import com.hellostranger.chess_app.dto.enums.MoveType
 import com.hellostranger.chess_app.gameClasses.enums.PieceType
 import com.hellostranger.chess_app.gameClasses.pieces.Piece
+import com.hellostranger.chess_app.network.retrofit.puzzleApi.PuzzleRetrofitClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 
 class PuzzleActivity : BaseActivity(), ChessGameInterface, PopupMenu.OnMenuItemClickListener {
     private lateinit var binding : ActivityPuzzleBinding
@@ -36,25 +43,55 @@ class PuzzleActivity : BaseActivity(), ChessGameInterface, PopupMenu.OnMenuItemC
         binding = ActivityPuzzleBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-
         if(PuzzlesList.instance.getCurrentPuzzle() == null){
             Log.e(TAG, "We don't have any puzzle")
         }
-        currentPuzzle = PuzzlesList.instance.getCurrentPuzzle()!!
-        Game.setInstance(fenConvertor.convertFENToGame(currentPuzzle.fen))
-        isWhite = !Game.getInstance()!!.isP1Turn
-        if(isWhite) {
-            binding.ivLogo.setImageResource(R.drawable.ic_white_queen)
-            binding.tv2.text = getString(R.string.white_to_play)
-        }
-        boardHistory.add(Game.getInstance()!!.board)
-        updatePiecesResId()
         binding.chessView.chessGameInterface = this
+
+        updateCurrentPuzzle()
+        updateUIToStartPuzzle()
+
+        startCurrentPuzzle()
+
+        binding.btnRetry.setOnClickListener {
+            retryPuzzle()
+        }
+        binding.btnNext.setOnClickListener {
+            goToNextPuzzle()
+        }
+
+
+    }
+
+    private fun updateUIToStartPuzzle(){
+        binding.llNextPuzzle.visibility = View.GONE
+        binding.tv1.text = getString(R.string.your_turn)
+        binding.tv2.visibility = View.VISIBLE
+        if(isWhite){
+            binding.ivLogo.setImageResource(R.drawable.ic_white_king)
+            binding.tv2.text = getString(R.string.white_to_play)
+        } else{
+            binding.ivLogo.setImageResource(R.drawable.ic_black_king)
+            binding.tv2.text = getString(R.string.black_to_play)
+        }
+
+    }
+
+    private fun startCurrentPuzzle(){
         val newBoard = boardHistory[mCurrentBoardShown].clone().movePiece(convertMoveToMoveMessage(currentPuzzle.moves[mCurrentBoardShown]))
         newBoard.previousMove = convertMoveToMoveMessage(currentPuzzle.moves[mCurrentBoardShown])
         boardHistory.add(newBoard)
         mCurrentBoardShown += 1
+    }
+    private fun updateCurrentPuzzle(){
+        currentPuzzle = PuzzlesList.instance.getCurrentPuzzle()!!
+        Game.setInstance(fenConvertor.convertFENToGame(currentPuzzle.fen))
 
+        isWhite = !Game.getInstance()!!.isP1Turn
+        boardHistory.clear()
+        mCurrentBoardShown = 0;
+        boardHistory.add(Game.getInstance()!!.board)
+        updatePiecesResId()
 
     }
     private fun setPiecePromotionMenu(){
@@ -165,28 +202,68 @@ class PuzzleActivity : BaseActivity(), ChessGameInterface, PopupMenu.OnMenuItemC
             updatedMoveMessage.endRow == correctMove.endRow &&
             updatedMoveMessage.moveType == correctMove.moveType
         ){
-            if(mCurrentBoardShown == currentPuzzle.moves.size -1){
-                showCorrectMoveUi(true)
-            }else{
-                showCorrectMoveUi(false)
+            val isOnLastMove = mCurrentBoardShown == currentPuzzle.moves.size - 1
+            showCorrectMoveUi(isOnLastMove);
+            playMoveForPuzzle(updatedMoveMessage)
+            if(!isOnLastMove){
+                CoroutineScope(Dispatchers.Main).launch {
+                    delay(100)
+                    playMoveForPuzzle(convertMoveToMoveMessage(currentPuzzle.moves[mCurrentBoardShown]))
+                }
+
+            } else{
+                binding.llNextPuzzle.visibility = View.VISIBLE
+                Toast.makeText(this, "Finished The puzzle!", Toast.LENGTH_LONG).show()
+
             }
-            var newBoard = boardHistory[mCurrentBoardShown].clone().movePiece(updatedMoveMessage)
-            newBoard.previousMove = updatedMoveMessage
-            boardHistory.add(newBoard)
-            mCurrentBoardShown += 1
-            binding.chessView.invalidate()
-            runBlocking {
-                delay(500)
-            }
-            newBoard = boardHistory[mCurrentBoardShown].clone().movePiece(convertMoveToMoveMessage(currentPuzzle.moves[mCurrentBoardShown]))
-            newBoard.previousMove = convertMoveToMoveMessage(currentPuzzle.moves[mCurrentBoardShown])
-            boardHistory.add(newBoard)
-            mCurrentBoardShown += 1
-            binding.chessView.invalidate()
+
         } else{
             Log.e(TAG, "MovePlayed: $updatedMoveMessage. the move we were expecting: $correctMove")
             showWrongMoveUi()
         }
+    }
+    private fun retryPuzzle(){
+        updateCurrentPuzzle()
+        updateUIToStartPuzzle()
+        startCurrentPuzzle()
+        CoroutineScope(Dispatchers.Main).launch {
+            delay(800)
+            binding.chessView.postInvalidate()
+        }
+    }
+    private fun goToNextPuzzle(){
+        if(PuzzlesList.instance.goToNextPuzzle() != null){
+            updateCurrentPuzzle()
+            updateUIToStartPuzzle()
+
+            CoroutineScope(Dispatchers.Main).launch {
+                delay(1000)
+                startCurrentPuzzle()
+                binding.chessView.postInvalidate()
+            }
+            return
+        }
+        //TODO: We ran out of puzzles
+        showProgressDialog("Please wait while we fetch new puzzles...")
+        CoroutineScope(Dispatchers.IO).launch {
+            val response =
+                PuzzleRetrofitClient.instance.getRandomPuzzle(4)
+            if (response.isSuccessful && response.body() != null) {
+                Log.e("TAG", "(PuzzleActivity) Got puzzles. response: ${response.body()}")
+                PuzzlesList.instance.addPuzzles(response.body()!!)
+                Log.e("TAG", "(PuzzleActivity) PuzzleList: ${PuzzlesList.instance}")
+            }
+            withContext(Dispatchers.Main){
+                goToNextPuzzle()
+            }
+        }
+    }
+    private fun playMoveForPuzzle(updatedMoveMessage: MoveMessage){
+        val newBoard = boardHistory[mCurrentBoardShown].clone().movePiece(updatedMoveMessage)
+        newBoard.previousMove = updatedMoveMessage
+        boardHistory.add(newBoard)
+        mCurrentBoardShown += 1;
+        binding.chessView.postInvalidate()
     }
 
     private fun showCorrectMoveUi(isLastMove : Boolean){
@@ -198,6 +275,7 @@ class PuzzleActivity : BaseActivity(), ChessGameInterface, PopupMenu.OnMenuItemC
         } else{
             binding.tv1.text = getString(R.string.best_move)
             binding.tv2.text = getString(R.string.keep_going)
+
         }
     }
     private fun showWrongMoveUi(){
