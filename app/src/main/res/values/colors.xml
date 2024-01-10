@@ -11,6 +11,7 @@
     <color name="primary_text_color">#363A43</color>
     <color name="secondary_text_color">#7A8089</color>
 
+    <color name="green_active">#1EB16A</color>
     <color name="snackbar_error_color">#F72400</color>
     <color name="lightSquare">#EEEEEE</color>
     <color name="darkSquare">#bfbdbd</color>

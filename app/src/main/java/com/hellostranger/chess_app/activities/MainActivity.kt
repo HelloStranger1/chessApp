@@ -11,6 +11,7 @@ import androidx.appcompat.widget.Toolbar
 import androidx.core.view.GravityCompat
 import com.bumptech.glide.Glide
 import com.google.android.material.navigation.NavigationView
+import com.google.errorprone.annotations.Keep
 import com.hellostranger.chess_app.utils.MyApp
 import com.hellostranger.chess_app.R
 import com.hellostranger.chess_app.utils.TokenManager
@@ -24,6 +25,7 @@ import com.hellostranger.chess_app.network.retrofit.auth.AuthRetrofitClient
 import com.hellostranger.chess_app.network.retrofit.backend.BackendRetrofitClient
 import com.hellostranger.chess_app.network.retrofit.puzzleApi.PuzzleRetrofitClient
 import com.hellostranger.chess_app.utils.Constants
+import com.hellostranger.chess_app.utils.KeepAlive
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -43,6 +45,9 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
 
         setupActionBar()
         binding.navView.setNavigationItemSelectedListener(this)
+
+
+        startService(Intent(this, KeepAlive::class.java))
         val fenConvertor = FenConvertor()
         fenConvertor.convertFENToGame("r3k3/pp2np1Q/3B4/5b2/1P3n2/5N2/P1PK1PPP/q4B1R w q - 1 22")
         val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable ->
@@ -93,6 +98,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
                     Log.e("TAG", "Got puzzles. response: ${response.body()}")
                     PuzzlesList.instance.addPuzzles(response.body()!!)
                     Log.e("TAG", "PuzzleList: ${PuzzlesList.instance}")
+                    hideProgressDialog()
                     val intent = Intent(this@MainActivity, PuzzleActivity::class.java)
                     startActivity(intent)
                 }
@@ -175,5 +181,10 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         binding.drawerLayout.closeDrawer(GravityCompat.START)
 
         return true
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        stopService(Intent(this, KeepAlive::class.java))
     }
 }

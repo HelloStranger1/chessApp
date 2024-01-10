@@ -52,6 +52,9 @@ interface BackendApiService {
     @POST("/api/users/remove-friend/{userEmail}")
     suspend fun deleteFriend(@Path("userEmail") userEmail : String, @Query("friendEmail") friendEmail : String) : Response<String>
 
+    @GET("/api/users/keep-alive/{userEmail}")
+    suspend fun keepAlive(@Path("userEmail") userEmail: String) : Response<String>
+
 
 
 

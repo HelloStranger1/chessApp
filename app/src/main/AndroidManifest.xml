@@ -22,6 +22,7 @@
         android:theme="@style/Theme.ChessApp"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
+        <service android:name=".utils.KeepAlive"/>
         <activity
             android:name=".activities.PuzzleActivity"
             android:exported="false" />

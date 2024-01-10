@@ -10,6 +10,7 @@ data class User(
     val name : String = "",
     val email : String = "",
     val elo : Int = 0,
+    val isActive : Boolean = false,
     val image : String = "",
     val accountCreation : String,
     val totalGames : Int = 0,

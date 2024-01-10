@@ -64,14 +64,25 @@
                     android:id="@+id/tv_username"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="8dp"
                     tools:text="username"
                     android:paddingVertical="10dp"
-                    android:paddingHorizontal="12dp"
                     android:textStyle="bold"
                     android:textSize="18sp"
                     android:layout_gravity="center"
                     android:textColor="@color/primary_text_color"
                     />
+                <View
+                    android:id="@+id/activity_box"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="2dp"
+                    android:layout_width="15dp"
+                    android:layout_height="15dp"
+                    android:background="@color/green_active"
+                    android:visibility="gone"
+                    />
+
             </LinearLayout>
             <TextView
                 android:id="@+id/tv_user_creation"

@@ -107,7 +107,6 @@ class ProfileActivity : BaseActivity() {
         }
         binding.tvSendFriendRequest.setOnClickListener {
             viewModel.sendFriendRequest(userEmail)
-
         }
         binding.tvUnfriend.setOnClickListener {
             viewModel.removeFriend(userEmail)
@@ -169,6 +168,11 @@ class ProfileActivity : BaseActivity() {
         binding.tvGamesDrawn.text = user.gamesDrawn.toString()
         binding.tvGamesWon.text = user.gamesWon.toString()
         binding.tvGamesLost.text = user.gamesLost.toString()
+        if(user.isActive){
+            binding.activityBox.visibility = View.VISIBLE
+        } else{
+            binding.activityBox.visibility = View.GONE
+        }
         binding.tvUserCreation.text = String.format(resources.getString(R.string.joined_at), user.accountCreation)
         Glide
             .with(this@ProfileActivity)
