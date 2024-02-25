@@ -244,7 +244,7 @@ class PuzzleActivity : BaseActivity(), ChessGameInterface, PopupMenu.OnMenuItemC
             return
         }
         //TODO: We ran out of puzzles
-        showProgressDialog("Please wait while we fetch new puzzles...")
+        showProgressDialog("Please wait while we fetch new puzzles...", false)
         CoroutineScope(Dispatchers.IO).launch {
             val response =
                 PuzzleRetrofitClient.instance.getRandomPuzzle(4)

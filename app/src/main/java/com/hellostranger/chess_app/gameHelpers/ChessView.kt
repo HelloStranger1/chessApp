@@ -296,7 +296,13 @@ class ChessView(context : Context?, attrs : AttributeSet?) : View(context, attrs
         }
         for(row in 0..7){
             for (col in 0..7) {
-                drawSquareAt(canvas, col, row, (col+row) % 2 == 0)
+                val isDark = if(isFlipped) {
+                    (col+row) % 2 == 0
+                } else {
+                    (col+row) % 2 != 0
+                }
+
+                drawSquareAt(canvas, col, row, isDark)
             }
         }
     }

@@ -4,22 +4,25 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.MenuItem
+import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.widget.Toolbar
+import androidx.core.os.bundleOf
 import androidx.core.view.GravityCompat
+import androidx.fragment.app.commit
 import com.bumptech.glide.Glide
 import com.google.android.material.navigation.NavigationView
-import com.google.errorprone.annotations.Keep
+import com.hellostranger.chess_app.GameResultFragment
 import com.hellostranger.chess_app.utils.MyApp
 import com.hellostranger.chess_app.R
 import com.hellostranger.chess_app.utils.TokenManager
 import com.hellostranger.chess_app.gameClasses.Game
 import com.hellostranger.chess_app.databinding.ActivityMainBinding
 import com.hellostranger.chess_app.dto.requests.JoinRequest
-import com.hellostranger.chess_app.gameHelpers.FenConvertor
 import com.hellostranger.chess_app.gameHelpers.PuzzlesList
+import com.hellostranger.chess_app.models.entities.Puzzle
 import com.hellostranger.chess_app.models.entities.User
 import com.hellostranger.chess_app.network.retrofit.auth.AuthRetrofitClient
 import com.hellostranger.chess_app.network.retrofit.backend.BackendRetrofitClient
@@ -38,6 +41,12 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
     private lateinit var toolbarMainActivity : Toolbar
 
     private var tokenManager : TokenManager = MyApp.tokenManager
+
+    private val DEFAULT_PUZZLE_AMOUNT = 4
+
+    private val coroutineExceptionHandler = CoroutineExceptionHandler{ _, throwable ->
+        throwable.printStackTrace()
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -48,70 +57,164 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
 
 
         startService(Intent(this, KeepAlive::class.java))
-        val fenConvertor = FenConvertor()
-        fenConvertor.convertFENToGame("r3k3/pp2np1Q/3B4/5b2/1P3n2/5N2/P1PK1PPP/q4B1R w q - 1 22")
-        val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable ->
-            throwable.printStackTrace()
-        }
+
+
         CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
-            Log.e(TAG, "(Fetching User) user email is: ${tokenManager.getUserEmail()}")
-            val response =
-                BackendRetrofitClient.instance.getUserByEmail(tokenManager.getUserEmail())
-            Log.e(TAG, "(Fetching User) response is: $response and the body is: ${response.body()}")
-            if(response.isSuccessful && response.body() != null){
-                runOnUiThread {
-                    updateNavigationUserDetails(response.body()!!)
+            val user : User? = fetchUser()
+            if(user != null){
+                runOnUiThread{
+                    updateNavigationUserDetails(user)
                 }
             }
         }
 
 
         binding.appBarMain.mainContent.btnJoinRandom.setOnClickListener {
-            val playerEmail = tokenManager.getUserEmail()
-            showProgressDialog("Joining random game...")
+            showProgressDialog("Joining random game...", false)
             CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
-                val response =
-                    BackendRetrofitClient.instance.joinRandomGame(JoinRequest(playerEmail))
-                Log.e(TAG, "(Joining Random Game) Response is: $response and is it successful? ${response.isSuccessful}")
-                if(response.isSuccessful && response.body() != null){
-                    Log.e(TAG, "Game joined, body: ${response.body()}")
-                    Game.setInstance(response.body()!!)
+                val game : Game? = joinRandomGame(JoinRequest(tokenManager.getUserEmail()))
+                game?.let {
+                    Game.setInstance(it)
                     updatePiecesResId()
                     runOnUiThread {
                         hideProgressDialog()
-                        val intent = Intent(this@MainActivity, GameActivity::class.java)
-                        intent.putExtra("MODE", Constants.ONLINE_MODE)
-                        startActivity(intent)
+                        launchIntoGame()
                     }
                 }
             }
-            Toast.makeText(this@MainActivity, "Game Joined", Toast.LENGTH_SHORT).show()
         }
 
 
-        binding.appBarMain.mainContent.btnCreate.setOnClickListener {
-            showProgressDialog("Fetching puzzle...")
+        binding.appBarMain.mainContent.btnDoPuzzle.setOnClickListener {
+            showProgressDialog("Fetching puzzle...", false)
             CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
-                val response =
-                    PuzzleRetrofitClient.instance.getRandomPuzzle(4)
-                if(response.isSuccessful && response.body() != null){
-                    Log.e("TAG", "Got puzzles. response: ${response.body()}")
-                    PuzzlesList.instance.addPuzzles(response.body()!!)
-                    Log.e("TAG", "PuzzleList: ${PuzzlesList.instance}")
+
+                val puzzlesList : List<Puzzle>? = fetchPuzzles(DEFAULT_PUZZLE_AMOUNT)
+
+                puzzlesList?.let {
+                    PuzzlesList.instance.addPuzzles(it)
                     hideProgressDialog()
                     val intent = Intent(this@MainActivity, PuzzleActivity::class.java)
                     startActivity(intent)
                 }
             }
         }
-        binding.appBarMain.mainContent.btnJoinSpecific.setOnClickListener{
-            Log.e(TAG, "email is: ${binding.appBarMain.mainContent.etGameId.text}")
+        binding.appBarMain.mainContent.btnLookupUser.setOnClickListener{
+            Log.e(TAG, "email is: ${binding.appBarMain.mainContent.etUserEmail.text}")
             val intent = Intent(this, ProfileActivity::class.java)
-            intent.putExtra(Constants.GUEST_EMAIL, binding.appBarMain.mainContent.etGameId.text.toString() )
+            intent.putExtra(Constants.GUEST_EMAIL, binding.appBarMain.mainContent.etUserEmail.text.toString() )
             startActivity(intent)
         }
 
+        binding.appBarMain.mainContent.btnCreatePrivate.setOnClickListener {
+            Log.e(TAG, "Creating private game")
+            showProgressDialog("Creating game...")
+            CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
+                val response = BackendRetrofitClient.instance.createPrivateGame()
+                if(!response.isSuccessful){
+                    Log.e(TAG, "Failed to create private game. Respone is:" + response.errorBody())
+                } else{
+                    runOnUiThread {
+                        Toast.makeText(this@MainActivity, "Code is: " + response.body(), Toast.LENGTH_LONG).show()
+                    }
+                    Log.e(TAG, "Private code is: " + response.body())
+                }
+                runOnUiThread {
+                    hideProgressDialog()
+                }
+            }
+        }
+        binding.appBarMain.mainContent.btnJoinSpecific.setOnClickListener {
+            val code : String = binding.appBarMain.mainContent.etGameId.text.toString()
+            Log.e(TAG, "Join private game. code is: " + code)
+            if(code.isEmpty() || code.isBlank()){
+                runOnUiThread{
+                    Toast.makeText(this@MainActivity, "You need to put a code!!", Toast.LENGTH_LONG).show()
+                }
+                return@setOnClickListener
+            }
+            showProgressDialog("Joining private game...")
 
+            CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
+                val game : Game? = JoinPrivateGame(JoinRequest(tokenManager.getUserEmail()), code)
+                game?.let {
+                    Game.setInstance(it)
+                    updatePiecesResId()
+                    runOnUiThread {
+                        hideProgressDialog()
+                        launchIntoGame()
+                    }
+                }
+            }
+
+        }
+
+
+    }
+
+    private fun launchIntoGame() {
+        val intent = Intent(this@MainActivity, GameActivity::class.java)
+        intent.putExtra("MODE", Constants.ONLINE_MODE)
+        startActivity(intent)
+    }
+
+    private suspend fun joinRandomGame(joinRequest: JoinRequest) : Game? {
+        val response =
+            BackendRetrofitClient.instance.joinRandomGame(joinRequest)
+        if(!response.isSuccessful){
+            Log.e(TAG, "(joinRandomGame) Response isn't successful. Error is: " + response.errorBody())
+            return null;
+        }
+        if(response.body() == null){
+            Log.e(TAG, "(joinRandomGame) Response body is null.")
+            return null;
+        }
+        Log.e(TAG, "Game joined, body: ${response.body()}")
+        return response.body()!!
+
+    }
+    private suspend fun JoinPrivateGame(joinRequest: JoinRequest, code : String) : Game? {
+        val response =
+            BackendRetrofitClient.instance.joinPrivateGame(code, joinRequest)
+        if(!response.isSuccessful){
+            Log.e(TAG, "(joinPrivate) Response isn't successful. Error is: " + response.errorBody())
+            return null;
+        }
+        if(response.body() == null){
+            Log.e(TAG, "(joinPrivate) Response body is null.")
+            return null;
+        }
+        Log.e(TAG, "Game joined, body: ${response.body()}")
+        return response.body()!!
+
+    }
+
+    private suspend fun fetchPuzzles(puzzlesAmount : Int) : List<Puzzle>? {
+        val response =
+            PuzzleRetrofitClient.instance.getRandomPuzzle(puzzlesAmount)
+        if (!response.isSuccessful) {
+            Log.e(TAG, "(fetchPuzzle) Response isn't successful. Error is: " + response.errorBody())
+            return null;
+        }
+        if (response.body() == null) {
+            Log.e(TAG, "(fetchPuzzle) Response body is null.")
+            return null;
+        }
+        return response.body()!!
+    }
+
+    private suspend fun fetchUser() : User?{
+        val response =
+            BackendRetrofitClient.instance.getUserByEmail(tokenManager.getUserEmail())
+        if(!response.isSuccessful){
+            Log.e(TAG, "(fetchUser) Response isn't successful. Error is: " + response.errorBody())
+            return null;
+        }
+        if(response.body() == null){
+            Log.e(TAG, "(fetchUser) Response body is null.")
+            return null;
+        }
+        return response.body()!!
     }
     private fun updateNavigationUserDetails(user : User){
         val headerView =  binding.navView.getHeaderView(0)

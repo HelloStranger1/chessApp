@@ -12,7 +12,7 @@ class UserRepository(private val  retrofitService : BackendApiService, val token
 
     suspend fun upsertFavoriteGameHistory(gameHistory: GameHistory) = gameHistoryDao.upsertGameHistory(gameHistory)
 
-    suspend fun removeGameHistoryFromFavorites(gameHistory : GameHistory) = gameHistoryDao.deleteGameHistory(gameHistory.localId)
+    suspend fun removeGameHistoryFromFavorites(gameHistory : GameHistory) = gameHistoryDao.deleteGameHistory(gameHistory.id)
 
     fun getFavoriteGameHistories() = gameHistoryDao.getGames()
     fun getFavoriteGameHistoryById(gameHistoryId: Int) = gameHistoryDao.getSpecificGame(gameHistoryId)

@@ -1,125 +1,145 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     tools:context=".activities.GameActivity">
-    <com.google.android.material.appbar.AppBarLayout
-        android:id="@+id/app_bar_game"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:theme="@style/AppTheme.AppBarOverlay">
-        <androidx.appcompat.widget.Toolbar
-            android:id="@+id/toolbar_game_activity"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:background="@color/colorPrimary"
-            app:popupTheme="@style/AppTheme.PopupOverlay" />
-    </com.google.android.material.appbar.AppBarLayout>
-    <LinearLayout
-        android:layout_below="@id/app_bar_game"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:id="@+id/ll_player2"
-        android:padding="8dp"
-        android:layout_marginTop="16dp"
-        >
-        <de.hdodenhof.circleimageview.CircleImageView
-            android:id="@+id/iv_p2_image"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            android:layout_marginStart="@dimen/nav_content_margin_StartEnd"
-            android:layout_marginEnd="@dimen/nav_content_margin_StartEnd"
-            app:civ_border_color="@android:color/white"
-            app:civ_border_width="@dimen/nav_image_circular_border_width"
-            android:contentDescription="@string/image_contentDescription"
-            android:src="@drawable/ic_user_place_holder" />
-        <TextView
-            android:layout_marginStart="10dp"
 
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:id="@+id/tv_p2_name"
-            android:text="@string/black"
-            android:layout_gravity="center_horizontal"
-            android:gravity="center"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            />
-
-    </LinearLayout>
-    <com.hellostranger.chess_app.gameHelpers.ChessView
-        android:layout_below="@id/ll_player2"
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".activities.GameActivity"
-        android:id="@+id/chess_view"
-        android:layout_gravity="center"/>
-    <LinearLayout
-        android:layout_below="@id/chess_view"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:id="@+id/ll_player1"
-        android:padding="8dp"
+        android:orientation="vertical">
+        <com.google.android.material.appbar.AppBarLayout
+            android:id="@+id/app_bar_game"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:theme="@style/AppTheme.AppBarOverlay">
+            <androidx.appcompat.widget.Toolbar
+                android:id="@+id/toolbar_game_activity"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                android:background="@color/colorPrimary"
+                app:popupTheme="@style/AppTheme.PopupOverlay" />
+        </com.google.android.material.appbar.AppBarLayout>
+        <LinearLayout
+            android:layout_below="@id/app_bar_game"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:id="@+id/ll_player2"
+            android:padding="8dp"
+            android:layout_marginTop="16dp"
+            >
+            <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/iv_p2_image"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:layout_marginStart="@dimen/nav_content_margin_StartEnd"
+                android:layout_marginEnd="@dimen/nav_content_margin_StartEnd"
+                app:civ_border_color="@android:color/white"
+                app:civ_border_width="@dimen/nav_image_circular_border_width"
+                android:contentDescription="@string/image_contentDescription"
+                android:src="@drawable/ic_user_place_holder" />
+            <TextView
+                android:layout_marginStart="10dp"
 
-        >
-        <de.hdodenhof.circleimageview.CircleImageView
-            android:id="@+id/iv_p1_image"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            android:layout_marginStart="@dimen/nav_content_margin_StartEnd"
-            android:layout_marginEnd="@dimen/nav_content_margin_StartEnd"
-            app:civ_border_color="@android:color/white"
-            app:civ_border_width="@dimen/nav_image_circular_border_width"
-            android:contentDescription="@string/image_contentDescription"
-            android:src="@drawable/ic_user_place_holder" />
-        <TextView
-            android:layout_marginStart="10dp"
-            android:layout_width="wrap_content"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:id="@+id/tv_p2_name"
+                android:text="@string/black"
+                android:layout_gravity="center_horizontal"
+                android:gravity="center"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                />
+
+        </LinearLayout>
+        <com.hellostranger.chess_app.gameHelpers.ChessView
+            android:layout_below="@id/ll_player2"
+            android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:id="@+id/tv_p1_name"
-            android:text="@string/white"
-            android:layout_gravity="center_horizontal"
-            android:gravity="center"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            />
-    </LinearLayout>
-    <LinearLayout
-        android:id="@+id/ll_buttons"
-        android:layout_alignParentBottom="true"
+            tools:context=".activities.GameActivity"
+            android:id="@+id/chess_view"
+            android:layout_gravity="center"/>
+        <LinearLayout
+            android:layout_below="@id/chess_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:id="@+id/ll_player1"
+            android:padding="8dp"
+
+            >
+            <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/iv_p1_image"
+                android:layout_width="60dp"
+                android:layout_height="60dp"
+                android:layout_marginStart="@dimen/nav_content_margin_StartEnd"
+                android:layout_marginEnd="@dimen/nav_content_margin_StartEnd"
+                app:civ_border_color="@android:color/white"
+                app:civ_border_width="@dimen/nav_image_circular_border_width"
+                android:contentDescription="@string/image_contentDescription"
+                android:src="@drawable/ic_user_place_holder" />
+            <TextView
+                android:layout_marginStart="10dp"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:id="@+id/tv_p1_name"
+                android:text="@string/white"
+                android:layout_gravity="center_horizontal"
+                android:gravity="center"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                />
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/ll_buttons"
+            android:layout_alignParentBottom="true"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <ImageButton
+                android:id="@+id/ib_arrow_back"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:src="@drawable/ic_black_arrow_back"/>
+            <ImageButton
+                android:id="@+id/ib_arrow_forward"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:src="@drawable/ic_arrow_forward"/>
+            <ImageButton
+                android:id="@+id/ib_flip_board"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:src="@drawable/ic_flip_board"/>
+            <ImageButton
+                android:id="@+id/ib_extra_settings"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:src="@drawable/ic_action_navigation_menu"/>
+
+        </LinearLayout>
+
+    </RelativeLayout>
+    <View
+        android:id="@+id/shadow"
+        android:visibility="invisible"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-        <ImageButton
-            android:id="@+id/ib_arrow_back"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:src="@drawable/ic_black_arrow_back"/>
-        <ImageButton
-            android:id="@+id/ib_arrow_forward"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:src="@drawable/ic_arrow_forward"/>
-        <ImageButton
-            android:id="@+id/ib_flip_board"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:src="@drawable/ic_flip_board"/>
-        <ImageButton
-            android:id="@+id/ib_extra_settings"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:src="@drawable/ic_action_navigation_menu"/>
+        android:layout_height="match_parent"
+        android:background="@drawable/background_shadow"/>
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/fragment_container_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginVertical="80dp"
+        android:layout_marginHorizontal="25dp"
+        />
 
-    </LinearLayout>
 
-</RelativeLayout>
+</FrameLayout>

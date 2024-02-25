@@ -62,13 +62,15 @@ open class BaseActivity : AppCompatActivity() {
             }
         }
     }
-    fun showProgressDialog(text: String) {
+    fun showProgressDialog(text: String, isCancelable : Boolean = true) {
         mProgressDialog = Dialog(this)
 
 
         mProgressDialog.setContentView(R.layout.dialog_progress)
 
         mProgressDialog.findViewById<TextView>(R.id.tv_progress_text).text = text
+
+        mProgressDialog.setCanceledOnTouchOutside(isCancelable)
 
         mProgressDialog.show()
     }

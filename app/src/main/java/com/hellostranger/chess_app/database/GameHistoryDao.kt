@@ -12,8 +12,8 @@ interface GameHistoryDao {
     @Upsert
     suspend fun upsertGameHistory(gameHistory: GameHistory)
 
-    @Query("DELETE FROM GameHistory WHERE localId = :gameHistoryLocalId")
-    suspend fun deleteGameHistory(gameHistoryLocalId: Int)
+    @Query("DELETE FROM GameHistory WHERE id = :gameHistoryId")
+    suspend fun deleteGameHistory(gameHistoryId: Int)
 
     @Query("SELECT * FROM GameHistory ORDER BY gameDate ASC")
     fun getGames() : LiveData<List<GameHistory>>

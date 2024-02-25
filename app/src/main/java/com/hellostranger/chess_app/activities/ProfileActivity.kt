@@ -27,6 +27,7 @@ import com.hellostranger.chess_app.utils.Constants
 import com.hellostranger.chess_app.database.GameHistoryDatabase
 import com.hellostranger.chess_app.gameClasses.pieces.Piece
 import com.hellostranger.chess_app.gameClasses.pieces.PieceJsonDeserializer
+import com.hellostranger.chess_app.models.rvEntities.GameHistory
 
 private const val TAG = "ProfileActivity"
 class ProfileActivity : BaseActivity() {
@@ -128,22 +129,7 @@ class ProfileActivity : BaseActivity() {
         return GamesHistoryAdapter(
             GamesHistoryAdapter.GameHistoryOnClickListener(
                 {
-                    val startMessage = GameStartMessage(
-                        whiteName = it.whiteName, blackName = it.blackName,
-                        whiteEmail = "", blackEmail = "",
-                        whiteImage = it.whiteImage, blackImage = it.blackImage,
-                        whiteElo = it.whiteElo, blackElo = it.blackElo
-                    )
-
-                    val game = Game(board = gson.fromJson(it.startBoardJson,  Board::class.java), id = "",gameState= it.result)
-                    Game.setInstance(game)
-                    updatePiecesResId()
-                    val intent = Intent(this@ProfileActivity, GameActivity::class.java)
-                    intent.putExtra(Constants.MODE, Constants.ANALYSIS_MODE)
-                    intent.putExtra(Constants.MOVES_LIST, it.gameMoves)
-                    intent.putExtra(Constants.START_DATA, startMessage)
-                    startActivity(intent)
-
+                    openGameHistory(it)
                 },
                 {
                     if(it.isSaved){
@@ -154,11 +140,28 @@ class ProfileActivity : BaseActivity() {
                         viewModel.onEvent(GameHistoryEvent.SaveGame(it))
 
                     }
-
                 }
             ),
             4
         )
+    }
+    private fun openGameHistory(it : GameHistory) : Unit {
+        val startMessage = GameStartMessage(
+            whiteName = it.whiteName, blackName = it.blackName,
+            whiteEmail = "", blackEmail = "",
+            whiteImage = it.whiteImage, blackImage = it.blackImage,
+            whiteElo = it.whiteElo, blackElo = it.blackElo
+        )
+
+        val game = Game(board = gson.fromJson(it.startBoardJson,  Board::class.java), id = "",gameState= it.result)
+        Game.setInstance(game)
+        updatePiecesResId()
+
+        val intent = Intent(this@ProfileActivity, GameActivity::class.java)
+        intent.putExtra(Constants.MODE, Constants.ANALYSIS_MODE)
+        intent.putExtra(Constants.MOVES_LIST, it.gameMoves)
+        intent.putExtra(Constants.START_DATA, startMessage)
+        startActivity(intent)
     }
     private fun setDataInUi(user: User) {
         currentUser = user

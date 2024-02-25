@@ -55,4 +55,6 @@
     <string name="not_the_move">That\'s not the move!</string>
     <string name="try_again">Try something else.</string>
     <string name="your_turn">Your turn</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

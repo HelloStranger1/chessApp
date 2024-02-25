@@ -5,14 +5,17 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.MenuItem
+import android.view.View
 
 import android.widget.PopupMenu
 import android.widget.PopupMenu.OnMenuItemClickListener
 import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.fragment.app.commit
 import androidx.lifecycle.ViewModelProvider
 import com.bumptech.glide.Glide
 import com.google.gson.Gson
+import com.hellostranger.chess_app.GameResultFragment
 import com.hellostranger.chess_app.viewModels.GameViewModel
 import com.hellostranger.chess_app.viewModels.factories.GameViewModelFactory
 import com.hellostranger.chess_app.R
@@ -25,6 +28,7 @@ import com.hellostranger.chess_app.gameHelpers.ChessGameInterface
 import com.hellostranger.chess_app.gameClasses.Game
 import com.hellostranger.chess_app.gameClasses.Square
 import com.hellostranger.chess_app.dto.enums.MoveType
+import com.hellostranger.chess_app.gameClasses.enums.GameState
 import com.hellostranger.chess_app.gameClasses.enums.PieceType
 import com.hellostranger.chess_app.gameClasses.pieces.Piece
 import com.hellostranger.chess_app.network.websocket.ChessWebSocketListener
@@ -52,7 +56,7 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         binding = ActivityGameViewBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        showProgressDialog("Waiting for game to start...")
+        showProgressDialog("Waiting for game to start...", false)
         setUpActionBar()
 
         viewModel = ViewModelProvider(this, GameViewModelFactory(Game.getInstance()!!))[GameViewModel::class.java]
@@ -73,8 +77,24 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         viewModel.gameStatus.observe(this){
             Toast.makeText(this@GameActivity, "GameStatus changed to: $it", Toast.LENGTH_LONG).show()
             Log.e(TAG, "gameStatus changed to: $it")
+            if((it == GameState.WHITE_WIN || it == GameState.BLACK_WIN || it == GameState.DRAW) && savedInstanceState == null){
+                viewModel.startMessageData.value?.let {msg ->
+                    val result : Int = if(it == GameState.WHITE_WIN) 0 else if(it == GameState.DRAW) 1 else 2
+                    val fragment : GameResultFragment = GameResultFragment.newInstance(msg.whiteName,
+                        msg.blackName, msg.whiteImage, msg.blackImage, 800, result)
+                    supportFragmentManager.commit {
+                        setReorderingAllowed(true)
+                        add(R.id.fragment_container_view, fragment)
+                    }
+                    binding.shadow.visibility = View.VISIBLE
+                }
+
+            }
         }
 
+        viewModel.startMessageData.observe(this){
+            startGame(it)
+        }
         viewModel.currentBoard.observe(this){
             binding.chessView.invalidate()
         }
@@ -98,6 +118,17 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
             }
 
         }
+    }
+
+    private fun startGame(startMsg: GameStartMessage){
+        hideProgressDialog()
+        setPlayerOneData(
+            startMsg.whiteName, startMsg.whiteEmail, startMsg.whiteImage, startMsg.whiteElo
+        )
+        setPlayerTwoData(
+            startMsg.blackName, startMsg.blackEmail, startMsg.blackImage, startMsg.blackElo
+        )
+
     }
     private fun showOnlineOptionsMenu(){
         val popupMenu = PopupMenu(this@GameActivity, binding.ibExtraSettings)
@@ -138,6 +169,7 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         )
         chessWebSocket = chessWebSocketListener!!.getWebSocketInstance()
     }
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun loadGameForAnalysis(){
         val startData = intent.getParcelableExtra(Constants.START_DATA, GameStartMessage::class.java)!!
         val moves : String = intent.getStringExtra(Constants.MOVES_LIST)!!

@@ -50,13 +50,6 @@ class NotificationsActivity : AppCompatActivity() {
             }
 
         }
-
-
-
-
-
-
-
     }
 
     private suspend fun updateRequests(){
