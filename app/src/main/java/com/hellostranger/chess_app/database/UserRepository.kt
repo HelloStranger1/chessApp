@@ -26,7 +26,7 @@ class UserRepository(private val  retrofitService : BackendApiService, val token
 
     suspend fun acceptFriendRequest(requestId : Int) = retrofitService.acceptFriendRequest(tokenManager.getUserEmail(), requestId)
 
-    suspend fun getFriends() = retrofitService.getFriends(tokenManager.getUserEmail())
+    suspend fun getFriends(email : String) = retrofitService.getFriends(email)
 
     suspend fun deleteFriend(friendEmail : String) = retrofitService.deleteFriend(tokenManager.getUserEmail(), friendEmail)
 

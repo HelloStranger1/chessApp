@@ -5,9 +5,11 @@ import com.hellostranger.chess_app.gameClasses.enums.GameState
 
 class GameEndMessage(
     val message : String,
-    val state : GameState
+    val state : GameState,
+    val whiteElo : Int,
+    val blackElo : Int
 ) : WebSocketMessage(WebsocketMessageType.END) {
     override fun toString(): String {
-        return "GameEnd. result: $state msg: $message"
+        return "GameEnd. result: $state msg: $message whiteElo: $whiteElo blackElo: $blackElo"
     }
 }

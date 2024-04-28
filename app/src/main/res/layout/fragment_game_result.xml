@@ -8,13 +8,16 @@
     app:cardCornerRadius="10dp"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".GameResultFragment">
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:orientation="vertical">
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/result_toolbar"
             android:layout_width="match_parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
             android:layout_height="100dp"
             android:background="@drawable/curve_toolbar_bg"
             >
@@ -23,6 +26,7 @@
                 android:layout_height="match_parent"
                 android:orientation="vertical">
                 <TextView
+                    android:id="@+id/tv_result_text"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
@@ -34,16 +38,20 @@
                     android:layout_marginBottom="3dp"
                     android:textColor="@color/white"/>
                 <TextView
+                    android:id="@+id/tv_result_description"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
-                    android:text="Jhon won by resgination"
+                    android:text="@string/won_by_resgination"
                     android:textSize="16sp"
                     android:textColor="@color/greyTint"
                     />
             </LinearLayout>
         </androidx.appcompat.widget.Toolbar>
         <LinearLayout
+            app:layout_constraintTop_toBottomOf="@id/result_toolbar"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginTop="25dp"
             android:layout_width="match_parent"
             android:orientation="horizontal"
@@ -99,6 +107,9 @@
 
         </LinearLayout>
         <TextView
+            app:layout_constraintTop_toBottomOf="@id/ll_result_images"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:id="@+id/tv_result"
@@ -108,14 +119,21 @@
             android:textColor="@color/secondary_text_color"
             android:textStyle="bold"/>
         <TextView
+            app:layout_constraintTop_toBottomOf="@id/tv_result"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:text="elo rating"
+            android:text="@string/new_elo_rating"
             android:layout_marginTop="10dp"
+            android:id="@+id/tv_elo_description"
             android:textColor="@color/secondary_text_color"
             android:textSize="18sp"/>
         <TextView
+            app:layout_constraintTop_toBottomOf="@id/tv_elo_description"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="22sp"
@@ -125,34 +143,17 @@
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="5dp"/>
 
-        <LinearLayout
-            android:layout_marginTop="80dp"
-            android:layout_marginBottom="55dp"
+        <androidx.appcompat.widget.AppCompatButton
+            app:layout_constraintBottom_toBottomOf="parent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/ll_result_buttons"
-            android:orientation="horizontal">
-            <androidx.appcompat.widget.AppCompatButton
-                android:layout_weight="1"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="@color/white"
-                android:layout_marginHorizontal="8dp"
-                android:background="@drawable/shape_button_rounded"
-                android:foreground="?attr/selectableItemBackground"
-                android:id="@+id/btn_result_new_game"
-                android:text="New game"/>
-            <androidx.appcompat.widget.AppCompatButton
-                android:layout_weight="1"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="8dp"
-                android:textColor="@color/white"
-                android:background="@drawable/shape_button_rounded"
-                android:foreground="?attr/selectableItemBackground"
-                android:id="@+id/btn_result_back_to_menu"
-                android:text="Back to menu"/>
-        </LinearLayout>
+            android:layout_marginBottom="20dp"
+            android:layout_marginHorizontal="40dp"
+            android:textColor="@color/white"
+            android:background="@drawable/shape_button_rounded"
+            android:foreground="?attr/selectableItemBackground"
+            android:id="@+id/btn_result_back_to_menu"
+            android:text="Back to menu"/>
 
-    </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.cardview.widget.CardView>

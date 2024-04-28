@@ -196,19 +196,23 @@ class ChessView(context : Context?, attrs : AttributeSet?) : View(context, attrs
         }
         when (event?.action){
             MotionEvent.ACTION_DOWN ->{
-                fromCol = ((event.x - originX) / cellSide).toInt()
-                fromRow = 7 - ((event.y - originY) / cellSide).toInt()
-
-                chessGameInterface?.pieceAt(fromCol, fromRow, isFlipped)?.let{
+                val tempFromCol = ((event.x - originX) / cellSide).toInt()
+                val tempFromRow = 7 - ((event.y - originY) / cellSide).toInt()
+                if (tempFromRow >= 8 || tempFromCol >= 8 || tempFromCol < 0 || tempFromRow < 0){
+                    return false
+                }
+                chessGameInterface?.pieceAt(tempFromCol,  tempFromRow, isFlipped)?.let{
                     movingPiece = it
                     movingPieceBitmap = pieceBitmaps[it.resID]
                     movingPieceMoves = chessGameInterface?.getPiecesMoves(it)
+                    fromRow = tempFromRow
+                    fromCol = tempFromCol
                 }
             }
             MotionEvent.ACTION_UP ->{
                 val col = ((event.x - originX) / cellSide).toInt()
                 val row = 7 - ((event.y - originY) / cellSide).toInt()
-                if(fromCol != col || fromRow != row){
+                if((fromCol != col || fromRow != row) && fromCol != -1){
                     val moveMessage = MoveMessage("", fromCol, fromRow, col, row, MoveType.REGULAR)
                     chessGameInterface?.playMove(moveMessage, isFlipped)
                 }
@@ -229,7 +233,7 @@ class ChessView(context : Context?, attrs : AttributeSet?) : View(context, attrs
     }
 
     private fun loadBitmaps(){
-        imgResIDs.forEach{
+        chessGameInterface!!.getPieceResIds().forEach{
             pieceBitmaps[it] = BitmapFactory.decodeResource(resources, it)
         }
     }

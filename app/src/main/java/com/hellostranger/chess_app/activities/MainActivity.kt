@@ -33,6 +33,7 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 private const val TAG = "MainActivity"
 class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedListener {
@@ -47,6 +48,15 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
     private val coroutineExceptionHandler = CoroutineExceptionHandler{ _, throwable ->
         throwable.printStackTrace()
     }
+
+    override fun onRestart() {
+        super.onRestart()
+        CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
+            fetchUser()?.let {
+                runOnUiThread { updateNavigationUserDetails(it) }
+            }
+        }
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -60,11 +70,8 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
 
 
         CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
-            val user : User? = fetchUser()
-            if(user != null){
-                runOnUiThread{
-                    updateNavigationUserDetails(user)
-                }
+            fetchUser()?.let {
+                runOnUiThread { updateNavigationUserDetails(it) }
             }
         }
 
@@ -100,7 +107,24 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
             }
         }
         binding.appBarMain.mainContent.btnLookupUser.setOnClickListener{
+            val email : String = binding.appBarMain.mainContent.etUserEmail.text.toString()
+            if (email.isEmpty() || email.isBlank()) {
+                Toast.makeText(this@MainActivity, "Please enter an email.", Toast.LENGTH_LONG).show();
+                return@setOnClickListener
+            }
+            var success = true
+            runBlocking {
+                val response = BackendRetrofitClient.instance.getUserByEmail(email);
+                if (!response.isSuccessful || response.body() == null) {
+                    Toast.makeText(this@MainActivity, "Couldn't find a user with this email", Toast.LENGTH_LONG).show()
+                    success = false
+                }
+            }
+            if (!success) {
+                return@setOnClickListener
+            }
             Log.e(TAG, "email is: ${binding.appBarMain.mainContent.etUserEmail.text}")
+
             val intent = Intent(this, ProfileActivity::class.java)
             intent.putExtra(Constants.GUEST_EMAIL, binding.appBarMain.mainContent.etUserEmail.text.toString() )
             startActivity(intent)
@@ -112,7 +136,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
             CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
                 val response = BackendRetrofitClient.instance.createPrivateGame()
                 if(!response.isSuccessful){
-                    Log.e(TAG, "Failed to create private game. Respone is:" + response.errorBody())
+                    Log.e(TAG, "Failed to create private game. Response is:" + response.errorBody())
                 } else{
                     runOnUiThread {
                         Toast.makeText(this@MainActivity, "Code is: " + response.body(), Toast.LENGTH_LONG).show()
@@ -126,7 +150,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         }
         binding.appBarMain.mainContent.btnJoinSpecific.setOnClickListener {
             val code : String = binding.appBarMain.mainContent.etGameId.text.toString()
-            Log.e(TAG, "Join private game. code is: " + code)
+            Log.e(TAG, "Join private game. code is: $code")
             if(code.isEmpty() || code.isBlank()){
                 runOnUiThread{
                     Toast.makeText(this@MainActivity, "You need to put a code!!", Toast.LENGTH_LONG).show()

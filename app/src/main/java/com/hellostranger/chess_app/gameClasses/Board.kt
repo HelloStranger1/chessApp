@@ -14,7 +14,7 @@ import com.hellostranger.chess_app.gameClasses.pieces.PieceJsonDeserializer
 import kotlin.math.abs
 
 
-private const val BoardTAG = "BoardClass"
+private const val BOARD_TAG = "BoardClass"
 data class Board(
     var squaresArray: Array<Array<Square>>,
     var whiteKing : King? = null,
@@ -49,43 +49,39 @@ data class Board(
     }
     fun getSquareAt(col: Int, row: Int): Square? {
         if (row >= 8 || row < 0 || col >= 8 || col < 0) {
-            Log.e(BoardTAG, "There is no square at col $col and row $row")
+            Log.e(BOARD_TAG, "There is no square at col $col and row $row")
             return null
         }
         return squaresArray[row][col]
     }
+
     fun movePiece(move : MoveMessage) : Board {
         val startSquare = squaresArray[move.startRow][move.startCol]
         val endSquare = squaresArray[move.endRow][move.endCol]
 
         val movingPiece = startSquare.piece
         if(movingPiece == null){
-            Log.e(BoardTAG, "You can't move this!! No Piece to move.")
+            Log.e(BOARD_TAG, "You can't move this!! No Piece to move.")
             return this
         }
 
-        if(!isValidMove(startSquare, endSquare)){
-            Log.e(BoardTAG, "Move is invalid. Can't play it.")
+        if(!isValidMove(startSquare, endSquare)) {
+            Log.e(BOARD_TAG, "Move is invalid. Can't play it.")
             return this
         }
-        if(move.moveType == MoveType.REGULAR){
+        if(move.moveType == MoveType.REGULAR) {
             movePiece(startSquare, endSquare)
-        }
-        else if(move.moveType == MoveType.CASTLE){
+        } else if(move.moveType == MoveType.CASTLE) {
             makeCastlingMove(startSquare, endSquare)
         }
+
         if(move.moveType != MoveType.CASTLE && move.moveType != MoveType.REGULAR){
             movingPiece.pieceType = when(move.moveType){
-                MoveType.PROMOTION_QUEEN -> {
-                    PieceType.QUEEN}
-                MoveType.PROMOTION_ROOK -> {
-                    PieceType.ROOK}
-                MoveType.PROMOTION_BISHOP -> {
-                    PieceType.BISHOP}
-                MoveType.PROMOTION_KNIGHT -> {
-                    PieceType.KNIGHT}
-                else -> {
-                    PieceType.PAWN}
+                MoveType.PROMOTION_QUEEN ->  { PieceType.QUEEN  }
+                MoveType.PROMOTION_ROOK ->   { PieceType.ROOK   }
+                MoveType.PROMOTION_BISHOP -> { PieceType.BISHOP }
+                MoveType.PROMOTION_KNIGHT -> { PieceType.KNIGHT }
+                else -> { PieceType.PAWN}
             }
             if(movingPiece.color == Color.WHITE){
                 when(movingPiece.pieceType){
@@ -93,15 +89,15 @@ data class Board(
                         movingPiece.resID = R.drawable.ic_white_queen
                     }
                     PieceType.ROOK ->{
-                        movingPiece.resID = R.drawable.ic_white_rook
+                        movingPiece.resID = R.drawable.ic_white_rook_plant
                     }
                     PieceType.BISHOP ->{
-                        movingPiece.resID = R.drawable.ic_white_bishop
+                        movingPiece.resID = R.drawable.ic_white_bishop_plant
                     }
                     PieceType.KNIGHT ->{
-                        movingPiece.resID = R.drawable.ic_white_knight
+                        movingPiece.resID = R.drawable.ic_white_knight_plant
                     }else ->{
-                        Log.e(BoardTAG, "Tried to promote to: ${movingPiece.pieceType} but you can't promote to that.")
+                        Log.e(BOARD_TAG, "Tried to promote to: ${movingPiece.pieceType} but you can't promote to that.")
                     }
                 }
             }else{
@@ -110,15 +106,15 @@ data class Board(
                         movingPiece.resID = R.drawable.ic_black_queen
                     }
                     PieceType.ROOK ->{
-                        movingPiece.resID = R.drawable.ic_black_rook
+                        movingPiece.resID = R.drawable.ic_black_rook_plant
                     }
                     PieceType.BISHOP ->{
-                        movingPiece.resID = R.drawable.ic_black_bishop
+                        movingPiece.resID = R.drawable.ic_black_bishop_plant
                     }
                     PieceType.KNIGHT ->{
-                        movingPiece.resID = R.drawable.ic_black_knight
+                        movingPiece.resID = R.drawable.ic_black_knight_plant
                     }else ->{
-                        Log.e(BoardTAG, "Tried to promote to: ${movingPiece.pieceType} but you can't promote to that.")
+                        Log.e(BOARD_TAG, "Tried to promote to: ${movingPiece.pieceType} but you can't promote to that.")
                     }
                 }
             }
@@ -149,23 +145,49 @@ data class Board(
         if (endPiece.color !== startPiece.color) {
             return false
         }
-        Log.i(BoardTAG,"move from square: " + start + "to " + end + "is a castling move")
+        Log.i(BOARD_TAG,"move from square: " + start + "to " + end + "is a castling move")
         return true
     }
     fun isValidMove(start: Square, end: Square): Boolean {
         val movingPiece = start.piece
         if(movingPiece==null){
-            Log.e(BoardTAG, "Moving piece is null so the move is invalid")
+            Log.e(BOARD_TAG, "Moving piece is null so the move is invalid")
             return false
         }
         if (!canPieceMoveTo(movingPiece, end)) {
-            Log.e(BoardTAG,"Move is invalid because the piece can't move to there")
+            Log.e(BOARD_TAG,"Move is invalid because the piece can't move to there")
             return false
         }
         val isCastlingMove = isCastlingMove(start, end)
         val isFirstMove = !movingPiece.hasMoved
         val capturedPiece = end.piece
+        val row = start.rowIndex
+        var col = start.colIndex
         if (isCastlingMove) {
+            if (isKingInCheck(movingPiece.color == Color.WHITE)) {
+                return false
+            }
+            if (end.colIndex > start.colIndex) {
+                if (!isValidMove(start, squaresArray[start.rowIndex][start.colIndex + 1])) {
+                    return false
+                }
+                while (col < 7) {
+                    if (squaresArray[row][col].piece != null) {
+                        return false
+                    }
+                    col++;
+                }
+            } else {
+                if (!isValidMove(start, squaresArray[row][col - 1])) {
+                    return false
+                }
+                while (col > 0) {
+                    if (squaresArray[row][col].piece != null) {
+                        return false
+                    }
+                    col--;
+                }
+            }
             makeCastlingMove(start, end)
         } else {
             movePieceTemp(start, end)
@@ -183,7 +205,7 @@ data class Board(
             movingPiece.hasMoved = false
         }
         if(!isLegalMove){
-            Log.e(BoardTAG, "Move is not legal")
+            Log.e(BOARD_TAG, "Move is not legal")
         }
         return isLegalMove
     }
@@ -210,7 +232,7 @@ data class Board(
         return result
     }
     fun canPlayerPlay(playerColor: Color): Boolean {
-        Log.i(BoardTAG, "checking if player: " + playerColor + "can play")
+        Log.i(BOARD_TAG, "checking if player: " + playerColor + "can play")
         for (row in 0..7) {
             for (col in 0..7) {
                 val currentSquare = squaresArray[row][col]
@@ -226,16 +248,16 @@ data class Board(
     private fun doesPieceHaveAMove(piece: Piece, startSquare: Square): Boolean {
         for (targetSquare in piece.getMovableSquares(this)) {
             if (isValidMove(startSquare, targetSquare)) {
-                Log.e(BoardTAG,"The piece on square: $startSquare  can move to the square: $targetSquare")
+                Log.e(BOARD_TAG,"The piece on square: $startSquare  can move to the square: $targetSquare")
                 return true
             }
         }
         return false
     }
 
-    fun isKingInCheck(isWhite: Boolean): Boolean {
+    private fun isKingInCheck(isWhite: Boolean): Boolean {
         if(whiteKing == null || blackKing == null){
-            Log.e(BoardTAG, "isKingInCheck won't work cause one of the kings is null. black: $blackKing, white: $whiteKing")
+            Log.e(BOARD_TAG, "isKingInCheck won't work cause one of the kings is null. black: $blackKing, white: $whiteKing")
         }
         val kingSquare: Square = if (isWhite) {
             whiteKing?.let { getSquareAt(it.colIndex, it.rowIndex) }!!
@@ -247,7 +269,7 @@ data class Board(
                 val (_, piece) = squaresArray[row][col]
                 if (piece != null && isWhite != (piece.color === Color.WHITE)) {
                     if (canPieceThreatenSquare(piece, kingSquare)) {
-                        Log.e(BoardTAG,"\n \n isKingInCheck king is in check. by piece: \n$piece\n \n")
+                        Log.e(BOARD_TAG,"\n \n isKingInCheck king is in check. by piece: \n$piece\n \n")
                         return true
                     }
                 }

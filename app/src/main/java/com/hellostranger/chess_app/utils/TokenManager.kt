@@ -50,9 +50,13 @@ class TokenManager(context : Context){
         return sharedPreferences.getString(KEY_REFRESH_TOKEN, null) ?: return ""
     }
 
-    fun isAccessTokenExpired() : Boolean{
+    fun shouldRefreshAccessToken() : Boolean{
         val currentTimeMillis = System.currentTimeMillis()
-        return currentTimeMillis >= getAccessExpiration()
+        val expiry = getAccessExpiration()
+        return currentTimeMillis + 60_000 >= expiry && currentTimeMillis < expiry
+    }
+    fun isAccessTokenExpired() : Boolean {
+        return System.currentTimeMillis() >= getAccessExpiration()
     }
     fun isRefreshTokenExpired() : Boolean{
         val currentTimeMillis = System.currentTimeMillis()

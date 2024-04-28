@@ -23,7 +23,6 @@ class NotificationsActivity : AppCompatActivity() {
 
     private var tokenManager : TokenManager = MyApp.tokenManager
 
-    private lateinit var gamesAdapter : NotificationAdapter
     private lateinit var friendsAdapter : NotificationAdapter
 
 
@@ -37,11 +36,9 @@ class NotificationsActivity : AppCompatActivity() {
             throwable.printStackTrace()
         }
 
-        gamesAdapter = initializeGamesAdapter()
         friendsAdapter = initializeFriendsAdapter()
 
         binding.rvFriendRequests.adapter = friendsAdapter
-        binding.rvGameChallenges.adapter = gamesAdapter
 
         lifecycleScope.launch(Dispatchers.IO + coroutineExceptionHandler) {
             while(true){
@@ -65,21 +62,6 @@ class NotificationsActivity : AppCompatActivity() {
                 friendsAdapter.updateNotificationList(notificationList)
             }
         }
-    }
-    private fun initializeGamesAdapter() : NotificationAdapter {
-        return NotificationAdapter(
-            NotificationAdapter.NotificationOnClickListener(
-                {
-
-                },
-                {
-
-                },
-                {
-
-                }
-            )
-        )
     }
     private fun initializeFriendsAdapter() : NotificationAdapter {
         val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable ->

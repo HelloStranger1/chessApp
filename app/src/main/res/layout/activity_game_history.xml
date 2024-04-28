@@ -17,7 +17,7 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="@color/colorPrimary"
-            app:title="Notifications"
+            app:title="Games"
             app:popupTheme="@style/AppTheme.PopupOverlay"/>
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -34,7 +34,7 @@
             android:layout_marginStart="40dp"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:text="@string/friend_requests"
+            android:text="Games"
             android:textSize="18sp"
             android:textStyle="bold"
             android:gravity="center_vertical"
@@ -46,13 +46,13 @@
         android:layout_height="wrap_content">
 
         <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rv_friend_requests"
+            android:id="@+id/rv_past_games"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="#fefefe"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
             tools:itemCount="5"
-            tools:listitem="@layout/notification_item" />
+            tools:listitem="@layout/game_history_item" />
     </ScrollView>
 
 

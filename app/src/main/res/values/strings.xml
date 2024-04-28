@@ -57,4 +57,7 @@
     <string name="your_turn">Your turn</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="friends">Friends</string>
+    <string name="won_by_resgination">%1$s won by resignation</string>
+    <string name="new_elo_rating">new elo rating</string>
 </resources>

@@ -2,6 +2,7 @@ package com.hellostranger.chess_app.activities
 
 import android.app.AlertDialog
 import android.app.Dialog
+import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Handler
 import android.widget.TextView
@@ -18,6 +19,8 @@ open class BaseActivity : AppCompatActivity() {
     private var doubleBackToExitPressedOnce = false
 
     private lateinit var mProgressDialog: Dialog
+
+    private var isLightMode = true
 
     fun showRationaleDialog(
         title: String,
@@ -40,22 +43,22 @@ open class BaseActivity : AppCompatActivity() {
                     val isWhite = square.piece!!.color == Color.WHITE
                     square.piece!!.resID = when(square.piece!!.pieceType){
                         PieceType.KING -> {
-                            if(isWhite) R.drawable.ic_white_king else R.drawable.ic_black_king
+                            if(isWhite) R.drawable.ic_white_king_plant else R.drawable.ic_black_king_plant
                         }
                         PieceType.QUEEN -> {
                             if(isWhite) R.drawable.ic_white_queen else R.drawable.ic_black_queen
                         }
                         PieceType.ROOK -> {
-                            if(isWhite) R.drawable.ic_white_rook else R.drawable.ic_black_rook
+                            if(isWhite) R.drawable.ic_white_rook_plant else R.drawable.ic_black_rook_plant
                         }
                         PieceType.BISHOP -> {
-                            if(isWhite) R.drawable.ic_white_bishop else R.drawable.ic_black_bishop
+                            if(isWhite) R.drawable.ic_white_bishop_plant else R.drawable.ic_black_bishop_plant
                         }
                         PieceType.KNIGHT -> {
-                            if(isWhite) R.drawable.ic_white_knight else R.drawable.ic_black_knight
+                            if(isWhite) R.drawable.ic_white_knight_plant else R.drawable.ic_black_knight_plant
                         }
                         PieceType.PAWN -> {
-                            if(isWhite) R.drawable.ic_white_pawn else R.drawable.ic_black_pawn
+                            if(isWhite) R.drawable.ic_white_pawn_plant else R.drawable.ic_black_pawn_plant
                         }
                     }
                 }
@@ -109,4 +112,5 @@ open class BaseActivity : AppCompatActivity() {
         )
         snackBar.show()
     }
+
 }

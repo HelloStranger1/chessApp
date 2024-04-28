@@ -30,7 +30,7 @@ class SplashActivity : AppCompatActivity() {
 
 
         Handler().postDelayed({
-            if(!MyApp.tokenManager.isRefreshTokenExpired()){
+            if(!MyApp.tokenManager.isAccessTokenExpired()){
                 startActivity(Intent(this, MainActivity::class.java))
             }else{
                 startActivity(Intent(this, IntroActivity::class.java))

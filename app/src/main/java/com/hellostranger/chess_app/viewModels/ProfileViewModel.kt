@@ -8,6 +8,7 @@ import com.hellostranger.chess_app.rv.GameHistoryEvent
 import com.hellostranger.chess_app.database.UserRepository
 import com.hellostranger.chess_app.models.rvEntities.GameHistory
 import com.hellostranger.chess_app.models.entities.User
+import com.hellostranger.chess_app.models.rvEntities.Friend
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,7 +18,7 @@ class ProfileViewModel(
     private val userRepository: UserRepository,
 ) : ViewModel() {
     val gameHistoryList = MutableLiveData<List<GameHistory>>()
-
+    val friendsList = MutableLiveData<List<Friend>>()
     var favoriteGamesList = MutableLiveData<List<GameHistory>>()
     val userDetails = MutableLiveData<User>()
     val isFriendsWithUser = MutableLiveData(false)
@@ -43,7 +44,7 @@ class ProfileViewModel(
 
     fun areFriendsWithUser(friendEmail : String)  {
         viewModelScope.launch(Dispatchers.IO + coroutineExceptionHandler){
-            val response = userRepository.getFriends()
+            val response = userRepository.getFriends(userRepository.tokenManager.getUserEmail())
             if(response.isSuccessful && response.body() != null){
                 val userFriends : List<User> = response.body()!!
                 for(friend : User in userFriends){
@@ -110,6 +111,23 @@ class ProfileViewModel(
                 gameHistoryList.postValue(response.body())
             } else{
                 Log.e("TAG", "Couldn't get game history. response is: $response and body: ${response.body()}")
+                failed.postValue(response.body().toString())
+            }
+        }
+    }
+
+    fun getFriendsList(email: String) {
+        viewModelScope.launch(Dispatchers.IO + coroutineExceptionHandler) {
+            val response = userRepository.getFriends(email)
+            if (response.isSuccessful) {
+                val tempFriendList : MutableList<Friend> = mutableListOf()
+                for (user in response.body()!!) {
+                    val friend : Friend = Friend(user.image, user.email, user.name)
+                    tempFriendList.add(friend)
+                }
+                friendsList.postValue(tempFriendList)
+            } else {
+                Log.e("TAG", "Couldn't get friends list")
                 failed.postValue(response.body().toString())
             }
         }

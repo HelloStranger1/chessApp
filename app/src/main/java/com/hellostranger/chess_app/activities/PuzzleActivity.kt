@@ -18,9 +18,12 @@ import com.hellostranger.chess_app.gameClasses.Board
 import com.hellostranger.chess_app.gameClasses.Game
 import com.hellostranger.chess_app.gameClasses.Square
 import com.hellostranger.chess_app.dto.enums.MoveType
+import com.hellostranger.chess_app.gameClasses.enums.Color
 import com.hellostranger.chess_app.gameClasses.enums.PieceType
 import com.hellostranger.chess_app.gameClasses.pieces.Piece
 import com.hellostranger.chess_app.network.retrofit.puzzleApi.PuzzleRetrofitClient
+import com.hellostranger.chess_app.utils.Constants
+import com.hellostranger.chess_app.utils.MyApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -167,6 +170,19 @@ class PuzzleActivity : BaseActivity(), ChessGameInterface, PopupMenu.OnMenuItemC
         return movableSquares
     }
 
+    fun validateMove(moveMessage: MoveMessage) : Boolean {
+        val board = boardHistory[mCurrentBoardShown]
+        val startSquare = board.getSquareAt(moveMessage.startCol, moveMessage.startRow)!!
+        val endSquare = board.getSquareAt(moveMessage.endCol, moveMessage.endRow)!!
+
+        if(startSquare.piece == null || isWhite != (startSquare.piece!!.color == Color.WHITE)) {
+            return false
+        }
+        if(!board.isValidMove(startSquare, endSquare)){
+            return false
+        }
+        return true
+    }
     override fun playMove(moveMessage: MoveMessage, isFlipped: Boolean) {
         var updatedMoveMessage = moveMessage
         if(isFlipped){
@@ -194,6 +210,10 @@ class PuzzleActivity : BaseActivity(), ChessGameInterface, PopupMenu.OnMenuItemC
         if(isCastlingMove(updatedMoveMessage)){
             updatedMoveMessage.moveType = MoveType.CASTLE
         }
+        if(!validateMove(updatedMoveMessage)) {
+            return
+        }
+
         val correctMove = convertMoveToMoveMessage(currentPuzzle.moves[mCurrentBoardShown])
         if(
             updatedMoveMessage.startCol == correctMove.startCol &&
@@ -297,6 +317,17 @@ class PuzzleActivity : BaseActivity(), ChessGameInterface, PopupMenu.OnMenuItemC
 
     override fun getLastMovePlayed(): MoveMessage? {
         return boardHistory[mCurrentBoardShown].previousMove
+    }
+
+    override fun getPieceResIds(): Set<Int> {
+        if (MyApp.pieceTheme == MyApp.PieceTheme.DEFAULT) {
+            return Constants.imgResIDs
+        } else if (MyApp.pieceTheme == MyApp.PieceTheme.PLANT) {
+            return Constants.plantResIDs
+        }
+
+        return Constants.imgResIDs
+
     }
 
     override fun onMenuItemClick(menuItem: MenuItem): Boolean {

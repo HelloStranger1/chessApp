@@ -1,5 +1,6 @@
 package com.hellostranger.chess_app.rv.adapters
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -20,6 +21,7 @@ class GamesHistoryAdapter(
     private var gameHistoryList = mutableListOf<GameHistory>()
     fun updateGameHistoryList(updateGameHistoryList : List<GameHistory>){
         this.gameHistoryList = updateGameHistoryList.toMutableList()
+        Log.e("GameHistoryAdapter","We have ${gameHistoryList.size} elements in the rv of game histories")
         notifyDataSetChanged()
     }
 

@@ -6,6 +6,7 @@ import com.hellostranger.chess_app.viewModels.GameViewModel
 import com.hellostranger.chess_app.dto.websocket.GameEndMessage
 import com.hellostranger.chess_app.dto.websocket.GameStartMessage
 import com.hellostranger.chess_app.dto.enums.WebsocketMessageType
+import com.hellostranger.chess_app.dto.websocket.DrawOfferMessage
 import com.hellostranger.chess_app.dto.websocket.MoveMessage
 import com.hellostranger.chess_app.dto.websocket.WebSocketMessage
 import okhttp3.OkHttpClient
@@ -67,11 +68,14 @@ class ChessWebSocketListener(private val viewModel: GameViewModel) : WebSocketLi
             }
             WebsocketMessageType.END ->{
                 val endMessage : GameEndMessage = gson.fromJson(text, GameEndMessage::class.java)
-                viewModel.onGameEnding(endMessage.state)
+                viewModel.onGameEnding(endMessage.state, endMessage.whiteElo, endMessage.blackElo, endMessage.message)
             }
             WebsocketMessageType.INVALID_MOVE -> {
                 Log.e(TAG, "Invalid Move, undoing it")
                 viewModel.undoMove()
+            }
+            WebsocketMessageType.DRAW_OFFER -> {
+                viewModel.updateDrawOffer(gson.fromJson(text, DrawOfferMessage::class.java))
             }
 
             else -> {

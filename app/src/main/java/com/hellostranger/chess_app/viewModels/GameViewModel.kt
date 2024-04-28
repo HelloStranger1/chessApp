@@ -5,6 +5,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hellostranger.chess_app.dto.websocket.DrawOfferMessage
 import com.hellostranger.chess_app.dto.websocket.GameStartMessage
 import com.hellostranger.chess_app.dto.websocket.MoveMessage
 import com.hellostranger.chess_app.gameClasses.Board
@@ -16,7 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 private const val GameVMTAG = "GameViewModel"
-class GameViewModel(private val currentGame : Game) : ViewModel() {
+class GameViewModel(private var currentGame : Game) : ViewModel() {
 
     val currentPlayerEmail = MyApp.tokenManager.getUserEmail()
 
@@ -34,9 +35,14 @@ class GameViewModel(private val currentGame : Game) : ViewModel() {
 
     private val boardsHistory = ArrayList<Board>()
 
+    private val _drawOffer = MutableLiveData<DrawOfferMessage>()
+    val drawOffer : LiveData<DrawOfferMessage> = _drawOffer
+
     private var currentMoveShown = 0
     private var isOurTurn = false
+    var ourElo = -1;
     var isWhite = false
+    var gameOverDescription = ""
 
     fun setStatus(status : Boolean) = viewModelScope.launch(Dispatchers.Main) {
         _socketStatus.value = status
@@ -95,12 +101,18 @@ class GameViewModel(private val currentGame : Game) : ViewModel() {
         if(boardsHistory.isEmpty()){
             boardsHistory.add(_currentBoard.value!!)
         }
+        ourElo = if(isWhite) startMessage.whiteElo else startMessage.blackElo
         _startMessageData.value = startMessage
 
     }
+    fun updateDrawOffer(drawOfferMessage: DrawOfferMessage) {
+        _drawOffer.value = drawOfferMessage
+    }
 
-    fun onGameEnding(result : GameState) = viewModelScope.launch(Dispatchers.Main){
+    fun onGameEnding(result : GameState, whiteElo : Int, blackElo : Int, description : String) = viewModelScope.launch(Dispatchers.Main){
+        gameOverDescription = description
         _gameStatus.value = result
+        ourElo = if(isWhite) whiteElo else blackElo
         _socketStatus.value = false
 
     }

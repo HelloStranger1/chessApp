@@ -6,7 +6,6 @@ import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
-import androidx.room.Room
 import com.bumptech.glide.Glide
 import com.google.gson.GsonBuilder
 import com.hellostranger.chess_app.rv.GameHistoryEvent
@@ -24,10 +23,11 @@ import com.hellostranger.chess_app.gameClasses.Board
 import com.hellostranger.chess_app.gameClasses.Game
 import com.hellostranger.chess_app.network.retrofit.backend.BackendRetrofitClient
 import com.hellostranger.chess_app.utils.Constants
-import com.hellostranger.chess_app.database.GameHistoryDatabase
 import com.hellostranger.chess_app.gameClasses.pieces.Piece
 import com.hellostranger.chess_app.gameClasses.pieces.PieceJsonDeserializer
+import com.hellostranger.chess_app.models.rvEntities.Friend
 import com.hellostranger.chess_app.models.rvEntities.GameHistory
+import com.hellostranger.chess_app.rv.adapters.FriendsAdapter
 
 private const val TAG = "ProfileActivity"
 class ProfileActivity : BaseActivity() {
@@ -36,7 +36,8 @@ class ProfileActivity : BaseActivity() {
     private var tokenManager : TokenManager = MyApp.tokenManager
 
     private lateinit var viewModel : ProfileViewModel
-    private lateinit var adapter : GamesHistoryAdapter
+    private lateinit var gamesHistoryAdapter : GamesHistoryAdapter
+    private lateinit var friendsAdapter : FriendsAdapter
 
     private var isGuestUser : Boolean = false
 
@@ -45,6 +46,10 @@ class ProfileActivity : BaseActivity() {
         .registerTypeAdapter(Piece::class.java, PieceJsonDeserializer())
         .create()
 
+    override fun onRestart() {
+        super.onRestart()
+        currentUser?.email?.let { viewModel.getUserDetails(it) }
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityProfileBinding.inflate(layoutInflater)
@@ -52,31 +57,42 @@ class ProfileActivity : BaseActivity() {
 
         //Initialize Room DB
 
-        val favoriteGamesDb = Room.databaseBuilder(
-            applicationContext, GameHistoryDatabase::class.java, Constants.FAVORITE_GAMES_DB
-        ).fallbackToDestructiveMigration().build()
-
+        val favoriteGamesDb = MyApp.favoriteGameDB
         //Take the userEmail From The intent, Compare it against the logged-in userEmail.
         var userEmail = intent.getStringExtra(Constants.GUEST_EMAIL)
         if(userEmail == null) {
             userEmail = tokenManager.getUserEmail()
             binding.llGuestExtraOptions.visibility = View.GONE
         } else{
-            isGuestUser = true
+            val ourEmail = tokenManager.getUserEmail()
+            if (userEmail == ourEmail) {
+                userEmail = ourEmail
+                binding.llGuestExtraOptions.visibility = View.GONE
+            } else {
+                isGuestUser = true
+            }
         }
 
         viewModel = ViewModelProvider(this,
             ProfileViewModelFactory(UserRepository(BackendRetrofitClient.instance, tokenManager, favoriteGamesDb.dao))
         )[ProfileViewModel::class.java]
 
-        adapter = initializeGameHistoryAdapter()
-        binding.rvRecentGames.adapter = adapter
+        gamesHistoryAdapter = initializeGameHistoryAdapter()
+        binding.rvRecentGames.adapter = gamesHistoryAdapter
         binding.rvRecentGames.setHasFixedSize(true)
+
+        friendsAdapter = initializeFriendsAdapter()
+        binding.rvFriends.adapter = friendsAdapter
+        binding.rvFriends.setHasFixedSize(true)
 
 
         viewModel.gameHistoryList.observe(this) {
             Log.d(TAG, "onCreate History: $it")
-            adapter.updateGameHistoryList(it)
+            gamesHistoryAdapter.updateGameHistoryList(it)
+        }
+        viewModel.friendsList.observe(this) {
+            Log.d(TAG, "onCreate friends: $it")
+            friendsAdapter.updateFriendList(it)
         }
         viewModel.userDetails.observe(this){
             Log.d(TAG, "onCreate User: $it")
@@ -101,10 +117,13 @@ class ProfileActivity : BaseActivity() {
         viewModel.getAllGameHistories(userEmail)
         viewModel.getUserDetails(userEmail)
         viewModel.areFriendsWithUser(userEmail)
+        viewModel.getFriendsList(userEmail)
 
         viewModel.friendRequestStatus.observe(this){
-            Log.e(TAG, "viewModel friendRequestStatus: $it")
-            Toast.makeText(this, it, Toast.LENGTH_LONG).show()
+            if (it.isNotBlank()){
+                Log.e(TAG, "viewModel friendRequestStatus: $it")
+                Toast.makeText(this, it, Toast.LENGTH_LONG).show()
+            }
         }
         binding.tvSendFriendRequest.setOnClickListener {
             viewModel.sendFriendRequest(userEmail)
@@ -141,9 +160,21 @@ class ProfileActivity : BaseActivity() {
 
                     }
                 }
-            ),
-            4
+            )
         )
+    }
+    private fun initializeFriendsAdapter() : FriendsAdapter {
+        return FriendsAdapter(
+            FriendsAdapter.FriendOnClickListener {
+                openFriend(it)
+            }
+        )
+    }
+    private fun openFriend(it : Friend) : Unit {
+        Log.i(TAG, "Opening friend with email: ${it.email} and name: ${it.name}")
+        val intent = Intent(this, ProfileActivity::class.java)
+        intent.putExtra(Constants.GUEST_EMAIL, it.email)
+        startActivity(intent)
     }
     private fun openGameHistory(it : GameHistory) : Unit {
         val startMessage = GameStartMessage(

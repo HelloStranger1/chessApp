@@ -3,7 +3,6 @@ package com.hellostranger.chess_app.network.retrofit.auth
 import android.util.Log
 import com.hellostranger.chess_app.utils.MyApp
 import com.hellostranger.chess_app.utils.TokenManager
-import com.hellostranger.chess_app.network.retrofit.auth.AuthApiService
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.Response
@@ -14,8 +13,8 @@ class AuthInterceptor(private val authApiService: AuthApiService) : Interceptor 
     override fun intercept(chain: Interceptor.Chain): Response {
         val originalRequest = chain.request()
         val accessToken = tokenManager.getAccessToken()
-        Log.e("AuthInterceptor", "is access expired? ${tokenManager.isAccessTokenExpired()} the token is: ${tokenManager.getAccessToken()}")
-        if (accessToken != "" && tokenManager.isAccessTokenExpired()) {
+        Log.e("AuthInterceptor", "should refresh token? ${tokenManager.shouldRefreshAccessToken()} the token is: ${tokenManager.getAccessToken()}")
+        if (accessToken != "" && tokenManager.shouldRefreshAccessToken()) {
             val refreshToken = tokenManager.getRefreshToken()
 
             // Make the token refresh request
@@ -24,8 +23,10 @@ class AuthInterceptor(private val authApiService: AuthApiService) : Interceptor 
                 if(response.isSuccessful){
                     tokenManager.saveAccessToken(response.body()!!.accessToken, response.body()!!.accessExpiresIn)
                     response.body()!!.accessToken
+                    Log.e("AuthInterceptor", "Refreshed access token using refresh token")
                 }else{
                     tokenManager.clearSession()
+                    Log.e("AuthInterceptor", "Couldn't refresh token")
                     //TODO: If user's refresh token is invalid, send him back to the intro screen.
                 }
                 // Update the refreshed access token and its expiration time in the session
@@ -39,6 +40,9 @@ class AuthInterceptor(private val authApiService: AuthApiService) : Interceptor 
 
             // Retry the request with the new access token
             return chain.proceed(newRequest)
+        } else if (accessToken != "" && tokenManager.isAccessTokenExpired()) {
+            tokenManager.clearSession()
+            Log.e("AuthInterceptor", "Can't refresh token.");
         }
 
         // Add the access token to the request header

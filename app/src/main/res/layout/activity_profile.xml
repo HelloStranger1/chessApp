@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:orientation="vertical"
     tools:context=".activities.ProfileActivity">
     <com.google.android.material.appbar.AppBarLayout
@@ -131,18 +131,6 @@
                     android:gravity="center_horizontal"
                     android:layout_gravity="center"
                     app:drawableTopCompat="@drawable/ic_remove_friend" />
-                <TextView
-                    android:id="@+id/tv_challenge_to_game"
-                    android:layout_weight="1"
-                    android:paddingTop="10dp"
-                    android:textSize="12sp"
-                    android:layout_width="match_parent"
-                    android:layout_height="60dp"
-                    android:layout_marginBottom="0dp"
-                    android:text="@string/challenge_to_a_game"
-                    android:gravity="center_horizontal"
-                    android:layout_gravity="center"
-                    app:drawableTopCompat="@drawable/ic_challenge" />
             </LinearLayout>
             <com.google.android.material.divider.MaterialDivider
                 android:layout_height="1dp"
@@ -352,10 +340,51 @@
             </HorizontalScrollView>
 
             <com.google.android.material.divider.MaterialDivider
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                />
+            <com.google.android.material.divider.MaterialDivider
                 android:layout_height="1dp"
                 android:layout_width="match_parent"
                 />
+            <androidx.cardview.widget.CardView
+                android:layout_height="50dp"
+                android:layout_width="match_parent"
+                android:elevation="10dp"
+                android:backgroundTint="@color/greyTint"
+                >
+                <TextView
+                    android:layout_marginStart="10dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:text="@string/friends"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:gravity="center_vertical"
+                    android:textColor="@color/primary_text_color"/>
 
+
+            </androidx.cardview.widget.CardView>
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rv_friends"
+                    android:layout_marginVertical="12dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#fefefe"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                    android:orientation="horizontal"
+                    tools:itemCount="5"
+                    tools:listitem="@layout/friend_item" />
+
+            </HorizontalScrollView>
+            <com.google.android.material.divider.MaterialDivider
+                android:layout_height="1dp"
+                android:layout_width="match_parent"
+                />
             <androidx.cardview.widget.CardView
                 android:layout_height="50dp"
                 android:layout_width="match_parent"
@@ -381,13 +410,13 @@
                     android:gravity="center_vertical"
                     android:textColor="@color/primary_text_color"/>
 
-                <ImageView
-                    android:layout_marginHorizontal="15dp"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:src="@drawable/ic_arrow_forward"
-                    android:layout_gravity="end|center_vertical"
-                    />
+<!--                <ImageView-->
+<!--                    android:layout_marginHorizontal="15dp"-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="match_parent"-->
+<!--                    android:src="@drawable/ic_arrow_forward"-->
+<!--                    android:layout_gravity="end|center_vertical"-->
+<!--                    />-->
 
             </androidx.cardview.widget.CardView>
             <com.google.android.material.divider.MaterialDivider
@@ -403,8 +432,6 @@
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                 tools:itemCount="5"
                 tools:listitem="@layout/game_history_item" />
-
-
         </LinearLayout>
 
 

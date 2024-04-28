@@ -28,6 +28,7 @@ import com.hellostranger.chess_app.gameHelpers.ChessGameInterface
 import com.hellostranger.chess_app.gameClasses.Game
 import com.hellostranger.chess_app.gameClasses.Square
 import com.hellostranger.chess_app.dto.enums.MoveType
+import com.hellostranger.chess_app.dto.websocket.DrawOfferMessage
 import com.hellostranger.chess_app.gameClasses.enums.GameState
 import com.hellostranger.chess_app.gameClasses.enums.PieceType
 import com.hellostranger.chess_app.gameClasses.pieces.Piece
@@ -38,6 +39,7 @@ import com.hellostranger.chess_app.utils.TokenManager
 import okhttp3.WebSocket
 
 private const val TAG = "GameActivity"
+
 class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener {
 
     private lateinit var binding : ActivityGameViewBinding
@@ -49,6 +51,7 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
     private lateinit var viewModel: GameViewModel
     private lateinit var gameMode : String
     private var heldMoveMessage : MoveMessage? = null //To hold the move message while waiting for the player to chose promotion
+    private var isDrawOffered : Boolean = false
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -77,18 +80,23 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         viewModel.gameStatus.observe(this){
             Toast.makeText(this@GameActivity, "GameStatus changed to: $it", Toast.LENGTH_LONG).show()
             Log.e(TAG, "gameStatus changed to: $it")
-            if((it == GameState.WHITE_WIN || it == GameState.BLACK_WIN || it == GameState.DRAW) && savedInstanceState == null){
-                viewModel.startMessageData.value?.let {msg ->
-                    val result : Int = if(it == GameState.WHITE_WIN) 0 else if(it == GameState.DRAW) 1 else 2
-                    val fragment : GameResultFragment = GameResultFragment.newInstance(msg.whiteName,
-                        msg.blackName, msg.whiteImage, msg.blackImage, 800, result)
+            val result : Int = when (it) {
+                GameState.WHITE_WIN -> 0
+                GameState.DRAW, GameState.ABORTED -> 1
+                GameState.BLACK_WIN -> 2
+                else -> -1
+            }
+            if(savedInstanceState == null && result != -1){
+                val ourElo = viewModel.ourElo
+                viewModel.startMessageData.value?.let { msg ->
+                    val fragment : GameResultFragment = GameResultFragment.newInstance(msg.whiteName, msg.blackName,
+                        msg.whiteImage, msg.blackImage, ourElo, result, viewModel.gameOverDescription)
                     supportFragmentManager.commit {
                         setReorderingAllowed(true)
                         add(R.id.fragment_container_view, fragment)
                     }
                     binding.shadow.visibility = View.VISIBLE
                 }
-
             }
         }
 
@@ -98,6 +106,13 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         viewModel.currentBoard.observe(this){
             binding.chessView.invalidate()
         }
+        viewModel.drawOffer.observe(this) {
+            if (it.isWhite != viewModel.isWhite) {
+                Toast.makeText(this, "Player ${it.playerEmail} Offered a draw. ", Toast.LENGTH_LONG).show()
+                isDrawOffered = true
+            }
+        }
+        Log.e("hey", "hey ")
 
         binding.ibArrowBack.setOnClickListener{
             viewModel.showPreviousBoard()
@@ -109,6 +124,8 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         binding.ibFlipBoard.setOnClickListener{
             flipUserData()
         }
+
+
 
         binding.ibExtraSettings.setOnClickListener {
             if(gameMode == Constants.ONLINE_MODE){
@@ -139,10 +156,17 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
                     showConcedeDialog()
                     return@setOnMenuItemClickListener true
                 }
+                R.id.draw -> {
+                    sendDrawOffer()
+                    return@setOnMenuItemClickListener true
+                }
                 else -> {return@setOnMenuItemClickListener true}
             }
         }
         popupMenu.show()
+    }
+    private fun sendDrawOffer() {
+       sendMessageToServer(DrawOfferMessage(viewModel.currentPlayerEmail, viewModel.isWhite))
     }
     private fun flipUserData(){
         binding.chessView.flipBoard()
@@ -203,6 +227,7 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         }
     }
 
+
     private fun showConcedeDialog(){
         val builder = AlertDialog.Builder(this@GameActivity)
         builder.setTitle("Resign Game")
@@ -210,7 +235,7 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         builder.setPositiveButton("Yes"){ dialog, _ ->
             sendMessageToServer(ConcedeGameMessage(viewModel.currentPlayerEmail))
             dialog.dismiss()
-            finish()
+
         }
         builder.setNegativeButton("No"){
                 dialog, _ -> dialog.dismiss()
@@ -300,6 +325,7 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
                 sendMessageToServer(updatedMoveMessage)
             }
         }
+        isDrawOffered = false
        /* if(!gameService.validateMove(updatedMoveMessage)) return
 
         gameService.temporaryMakeMove(updatedMoveMessage)*/ //Instead of waiting for the server to validate the move, we play it temporarily and undo it if the server says it is invalid.
@@ -308,6 +334,17 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
 
     override fun getLastMovePlayed() : MoveMessage? {
         return viewModel.currentBoard.value?.previousMove
+    }
+
+    override fun getPieceResIds(): Set<Int> {
+        if (MyApp.pieceTheme == MyApp.PieceTheme.DEFAULT) {
+            return Constants.imgResIDs
+        } else if (MyApp.pieceTheme == MyApp.PieceTheme.PLANT) {
+            return Constants.plantResIDs
+        }
+
+        return Constants.imgResIDs
+
     }
 
     private fun setPiecePromotionMenu(){
@@ -443,6 +480,5 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
             else -> {return false}
         }
     }
-
 
 }

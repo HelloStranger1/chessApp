@@ -23,6 +23,21 @@ object Constants {
     const val NEW_MOVE_DURATION : Long = 600
     const val OLD_MOVE_DURATION : Long = 500
     const val FAVORITE_GAMES_DB = "favorite-games-database"
+    val plantResIDs = setOf(
+        R.drawable.ic_white_king_plant,
+        R.drawable.ic_white_queen,
+        R.drawable.ic_white_rook_plant,
+        R.drawable.ic_white_knight_plant,
+        R.drawable.ic_white_bishop_plant,
+        R.drawable.ic_white_pawn_plant,
+
+        R.drawable.ic_black_king_plant,
+        R.drawable.ic_black_queen,
+        R.drawable.ic_black_rook_plant,
+        R.drawable.ic_black_knight_plant,
+        R.drawable.ic_black_bishop_plant,
+        R.drawable.ic_black_pawn_plant,
+    )
     val imgResIDs = setOf(
         R.drawable.ic_white_king,
         R.drawable.ic_white_queen,

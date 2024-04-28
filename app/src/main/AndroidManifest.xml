@@ -19,18 +19,21 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.ChessApp"
+        android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
-        <service android:name=".utils.KeepAlive"/>
+        <activity
+            android:name=".activities.GameHistoryActivity"
+            android:exported="false" />
+
+        <service android:name=".utils.KeepAlive" />
+
         <activity
             android:name=".activities.PuzzleActivity"
             android:exported="false" />
-
         <activity
             android:name=".activities.NotificationsActivity"
             android:exported="false" />
-
         <activity
             android:name=".activities.ProfileActivity"
             android:exported="false"
@@ -83,6 +86,5 @@
             android:screenOrientation="portrait"
             android:theme="@style/NoActionBar" />
     </application>
-
 
 </manifest>
