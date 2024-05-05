@@ -336,16 +336,6 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         return viewModel.currentBoard.value?.previousMove
     }
 
-    override fun getPieceResIds(): Set<Int> {
-        if (MyApp.pieceTheme == MyApp.PieceTheme.DEFAULT) {
-            return Constants.imgResIDs
-        } else if (MyApp.pieceTheme == MyApp.PieceTheme.PLANT) {
-            return Constants.plantResIDs
-        }
-
-        return Constants.imgResIDs
-
-    }
 
     private fun setPiecePromotionMenu(){
         val popupMenu = PopupMenu(this@GameActivity, binding.llPlayer2)

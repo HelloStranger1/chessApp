@@ -105,7 +105,7 @@ class GameViewModel(private var currentGame : Game) : ViewModel() {
         _startMessageData.value = startMessage
 
     }
-    fun updateDrawOffer(drawOfferMessage: DrawOfferMessage) {
+    fun updateDrawOffer(drawOfferMessage: DrawOfferMessage) = viewModelScope.launch(Dispatchers.Main) {
         _drawOffer.value = drawOfferMessage
     }
 

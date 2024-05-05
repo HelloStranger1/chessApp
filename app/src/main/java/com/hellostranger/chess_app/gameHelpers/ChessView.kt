@@ -20,6 +20,7 @@ import com.hellostranger.chess_app.gameClasses.pieces.Piece
 import com.hellostranger.chess_app.utils.Constants
 import com.hellostranger.chess_app.utils.Constants.imgResIDs
 import com.hellostranger.chess_app.utils.Constants.scaleFactor
+import com.hellostranger.chess_app.utils.MyApp
 
 class ChessView(context : Context?, attrs : AttributeSet?) : View(context, attrs) {
     private var lightColor = ContextCompat.getColor(context!!, R.color.lightSquare)
@@ -233,9 +234,19 @@ class ChessView(context : Context?, attrs : AttributeSet?) : View(context, attrs
     }
 
     private fun loadBitmaps(){
-        chessGameInterface!!.getPieceResIds().forEach{
+    getPieceResIds().forEach{
             pieceBitmaps[it] = BitmapFactory.decodeResource(resources, it)
         }
+    }
+    private fun getPieceResIds(): Set<Int> {
+        if (MyApp.pieceTheme == MyApp.PieceTheme.DEFAULT) {
+            return Constants.imgResIDs
+        } else if (MyApp.pieceTheme == MyApp.PieceTheme.PLANT) {
+            return Constants.plantResIDs
+        }
+
+        return Constants.imgResIDs
+
     }
 
     private fun drawPieces(canvas: Canvas?){

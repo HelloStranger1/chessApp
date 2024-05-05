@@ -319,17 +319,6 @@ class PuzzleActivity : BaseActivity(), ChessGameInterface, PopupMenu.OnMenuItemC
         return boardHistory[mCurrentBoardShown].previousMove
     }
 
-    override fun getPieceResIds(): Set<Int> {
-        if (MyApp.pieceTheme == MyApp.PieceTheme.DEFAULT) {
-            return Constants.imgResIDs
-        } else if (MyApp.pieceTheme == MyApp.PieceTheme.PLANT) {
-            return Constants.plantResIDs
-        }
-
-        return Constants.imgResIDs
-
-    }
-
     override fun onMenuItemClick(menuItem: MenuItem): Boolean {
         if(heldMoveMessage == null){
             Log.e(TAG, "held Move message is null")

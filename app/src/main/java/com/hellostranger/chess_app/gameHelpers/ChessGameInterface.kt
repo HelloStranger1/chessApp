@@ -18,7 +18,6 @@ interface ChessGameInterface {
 
     fun getLastMovePlayed() : MoveMessage?
 
-    fun getPieceResIds() : Set<Int>
 
 
 
