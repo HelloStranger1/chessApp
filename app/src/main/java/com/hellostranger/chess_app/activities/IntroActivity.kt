@@ -8,6 +8,7 @@ import android.view.WindowManager
 import androidx.appcompat.widget.AppCompatButton
 import com.hellostranger.chess_app.R
 
+@ExperimentalUnsignedTypes
 class IntroActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

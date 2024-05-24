@@ -3,8 +3,7 @@ package com.hellostranger.chess_app.models.rvEntities
 import androidx.room.Entity
 import androidx.room.Ignore
 import androidx.room.PrimaryKey
-import com.hellostranger.chess_app.gameClasses.enums.Color
-import com.hellostranger.chess_app.gameClasses.enums.GameState
+import com.hellostranger.chess_app.core.GameResult
 
 @Entity
 data class GameHistory @JvmOverloads constructor(
@@ -17,10 +16,10 @@ data class GameHistory @JvmOverloads constructor(
     val blackName : String,
     val blackElo : Int,
     val whiteElo : Int,
-    val opponentColor : Color,
+    val opponentColorIndex : Int,
     val gameDate : String,
-    val result : GameState,
-    val startBoardJson : String,
+    val result : GameResult,
+    val startBoardFen : String,
     val gameMoves : String,
     @Ignore
     var isSaved : Boolean = false

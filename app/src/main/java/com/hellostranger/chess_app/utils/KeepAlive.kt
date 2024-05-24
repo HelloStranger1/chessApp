@@ -6,7 +6,6 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.util.Log
-import com.google.errorprone.annotations.Keep
 import com.hellostranger.chess_app.network.retrofit.backend.BackendRetrofitClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -18,7 +17,7 @@ class KeepAlive : Service() {
     private val tokenManager = MyApp.tokenManager
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
     companion object {
-         var isRunning = false;
+         var isRunning = false
     }
 
 

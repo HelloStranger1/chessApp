@@ -60,4 +60,9 @@
     <string name="friends">Friends</string>
     <string name="won_by_resgination">%1$s won by resignation</string>
     <string name="new_elo_rating">new elo rating</string>
+    <string name="go_back_a_move">go back a move</string>
+    <string name="go_forward_a_move">go forward a move</string>
+    <string name="flip_board">flip board</string>
+    <string name="extra_settings">extra settings</string>
+    <string name="go_back">go back</string>
 </resources>

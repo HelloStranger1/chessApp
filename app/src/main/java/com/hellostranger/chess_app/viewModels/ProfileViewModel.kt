@@ -22,7 +22,7 @@ class ProfileViewModel(
     var favoriteGamesList = MutableLiveData<List<GameHistory>>()
     val userDetails = MutableLiveData<User>()
     val isFriendsWithUser = MutableLiveData(false)
-    val friendRequestStatus = MutableLiveData<String>("")
+    val friendRequestStatus = MutableLiveData("")
 
 
     val failed = MutableLiveData<String>()
@@ -122,7 +122,7 @@ class ProfileViewModel(
             if (response.isSuccessful) {
                 val tempFriendList : MutableList<Friend> = mutableListOf()
                 for (user in response.body()!!) {
-                    val friend : Friend = Friend(user.image, user.email, user.name)
+                    val friend = Friend(user.image, user.email, user.name)
                     tempFriendList.add(friend)
                 }
                 friendsList.postValue(tempFriendList)

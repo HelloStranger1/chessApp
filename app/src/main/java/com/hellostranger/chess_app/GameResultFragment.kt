@@ -1,6 +1,6 @@
 package com.hellostranger.chess_app
 
-import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -9,11 +9,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.annotation.RequiresApi
 import androidx.appcompat.widget.AppCompatButton
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
 import com.bumptech.glide.Glide
-import com.hellostranger.chess_app.gameClasses.enums.GameState
+import com.hellostranger.chess_app.core.Arbiter
+import com.hellostranger.chess_app.core.GameResult
 
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
 private const val ARG_WHITE_NAME = "whiteName"
@@ -28,6 +30,7 @@ private const val ARG_RESULT_DESC = "resultDesc"
  * Use the [GameResultFragment.newInstance] factory method to
  * create an instance of this fragment.
  */
+@ExperimentalUnsignedTypes
 class GameResultFragment : DialogFragment() {
 
     private var whiteName: String? = null
@@ -35,7 +38,7 @@ class GameResultFragment : DialogFragment() {
     private var whiteImage : String? = null
     private var blackImage : String? = null
     private var ourElo : Int = 0
-    private var gameResult : GameState? = null
+    private var gameResult : GameResult? = null
     private var gameResultDesc : String? = null
 
     private var whiteImageView : ImageView? = null
@@ -48,6 +51,7 @@ class GameResultFragment : DialogFragment() {
     private var eloTextView : TextView? = null
     private var btnBackToMenu : AppCompatButton? = null
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
@@ -56,8 +60,7 @@ class GameResultFragment : DialogFragment() {
             whiteImage = it.getString(ARG_WHITE_IMAGE)
             blackImage = it.getString(ARG_BLACK_IMAGE)
             ourElo = it.getInt(ARG_OUR_ELO)
-            val resInt = it.getInt(ARG_RESULT)
-            gameResult = if(resInt == 0) {GameState.WHITE_WIN} else if(resInt == 1) {GameState.DRAW} else {GameState.BLACK_WIN}
+            gameResult = it.getSerializable(ARG_RESULT, GameResult::class.java)
             gameResultDesc = it.getString(ARG_RESULT_DESC)
         }
 
@@ -95,17 +98,27 @@ class GameResultFragment : DialogFragment() {
             .into(blackImageView!!)
         whiteTextView!!.text = whiteName
         blackTextView!!.text = blackName
-        resultTextView!!.text = if(gameResult == GameState.WHITE_WIN) "1 - 0" else if(gameResult == GameState.DRAW) "0.5 - 0.5" else "0 - 1"
+        resultTextView!!.text = if(Arbiter.isWhiteWinResult(gameResult!!)) "1 - 0" else if(Arbiter.isDrawResult(gameResult!!)) "0.5 - 0.5" else "0 - 1"
         when (gameResult) {
-            GameState.WHITE_WIN -> {
+            GameResult.BlackIsMated -> {
                 whiteImageView!!.background = ContextCompat.getDrawable(requireContext(), R.drawable.image_border_win)
                 blackImageView!!.background = ContextCompat.getDrawable(requireContext(), R.drawable.image_border_lose)
-                resultTextTextView!!.text = "White won"
+                resultTextTextView!!.text = "White won by checkmate"
             }
-            GameState.BLACK_WIN -> {
+            GameResult.BlackResigned-> {
+                whiteImageView!!.background = ContextCompat.getDrawable(requireContext(), R.drawable.image_border_win)
+                blackImageView!!.background = ContextCompat.getDrawable(requireContext(), R.drawable.image_border_lose)
+                resultTextTextView!!.text = "White won by resignation"
+            }
+            GameResult.WhiteResigned -> {
                 whiteImageView!!.background = ContextCompat.getDrawable(requireContext(), R.drawable.image_border_lose)
                 blackImageView!!.background = ContextCompat.getDrawable(requireContext(), R.drawable.image_border_win)
-                resultTextTextView!!.text = "Black won"
+                resultTextTextView!!.text = "Black won by resignation"
+            }
+            GameResult.WhiteIsMated-> {
+                whiteImageView!!.background = ContextCompat.getDrawable(requireContext(), R.drawable.image_border_lose)
+                blackImageView!!.background = ContextCompat.getDrawable(requireContext(), R.drawable.image_border_win)
+                resultTextTextView!!.text = "Black won by checkmate"
             }
             else -> {
                 whiteImageView!!.background = ContextCompat.getDrawable(requireContext(), R.drawable.image_border_draw)
@@ -133,7 +146,7 @@ class GameResultFragment : DialogFragment() {
          */
         // TODO: Rename and change types and number of parameters
         @JvmStatic
-        fun newInstance(whiteName: String, blackName: String, whiteImage : String, blackImage : String, ourElo : Int, result : Int, resultDesc : String) : GameResultFragment =
+        fun newInstance(whiteName: String, blackName: String, whiteImage : String, blackImage : String, ourElo : Int, result : GameResult, resultDesc : String) : GameResultFragment =
             GameResultFragment().apply {
                 arguments = Bundle().apply {
                     putString(ARG_WHITE_NAME, whiteName)
@@ -141,8 +154,8 @@ class GameResultFragment : DialogFragment() {
                     putString(ARG_WHITE_IMAGE, whiteImage)
                     putString(ARG_BLACK_IMAGE, blackImage)
                     putInt(ARG_OUR_ELO, ourElo)
-                    putInt(ARG_RESULT, result)
                     putString(ARG_RESULT_DESC, resultDesc)
+                    putSerializable(ARG_RESULT, result)
                     Log.i("TAG", "resultDesc $resultDesc")
                 }
             }

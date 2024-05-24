@@ -1,6 +1,5 @@
 package com.hellostranger.chess_app.database
 
-import com.hellostranger.chess_app.database.GameHistoryDao
 import com.hellostranger.chess_app.models.rvEntities.GameHistory
 import com.hellostranger.chess_app.network.retrofit.backend.BackendApiService
 import com.hellostranger.chess_app.utils.TokenManager

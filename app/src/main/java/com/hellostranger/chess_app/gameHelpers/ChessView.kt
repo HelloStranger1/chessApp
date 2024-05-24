@@ -11,45 +11,57 @@ import android.util.AttributeSet
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.hellostranger.chess_app.R
-import com.hellostranger.chess_app.dto.websocket.MoveMessage
-import com.hellostranger.chess_app.gameClasses.Square
-import com.hellostranger.chess_app.dto.enums.MoveType
-import com.hellostranger.chess_app.gameClasses.pieces.Piece
-import com.hellostranger.chess_app.utils.Constants
-import com.hellostranger.chess_app.utils.Constants.imgResIDs
+import com.hellostranger.chess_app.core.board.Board
+import com.hellostranger.chess_app.core.board.Coord
+import com.hellostranger.chess_app.core.board.Move
+import com.hellostranger.chess_app.core.board.Piece
+import com.hellostranger.chess_app.core.helpers.BoardHelper
+import com.hellostranger.chess_app.core.moveGeneration.MoveGenerator
+
 import com.hellostranger.chess_app.utils.Constants.scaleFactor
 import com.hellostranger.chess_app.utils.MyApp
 
+@ExperimentalUnsignedTypes
 class ChessView(context : Context?, attrs : AttributeSet?) : View(context, attrs) {
-    private var lightColor = ContextCompat.getColor(context!!, R.color.lightSquare)
-    private var darkColor = ContextCompat.getColor(context!!, R.color.darkSquare)
-    private var tintedLightColor = ContextCompat.getColor(context!!, R.color.tintedLightSquare)
-    private var tintedDarkColor = ContextCompat.getColor(context!!, R.color.tintedDarkSquare)
+    private val lightColor       : Int = ContextCompat.getColor(context!!, R.color.lightSquare)
+    private val darkColor        : Int = ContextCompat.getColor(context!!, R.color.darkSquare)
+    private val tintedLightColor : Int = ContextCompat.getColor(context!!, R.color.tintedLightSquare)
+    private val tintedDarkColor  : Int = ContextCompat.getColor(context!!, R.color.tintedDarkSquare)
+
+    private val pieceSprites = PieceResIDs(MyApp.pieceTheme)
 
     private val paint = Paint()
     private val pieceBitmaps = mutableMapOf<Int, Bitmap>()
 
     private var movingPieceBitmap : Bitmap? = null
-    private var movingPiece : Piece? = null
 
-    private var fromCol : Int = -1
-    private var fromRow : Int = -1
+    private var movingPieceStartCoord : Coord = Coord(-1, -1)
+    private var lastMoveMade : Move = Move.NullMove
+
+/*
     private var lastMoveStartCol : Int = -1
     private var lastMoveStartRow : Int = -1
     private var lastMoveEndCol : Int = -1
     private var lastMoveEndRow : Int = -1
+*/
 
-    var movingPieceX : Float = -1f
-    var movingPieceY : Float = -1f
-    private var movingPieceMoves : ArrayList<Square>? = null
+    private var movingPieceX : Float = -1f
+    private var movingPieceY : Float = -1f
 
-    var isFlipped : Boolean = false
-    var originX = 20f
-    var originY = 200f
-    var cellSide : Float = 130f
-    var gameMode : String =""
+    var isWhiteOnBottom : Boolean = true
+        private set
+    private var moveGenerator = MoveGenerator()
+    private val board : Board?
+        get() = chessGameInterface?.getBoard()
+    var isLocked : Boolean = false
+
+    private var originX = 20f
+    private var originY = 200f
+    private var cellSide : Float = 130f
+//    var gameMode : String =""
     var chessGameInterface : ChessGameInterface? = null
 
     init {
@@ -57,171 +69,73 @@ class ChessView(context : Context?, attrs : AttributeSet?) : View(context, attrs
     }
 
     fun flipBoard(){
-        isFlipped = !isFlipped
-    }
-    /*fun animateMove(startCol: Int, startRow: Int, endCol: Int, endRow: Int) {
-        movingPiece = chessGameInterface?.pieceAt(startCol, startRow, false)
-        if(movingPiece == null){
-            Log.e("TAG", "Animate MovingPiece is null $movingPiece")
-            return
-        }
-        movingPieceBitmap = pieceBitmaps[movingPiece!!.resID]
-        fromCol = startCol
-        fromRow = startRow
-        if (movingPiece != null) {
-            val animation = PieceMoveAnimation(this, startCol, startRow, endCol, endRow)
-            animation.duration = Constants.OLD_MOVE_DURATION // You can adjust the duration as needed
-            animation.setAnimationListener(object : Animation.AnimationListener {
-                override fun onAnimationStart(animation: Animation) {
-                    // Animation started
-                    Log.e("TAG", "Animation started")
-                }
-
-                override fun onAnimationEnd(animation: Animation) {
-                    // Animation ended, update the game state and redraw
-                    chessGameInterface?.tellViewModelToPlayMove(
-                        MoveMessage("", startCol, startRow, endCol, endRow, MoveType.REGULAR)
-                    )
-                    fromCol = -1
-                    fromRow = -1
-                    movingPieceBitmap = null
-                    movingPiece = null
-                    movingPieceMoves = null
-                    invalidate()
-                }
-
-                override fun onAnimationRepeat(animation: Animation) {}
-            })
-
-            startAnimation(animation)
-        }
+        isWhiteOnBottom = !isWhiteOnBottom
     }
 
-    private fun calculateXForSquare(col: Int, row: Int): Float {
-        return originX + col * cellSide + cellSide / 2
-    }
-
-    private fun calculateYForSquare(col: Int, row: Int): Float {
-        return originY + (7 - row) * cellSide + cellSide / 2
-    }*/
-
-    /*fun animateMove(moveMessage: MoveMessage, duration : Long) {
-        movingPiece = chessGameInterface?.pieceAt(moveMessage.startCol, moveMessage.startRow, false)
-        if(movingPiece == null){
-            Log.e("TAG", "Animate MovingPiece is null $movingPiece")
-            return
-        }
-        movingPieceBitmap = pieceBitmaps[movingPiece!!.resID]
-        fromCol = moveMessage.startCol
-        fromRow = moveMessage.startRow
-        Log.e("TAG", "Animating move. movingPiece is: $movingPiece, and bitmap is: $movingPieceBitmap")
-        val animation = PieceMoveAnimation(this, moveMessage.startCol, moveMessage.startRow, moveMessage.endCol, moveMessage.endRow)
-        animation.duration = duration // You can adjust the duration as needed
-        animation.setAnimationListener(object : Animation.AnimationListener {
-            override fun onAnimationStart(animation: Animation) {
-                // Animation started
-                Log.e("TAG", "Animation started")
-            }
-
-            override fun onAnimationEnd(animation: Animation) {
-                // Animation ended, update the game state and redraw
-                chessGameInterface!!.playMove(moveMessage, false)
-                fromCol = -1
-                fromRow = -1
-                movingPieceBitmap = null
-                movingPiece = null
-                movingPieceMoves = null
-                Log.e("TAG", "Animation ended")
-            }
-
-            override fun onAnimationRepeat(animation: Animation) {}
-        })
-
-        startAnimation(animation)
-    }*/
-
-
-    /*fun animateMove(startCol : Int, startRow : Int, endCol : Int, endRow : Int){
-        fromRow = if(!isFlipped) startRow else 7-startRow
-        fromCol = if(!isFlipped) startCol else 7-startCol
-        Log.e("TAG", "AnimateMove called with: startCol $startCol, startRow $startRow, endCol $endCol, endRow $endRow, fromRow $fromRow, fromCol $fromCol")
-
-        val startX = fromCol * cellSide + originX + 0.5*cellSide
-        val startY = (7 - fromRow) * cellSide + originY + 0.5*cellSide
-        val endX = if(isFlipped){
-            (7- endCol) * cellSide + originX + 0.5*cellSide
-        } else {
-            endCol * cellSide + originX + 0.5*cellSide
-        }
-        val endY = if(isFlipped){
-            endRow * cellSide + originY + 0.5*cellSide
-        } else{
-            (7 - endRow) * cellSide + originY + 0.5*cellSide
-        }
-        Log.e("TAG", "startX $startX, startY $startY, endX $endX, endY $endY")
-        chessGameInterface?.pieceAt(startCol, startRow, false)?.let {
-            movingPiece = it
-            movingPieceBitmap = pieceBitmaps[it.resID]
-        }
-        movingPieceX = startX.toFloat()
-        movingPieceY = startY.toFloat()
-        for(i in 0..9){
-            movingPieceX += (endX - startX).toFloat() / 10
-            movingPieceY += (endY - startY).toFloat() / 10
-            Log.e("TAG", "movingX $movingPieceX , movingY $movingPieceY")
-            invalidate()
-        }
-
-    }*/
-
-    override fun onDraw(canvas: Canvas?){
-        canvas ?: return
+    override fun onDraw(canvas: Canvas) {
         val chessBoardSide = Integer.min(width, height) * scaleFactor
         cellSide = chessBoardSide / 8f
         originX= (width - chessBoardSide) / 2f
         originY = (height - chessBoardSide) / 2f
+        board?.let {
+            if (it.allGameMoves.isNotEmpty()) {
+                lastMoveMade = it.allGameMoves.last()
+            }
+        }
 
         drawChessBoard(canvas)
         drawPieces(canvas)
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        if(gameMode == Constants.ANALYSIS_MODE){
-            return false
-        }
-        if(!chessGameInterface!!.isOnLastMove()){
-            chessGameInterface!!.goToLastMove()
-            Log.e("TAG", "Not on last move.")
-            this.invalidate()
+        if (isLocked) {
             return false
         }
         when (event?.action){
             MotionEvent.ACTION_DOWN ->{
-                val tempFromCol = ((event.x - originX) / cellSide).toInt()
-                val tempFromRow = 7 - ((event.y - originY) / cellSide).toInt()
-                if (tempFromRow >= 8 || tempFromCol >= 8 || tempFromCol < 0 || tempFromRow < 0){
+                val coord = getCoordFromEvent(event.x, event.y)
+                Log.e("ChessView","Touching rank: ${coord.rankIndex} and file: ${coord.fileIndex}")
+                if (!coord.isValidSquare) {
                     return false
                 }
-                chessGameInterface?.pieceAt(tempFromCol,  tempFromRow, isFlipped)?.let{
-                    movingPiece = it
-                    movingPieceBitmap = pieceBitmaps[it.resID]
-                    movingPieceMoves = chessGameInterface?.getPiecesMoves(it)
-                    fromRow = tempFromRow
-                    fromCol = tempFromCol
+                board?.let {
+                    val piece = it.square[BoardHelper.indexFromCoord(coord)]
+                    if (piece != Piece.NONE) {
+                        movingPieceStartCoord = coord
+                        movingPieceBitmap = pieceBitmaps[piece]
+                    }
                 }
+//                chessGameInterface?.pieceAt(tempFromCol,  tempFromRow, isFlipped)?.let{
+//                    movingPiece = it
+//                    movingPieceBitmap = pieceBitmaps[it.resID]
+//                    movingPieceMoves = chessGameInterface?.getPiecesMoves(it)
+//                    fromRow = tempFromRow
+//                    fromCol = tempFromCol
+//                }
             }
             MotionEvent.ACTION_UP ->{
-                val col = ((event.x - originX) / cellSide).toInt()
-                val row = 7 - ((event.y - originY) / cellSide).toInt()
-                if((fromCol != col || fromRow != row) && fromCol != -1){
-                    val moveMessage = MoveMessage("", fromCol, fromRow, col, row, MoveType.REGULAR)
-                    chessGameInterface?.playMove(moveMessage, isFlipped)
+                val targetCoord = getCoordFromEvent(event.x, event.y)
+                if (!targetCoord.isValidSquare || targetCoord == movingPieceStartCoord) {
+                    resetMovingPiece()
+                    invalidate()
+                    return false
                 }
-                fromCol = -1
-                fromRow = -1
-                movingPieceBitmap = null
-                movingPiece = null
-                movingPieceMoves = null
+                if (!movingPieceStartCoord.isValidSquare) {
+                    Log.e("ChessView", "How tf is the movingPieceStartCoord not valid?? it is (file, rank): ${movingPieceStartCoord.fileIndex}, ${movingPieceStartCoord.rankIndex}")
+                }
+                chessGameInterface?.playMove(movingPieceStartCoord, targetCoord)
+                resetMovingPiece()
+
+
+//                if((fromcol != col || fromrow != row) && fromcol != -1){
+//                    val movemessage = movemessage("", fromcol, fromrow, col, row, movetype.regular)
+//                    chessgameinterface?.playmove(movemessage, isflipped)
+//                }
+//                fromcol = -1
+//                fromrow = -1
+//                movingpiecebitmap = null
+//                movingpiece = null
+//                movingpiecemoves = null
                 invalidate()
             }
             MotionEvent.ACTION_MOVE ->{
@@ -233,39 +147,58 @@ class ChessView(context : Context?, attrs : AttributeSet?) : View(context, attrs
         return true
     }
 
+    private fun resetMovingPiece() {
+        movingPieceBitmap = null
+        movingPieceStartCoord = Coord(-1, -1)
+    }
+    private fun getCoordFromEvent(x : Float, y : Float) : Coord {
+        val file = ((x - originX) / cellSide).toInt()
+        val rank = ((y - originY) / cellSide).toInt()
+        return if (!isWhiteOnBottom) {
+            Coord(7- file, rank)
+        } else {
+            Coord(file, 7 - rank)
+        }
+    }
+
     private fun loadBitmaps(){
-    getPieceResIds().forEach{
-            pieceBitmaps[it] = BitmapFactory.decodeResource(resources, it)
+        Piece.pieceIndices.forEach {
+            pieceBitmaps[it] = BitmapFactory.decodeResource(resources, pieceSprites.getPieceSprite(it))
         }
     }
-    private fun getPieceResIds(): Set<Int> {
-        if (MyApp.pieceTheme == MyApp.PieceTheme.DEFAULT) {
-            return Constants.imgResIDs
-        } else if (MyApp.pieceTheme == MyApp.PieceTheme.PLANT) {
-            return Constants.plantResIDs
-        }
 
-        return Constants.imgResIDs
-
-    }
-
-    private fun drawPieces(canvas: Canvas?){
-        for(row in 0..7){
-            for(col in 0..7){
-                chessGameInterface?.pieceAt(col, row, isFlipped)?.let{
-                    if(row != fromRow || col != fromCol || it != movingPiece){
-                        drawPieceAt(canvas, col, row, it.resID)
-                    }
+    private fun drawPieces(canvas: Canvas){
+        for (i in 0 until 64) {
+            val coord = Coord(i)
+            board?.let{
+                val piece = it.square[BoardHelper.indexFromCoord(coord)]
+                if (coord != movingPieceStartCoord && piece != Piece.NONE) {
+                    drawPieceAt(canvas, coord, piece)
                 }
-
             }
         }
+//        for(rank in 0..7){
+//            for(file in 0..7){
+//                val coord = Coord(file, rank)
+//                 board?.let{
+//                    val piece = it.square[BoardHelper.indexFromCoord(coord.fileIndex, coord.rankIndex)]
+//                    if (coord != movingPieceStartCoord && piece != Piece.NONE) {
+//                        drawPieceAt(canvas, coord, piece)
+//                    }
+//                }
+///*
+//                chessGameInterface?.pieceAt(col, row, isFlipped)?.let{
+//                    if(row != fromRow || col != fromCol || it != movingPiece){
+//                        drawPieceAt(canvas, col, row, it.resID)
+//                    }
+//                }
+//*/
+//
+//            }
+//        }
 
-        if(canvas == null){
-            Log.e("TAG", "canvas is null???")
-        }
         movingPieceBitmap?.let {
-            canvas?.drawBitmap(it,
+            canvas.drawBitmap(it,
                 null,
                 RectF(
                     movingPieceX - cellSide / 2,
@@ -275,13 +208,15 @@ class ChessView(context : Context?, attrs : AttributeSet?) : View(context, attrs
                 paint
             )
         }
-
     }
 
-    private fun drawPieceAt(canvas: Canvas?, col : Int, row : Int, resID : Int){
-        canvas ?: return
+    private fun drawPieceAt(canvas: Canvas, coord: Coord, piece : Int){
 
-        val pieceBitmap = pieceBitmaps[resID]!!
+
+        val pieceBitmap = pieceBitmaps[piece]!!
+
+        canvas.drawBitmap(pieceBitmap, null, squareFromCoord(coord), paint)
+/*
         canvas.drawBitmap(pieceBitmap,
             null,
             RectF(originX + col * cellSide,
@@ -290,12 +225,14 @@ class ChessView(context : Context?, attrs : AttributeSet?) : View(context, attrs
                 originY + ((7-row) + 1) * cellSide),
             paint
         )
+*/
 
 
     }
 
-    private fun drawChessBoard(canvas: Canvas?){
-        val lastMove : MoveMessage? = chessGameInterface!!.getLastMovePlayed()
+    private fun drawChessBoard(canvas: Canvas){
+
+/*
         if(lastMove != null){
             if(isFlipped){
                 lastMoveStartCol = 7 - lastMove.startCol
@@ -309,21 +246,74 @@ class ChessView(context : Context?, attrs : AttributeSet?) : View(context, attrs
                 lastMoveEndRow = lastMove.endRow
             }
         }
-        for(row in 0..7){
-            for (col in 0..7) {
-                val isDark = if(isFlipped) {
-                    (col+row) % 2 == 0
-                } else {
-                    (col+row) % 2 != 0
-                }
+*/
+//        for(row in 0..7){
+//            for (col in 0..7) {
+//                val isDark = if(isFlipped) {
+//                    (col+row) % 2 == 0
+//                } else {
+//                    (col+row) % 2 != 0
+//                }
+//
+//                drawSquareAt(canvas, col, row, isDark)
+//            }
+//        }
+        for (i in 0 until 64) {
+            drawSquareAt(canvas, Coord(i))
+        }
+        drawLegalMoves(canvas)
 
-                drawSquareAt(canvas, col, row, isDark)
+    }
+    private fun drawLegalMoves(canvas: Canvas) {
+        board ?: return
+        if (!movingPieceStartCoord.isValidSquare) {
+            return
+        }
+        val moves : Array<Move> = moveGenerator.generateMoves(board!!)
+        for (i in moves.indices) {
+            val move = moves[i]
+            if (move.startSquare != BoardHelper.indexFromCoord(movingPieceStartCoord)) {
+                continue
+            }
+            val targetedPaint = Paint()
+            targetedPaint.color = Color.GRAY
+            var radius = 20f
+            if (board!!.square[move.targetSquare] != Piece.NONE) {
+                targetedPaint.style = Paint.Style.STROKE
+                targetedPaint.strokeWidth = 6f
+                radius = (cellSide - targetedPaint.strokeWidth) / 2
+            }
+            val fileIndex = if (isWhiteOnBottom) BoardHelper.fileIndex(move.targetSquare) else 7 - BoardHelper.fileIndex(move.targetSquare)
+            val rankIndex = if (isWhiteOnBottom) 7 - BoardHelper.rankIndex(move.targetSquare) else BoardHelper.rankIndex(move.targetSquare)
+            canvas.drawCircle(
+                originX + (fileIndex + 0.5f) * cellSide,
+                originY + (rankIndex + 0.5f) * cellSide,
+                radius,
+                targetedPaint
+            )
+        }
+    }
+    private fun getSquareColour(coord : Coord) : Int{
+        val coordIndex : Int = BoardHelper.indexFromCoord(coord)
+        return if (coord.isLightSquare) {
+            if ((!lastMoveMade.isNull && (coordIndex == lastMoveMade.startSquare || coordIndex == lastMoveMade.targetSquare)) || coord == movingPieceStartCoord) {
+                tintedLightColor
+            } else {
+                lightColor
+            }
+        } else {
+            if ((!lastMoveMade.isNull && (coordIndex == lastMoveMade.startSquare || coordIndex == lastMoveMade.targetSquare)) || coord == movingPieceStartCoord) {
+                tintedDarkColor
+            } else {
+                darkColor
             }
         }
     }
 
-    private fun drawSquareAt(canvas: Canvas?, col : Int,row : Int, isDark : Boolean){
-        canvas ?: return
+    private fun drawSquareAt(canvas: Canvas, coord: Coord){
+        paint.color = getSquareColour(coord)
+        canvas.drawRect(squareFromCoord(coord), paint)
+/*
         val isChosenSquare : Boolean = (col == fromCol && row == (7-fromRow)) ||
                 (col == lastMoveStartCol && row == (7-lastMoveStartRow)) ||
                 (col == lastMoveEndCol && row == (7-lastMoveEndRow))
@@ -340,55 +330,72 @@ class ChessView(context : Context?, attrs : AttributeSet?) : View(context, attrs
                 paint.color = if(isChosenSquare) tintedLightColor else lightColor
             }
         }
-        canvas.drawRect(
-            originX + col * cellSide,
-            originY + row * cellSide,
-            originX + (col + 1)*cellSide,
-            originY + (row + 1) * cellSide,
-            paint
-        )
+*/
+//        canvas.drawRect(
+//            originX + col * cellSide,
+//            originY + row * cellSide,
+//            originX + (col + 1)*cellSide,
+//            originY + (row + 1) * cellSide,
+//            paint
+//        )
 
-        if(isSquareInMovesList(col, 7-row)){
-            val targetedPaint = Paint()
-            targetedPaint.color = Color.GRAY
-            if(chessGameInterface!!.pieceAt(col,7-row,isFlipped) == null){
-
-                canvas.drawCircle(
-                    originX + (col + 0.5f)*cellSide,
-                    originY + ((row) + 0.5f)*cellSide,
-                    20f,
-                    targetedPaint
-                )
-            } else{
-                targetedPaint.style = Paint.Style.STROKE
-                targetedPaint.strokeWidth = 6f
-                canvas.drawCircle(
-                    originX + (col + 0.5f)*cellSide,
-                    originY + ((row) + 0.5f)*cellSide,
-                    (cellSide-targetedPaint.strokeWidth)/2,
-                    targetedPaint
-                )
-            }
-        }
+//        if(isSquareInMovesList(col, 7-row)){
+//            val targetedPaint = Paint()
+//            targetedPaint.color = Color.GRAY
+//            if(chessGameInterface!!.pieceAt(col,7-row,isFlipped) == null){
+//
+//                canvas.drawCircle(
+//                    originX + (col + 0.5f)*cellSide,
+//                    originY + ((row) + 0.5f)*cellSide,
+//                    20f,
+//                    targetedPaint
+//                )
+//            } else{
+//                targetedPaint.style = Paint.Style.STROKE
+//                targetedPaint.strokeWidth = 6f
+//                canvas.drawCircle(
+//                    originX + (col + 0.5f)*cellSide,
+//                    originY + ((row) + 0.5f)*cellSide,
+//                    (cellSide-targetedPaint.strokeWidth)/2,
+//                    targetedPaint
+//                )
+//            }
+//        }
 
     }
-    private fun isSquareInMovesList(col : Int, row : Int) : Boolean{
-        movingPieceMoves ?: return false
-        if(isFlipped){
-            for (square : Square in movingPieceMoves!!){
-                if(square.colIndex == (7-col) && square.rowIndex == (7-row)){
-                    return true
-                }
-            }
-        }else{
-            for (square : Square in movingPieceMoves!!){
-                if(square.colIndex == col && square.rowIndex == row){
-                    return true
-                }
-            }
-        }
+//    private fun isSquareInMovesList(col : Int, row : Int) : Boolean{
+//        movingPieceMoves ?: return false
+//        if(isFlipped){
+//            for (square : Square in movingPieceMoves!!){
+//                if(square.colIndex == (7-col) && square.rowIndex == (7-row)){
+//                    return true
+//                }
+//            }
+//        }else{
+//            for (square : Square in movingPieceMoves!!){
+//                if(square.colIndex == col && square.rowIndex == row){
+//                    return true
+//                }
+//            }
+//        }
+//
+//        return false
+//    }
 
-        return false
+    private fun squareFromCoord(rank : Int, file : Int) : RectF{
+        return RectF(
+            originX + file * cellSide,
+            originY + rank * cellSide,
+            originX + (file + 1) * cellSide,
+            originY + (rank + 1) * cellSide
+        )
+    }
+    private fun squareFromCoord(coord: Coord) : RectF {
+        return if (!isWhiteOnBottom) {
+            squareFromCoord(coord.rankIndex, 7 - coord.fileIndex)
+        } else {
+            squareFromCoord(7 - coord.rankIndex, coord.fileIndex)
+        }
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -398,22 +405,3 @@ class ChessView(context : Context?, attrs : AttributeSet?) : View(context, attrs
     }
 
 }
-/*
-class PieceMoveAnimation(
-    private val view: ChessView,
-    private val startCol: Int,
-    private val startRow: Int,
-    private val endCol: Int,
-    private val endRow: Int
-) : Animation() {
-    override fun applyTransformation(interpolatedTime: Float, t: Transformation) {
-        val currentX = (startCol + 0.5*view.cellSide + (endCol - startCol) * interpolatedTime) * view.cellSide + view.originX
-        val currentY = (7 - startRow + 0.5*view.cellSide + (7 - endRow - 7 + startRow) * interpolatedTime) * view.cellSide + view.originY
-
-        view.movingPieceX = currentX.toFloat()
-        view.movingPieceY = currentY.toFloat()
-
-        view.invalidate()
-    }
-}
-*/

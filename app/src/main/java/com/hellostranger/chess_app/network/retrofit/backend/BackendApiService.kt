@@ -1,7 +1,7 @@
 package com.hellostranger.chess_app.network.retrofit.backend
 
+import com.hellostranger.chess_app.core.Game
 import com.hellostranger.chess_app.dto.requests.FriendRequest
-import com.hellostranger.chess_app.gameClasses.Game
 import com.hellostranger.chess_app.dto.requests.JoinRequest
 import com.hellostranger.chess_app.dto.requests.UpdateRequest
 import com.hellostranger.chess_app.models.rvEntities.GameHistory

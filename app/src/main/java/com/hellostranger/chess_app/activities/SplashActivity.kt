@@ -10,6 +10,7 @@ import android.view.WindowManager
 import com.hellostranger.chess_app.utils.MyApp
 import com.hellostranger.chess_app.R
 
+@ExperimentalUnsignedTypes
 class SplashActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

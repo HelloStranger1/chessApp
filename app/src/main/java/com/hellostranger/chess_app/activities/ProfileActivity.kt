@@ -7,29 +7,26 @@ import android.view.View
 import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
 import com.bumptech.glide.Glide
-import com.google.gson.GsonBuilder
 import com.hellostranger.chess_app.rv.GameHistoryEvent
 import com.hellostranger.chess_app.database.UserRepository
 import com.hellostranger.chess_app.rv.adapters.GamesHistoryAdapter
 import com.hellostranger.chess_app.viewModels.ProfileViewModel
 import com.hellostranger.chess_app.utils.MyApp
 import com.hellostranger.chess_app.R
+import com.hellostranger.chess_app.core.Game
 import com.hellostranger.chess_app.utils.TokenManager
 import com.hellostranger.chess_app.viewModels.factories.ProfileViewModelFactory
 import com.hellostranger.chess_app.databinding.ActivityProfileBinding
 import com.hellostranger.chess_app.dto.websocket.GameStartMessage
 import com.hellostranger.chess_app.models.entities.User
-import com.hellostranger.chess_app.gameClasses.Board
-import com.hellostranger.chess_app.gameClasses.Game
 import com.hellostranger.chess_app.network.retrofit.backend.BackendRetrofitClient
 import com.hellostranger.chess_app.utils.Constants
-import com.hellostranger.chess_app.gameClasses.pieces.Piece
-import com.hellostranger.chess_app.gameClasses.pieces.PieceJsonDeserializer
 import com.hellostranger.chess_app.models.rvEntities.Friend
 import com.hellostranger.chess_app.models.rvEntities.GameHistory
 import com.hellostranger.chess_app.rv.adapters.FriendsAdapter
 
 private const val TAG = "ProfileActivity"
+@ExperimentalUnsignedTypes
 class ProfileActivity : BaseActivity() {
     private lateinit var binding : ActivityProfileBinding
     private var currentUser : User? = null
@@ -41,10 +38,6 @@ class ProfileActivity : BaseActivity() {
 
     private var isGuestUser : Boolean = false
 
-    private val gson = GsonBuilder()
-        .setLenient()
-        .registerTypeAdapter(Piece::class.java, PieceJsonDeserializer())
-        .create()
 
     override fun onRestart() {
         super.onRestart()
@@ -170,13 +163,13 @@ class ProfileActivity : BaseActivity() {
             }
         )
     }
-    private fun openFriend(it : Friend) : Unit {
+    private fun openFriend(it : Friend) {
         Log.i(TAG, "Opening friend with email: ${it.email} and name: ${it.name}")
         val intent = Intent(this, ProfileActivity::class.java)
         intent.putExtra(Constants.GUEST_EMAIL, it.email)
         startActivity(intent)
     }
-    private fun openGameHistory(it : GameHistory) : Unit {
+    private fun openGameHistory(it : GameHistory) {
         val startMessage = GameStartMessage(
             whiteName = it.whiteName, blackName = it.blackName,
             whiteEmail = "", blackEmail = "",
@@ -184,9 +177,9 @@ class ProfileActivity : BaseActivity() {
             whiteElo = it.whiteElo, blackElo = it.blackElo
         )
 
-        val game = Game(board = gson.fromJson(it.startBoardJson,  Board::class.java), id = "",gameState= it.result)
+        val game = Game(id = "", gameResult = it.result, boardsFen = mutableListOf(it.startBoardFen))
         Game.setInstance(game)
-        updatePiecesResId()
+        // updatePiecesResId()
 
         val intent = Intent(this@ProfileActivity, GameActivity::class.java)
         intent.putExtra(Constants.MODE, Constants.ANALYSIS_MODE)

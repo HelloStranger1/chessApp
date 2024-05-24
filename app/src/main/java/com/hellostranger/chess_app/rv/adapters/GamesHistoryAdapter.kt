@@ -7,8 +7,9 @@ import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.hellostranger.chess_app.R
-import com.hellostranger.chess_app.gameClasses.enums.Color
-import com.hellostranger.chess_app.gameClasses.enums.GameState
+import com.hellostranger.chess_app.core.Arbiter
+import com.hellostranger.chess_app.core.GameResult
+import com.hellostranger.chess_app.core.board.Board
 import com.hellostranger.chess_app.databinding.GameHistoryItemBinding
 import com.hellostranger.chess_app.models.rvEntities.GameHistory
 
@@ -25,13 +26,14 @@ class GamesHistoryAdapter(
         notifyDataSetChanged()
     }
 
+    @ExperimentalUnsignedTypes
     inner class GamesHistoryViewHolder(private val binding : GameHistoryItemBinding)
         : RecyclerView.ViewHolder(binding.root) {
         val saveImageView : ImageView = binding.ivSaveGame
         fun bind(gameHistory: GameHistory?){
-            val opponentImage = if(gameHistory?.opponentColor == Color.WHITE) gameHistory.whiteImage else gameHistory?.blackImage
-            val opponentName = if(gameHistory?.opponentColor == Color.WHITE) gameHistory.whiteName else gameHistory?.blackName
-            val opponentElo = if(gameHistory?.opponentColor == Color.WHITE) gameHistory.whiteElo else gameHistory?.blackElo
+            val opponentImage = if(gameHistory?.opponentColorIndex == Board.WHITE_INDEX) gameHistory.whiteImage else gameHistory?.blackImage
+            val opponentName = if(gameHistory?.opponentColorIndex == Board.WHITE_INDEX) gameHistory.whiteName else gameHistory?.blackName
+            val opponentElo = if(gameHistory?.opponentColorIndex == Board.WHITE_INDEX) gameHistory.whiteElo else gameHistory?.blackElo
             Glide
                 .with(binding.ivOpponentImage)
                 .load(opponentImage)
@@ -46,14 +48,14 @@ class GamesHistoryAdapter(
                 binding.ivSaveGame.setImageResource(R.drawable.ic_save_border)
             }
 
-            if(gameHistory?.result == GameState.WHITE_WIN){
-                if(gameHistory.opponentColor == Color.WHITE){
+            if(gameHistory?.result?.let { Arbiter.isWhiteWinResult(it) } == true){
+                if(gameHistory?.opponentColorIndex == Board.WHITE_INDEX){
                     binding.ivGameResult.setImageResource(R.drawable.ic_red_minus)
                 } else{
                     binding.ivGameResult.setImageResource(R.drawable.ic_green_checkmark)
                 }
-            } else if(gameHistory?.result == GameState.BLACK_WIN){
-                if(gameHistory.opponentColor == Color.WHITE){
+            } else if(gameHistory?.result?.let { Arbiter.isBlackWinResult(it) } == true){
+                if(gameHistory.opponentColorIndex == Board.WHITE_INDEX){
                     binding.ivGameResult.setImageResource(R.drawable.ic_green_checkmark)
                 } else{
                     binding.ivGameResult.setImageResource(R.drawable.ic_red_minus)

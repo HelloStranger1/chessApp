@@ -4,21 +4,18 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.MenuItem
-import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.widget.Toolbar
-import androidx.core.os.bundleOf
 import androidx.core.view.GravityCompat
-import androidx.fragment.app.commit
 import com.bumptech.glide.Glide
 import com.google.android.material.navigation.NavigationView
-import com.hellostranger.chess_app.GameResultFragment
 import com.hellostranger.chess_app.utils.MyApp
 import com.hellostranger.chess_app.R
+import com.hellostranger.chess_app.core.Game
+import com.hellostranger.chess_app.core.GameResult
 import com.hellostranger.chess_app.utils.TokenManager
-import com.hellostranger.chess_app.gameClasses.Game
 import com.hellostranger.chess_app.databinding.ActivityMainBinding
 import com.hellostranger.chess_app.dto.requests.JoinRequest
 import com.hellostranger.chess_app.gameHelpers.PuzzlesList
@@ -36,14 +33,16 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 private const val TAG = "MainActivity"
+@ExperimentalUnsignedTypes
 class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedListener {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var toolbarMainActivity : Toolbar
 
+    private lateinit var currentUser : User
+
     private var tokenManager : TokenManager = MyApp.tokenManager
 
-    private val DEFAULT_PUZZLE_AMOUNT = 4
 
     private val coroutineExceptionHandler = CoroutineExceptionHandler{ _, throwable ->
         throwable.printStackTrace()
@@ -57,6 +56,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
             }
         }
     }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -82,13 +82,23 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
                 val game : Game? = joinRandomGame(JoinRequest(tokenManager.getUserEmail()))
                 game?.let {
                     Game.setInstance(it)
-                    updatePiecesResId()
+                    // updatePiecesResId()
                     runOnUiThread {
                         hideProgressDialog()
-                        launchIntoGame()
+                        launchIntoGame(Constants.ONLINE_MODE)
                     }
                 }
             }
+        }
+        binding.appBarMain.mainContent.btnAgainstBot.setOnClickListener{
+            Game.setInstance(Game("", GameResult.InProgress))
+            val intent = Intent(this@MainActivity, GameActivity::class.java)
+            intent.putExtra(Constants.MODE, Constants.AI_MODE)
+            intent.putExtra(Constants.USER_EMAIL, currentUser.email)
+            intent.putExtra(Constants.USER_NAME, currentUser.name)
+            intent.putExtra(Constants.USER_ELO, currentUser.elo)
+            intent.putExtra(Constants.USER_IMAGE, currentUser.image)
+            startActivity(intent)
         }
 
 
@@ -96,7 +106,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
             showProgressDialog("Fetching puzzle...", false)
             CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
 
-                val puzzlesList : List<Puzzle>? = fetchPuzzles(DEFAULT_PUZZLE_AMOUNT)
+                val puzzlesList : List<Puzzle>? = fetchPuzzles(Constants.DEFAULT_PUZZLE_AMOUNT)
 
                 puzzlesList?.let {
                     PuzzlesList.instance.addPuzzles(it)
@@ -109,12 +119,12 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         binding.appBarMain.mainContent.btnLookupUser.setOnClickListener{
             val email : String = binding.appBarMain.mainContent.etUserEmail.text.toString()
             if (email.isEmpty() || email.isBlank()) {
-                Toast.makeText(this@MainActivity, "Please enter an email.", Toast.LENGTH_LONG).show();
+                Toast.makeText(this@MainActivity, "Please enter an email.", Toast.LENGTH_LONG).show()
                 return@setOnClickListener
             }
             var success = true
             runBlocking {
-                val response = BackendRetrofitClient.instance.getUserByEmail(email);
+                val response = BackendRetrofitClient.instance.getUserByEmail(email)
                 if (!response.isSuccessful || response.body() == null) {
                     Toast.makeText(this@MainActivity, "Couldn't find a user with this email", Toast.LENGTH_LONG).show()
                     success = false
@@ -160,13 +170,13 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
             showProgressDialog("Joining private game...")
 
             CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
-                val game : Game? = JoinPrivateGame(JoinRequest(tokenManager.getUserEmail()), code)
+                val game : Game? = joinPrivateGame(JoinRequest(tokenManager.getUserEmail()), code)
                 game?.let {
                     Game.setInstance(it)
-                    updatePiecesResId()
+                    // updatePiecesResId()
                     runOnUiThread {
                         hideProgressDialog()
-                        launchIntoGame()
+                        launchIntoGame(Constants.ONLINE_MODE)
                     }
                 }
             }
@@ -176,9 +186,9 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
 
     }
 
-    private fun launchIntoGame() {
+    private fun launchIntoGame(mode : String) {
         val intent = Intent(this@MainActivity, GameActivity::class.java)
-        intent.putExtra("MODE", Constants.ONLINE_MODE)
+        intent.putExtra(Constants.MODE, mode)
         startActivity(intent)
     }
 
@@ -187,26 +197,26 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
             BackendRetrofitClient.instance.joinRandomGame(joinRequest)
         if(!response.isSuccessful){
             Log.e(TAG, "(joinRandomGame) Response isn't successful. Error is: " + response.errorBody())
-            return null;
+            return null
         }
         if(response.body() == null){
             Log.e(TAG, "(joinRandomGame) Response body is null.")
-            return null;
+            return null
         }
         Log.e(TAG, "Game joined, body: ${response.body()}")
         return response.body()!!
 
     }
-    private suspend fun JoinPrivateGame(joinRequest: JoinRequest, code : String) : Game? {
+    private suspend fun joinPrivateGame(joinRequest: JoinRequest, code : String) : Game? {
         val response =
             BackendRetrofitClient.instance.joinPrivateGame(code, joinRequest)
         if(!response.isSuccessful){
             Log.e(TAG, "(joinPrivate) Response isn't successful. Error is: " + response.errorBody())
-            return null;
+            return null
         }
         if(response.body() == null){
             Log.e(TAG, "(joinPrivate) Response body is null.")
-            return null;
+            return null
         }
         Log.e(TAG, "Game joined, body: ${response.body()}")
         return response.body()!!
@@ -218,11 +228,11 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
             PuzzleRetrofitClient.instance.getRandomPuzzle(puzzlesAmount)
         if (!response.isSuccessful) {
             Log.e(TAG, "(fetchPuzzle) Response isn't successful. Error is: " + response.errorBody())
-            return null;
+            return null
         }
         if (response.body() == null) {
             Log.e(TAG, "(fetchPuzzle) Response body is null.")
-            return null;
+            return null
         }
         return response.body()!!
     }
@@ -232,11 +242,11 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
             BackendRetrofitClient.instance.getUserByEmail(tokenManager.getUserEmail())
         if(!response.isSuccessful){
             Log.e(TAG, "(fetchUser) Response isn't successful. Error is: " + response.errorBody())
-            return null;
+            return null
         }
         if(response.body() == null){
             Log.e(TAG, "(fetchUser) Response body is null.")
-            return null;
+            return null
         }
         return response.body()!!
     }
@@ -254,6 +264,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
 
 
         headerView.findViewById<TextView>(R.id.tv_username).text = user.name
+        currentUser = user
     }
     private fun setupActionBar(){
         toolbarMainActivity = binding.appBarMain.toolbarMainActivity
@@ -274,11 +285,13 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         }
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         if(binding.drawerLayout.isDrawerOpen(GravityCompat.START)){
             binding.drawerLayout.closeDrawer(GravityCompat.START)
         }else{
             doubleBackToExit()
+            super.onBackPressed()
         }
     }
 

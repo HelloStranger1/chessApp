@@ -1,11 +1,11 @@
 package com.hellostranger.chess_app.dto.websocket
 
+import com.hellostranger.chess_app.core.GameResult
 import com.hellostranger.chess_app.dto.enums.WebsocketMessageType
-import com.hellostranger.chess_app.gameClasses.enums.GameState
 
 class GameEndMessage(
     val message : String,
-    val state : GameState,
+    val state : GameResult,
     val whiteElo : Int,
     val blackElo : Int
 ) : WebSocketMessage(WebsocketMessageType.END) {

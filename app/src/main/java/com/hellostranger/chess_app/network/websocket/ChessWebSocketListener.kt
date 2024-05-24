@@ -2,6 +2,9 @@ package com.hellostranger.chess_app.network.websocket
 
 import android.util.Log
 import com.google.gson.Gson
+import com.hellostranger.chess_app.core.board.Move
+import com.hellostranger.chess_app.core.helpers.MoveUtility
+import com.hellostranger.chess_app.core.Player
 import com.hellostranger.chess_app.viewModels.GameViewModel
 import com.hellostranger.chess_app.dto.websocket.GameEndMessage
 import com.hellostranger.chess_app.dto.websocket.GameStartMessage
@@ -16,10 +19,13 @@ import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 
 private const val TAG = "ChessWebSocketListener"
-class ChessWebSocketListener(private val viewModel: GameViewModel) : WebSocketListener() {
+@ExperimentalUnsignedTypes
+class ChessWebSocketListener(private val viewModel: GameViewModel, private val currentUserEmail : String) : WebSocketListener(),
+    Player {
     private lateinit var webSocket: WebSocket
 
 
+    val gson = Gson()
     fun connectWebSocket(path : String, token : String) {
         val client = OkHttpClient.Builder().build()
         val request = Request.Builder()
@@ -52,27 +58,30 @@ class ChessWebSocketListener(private val viewModel: GameViewModel) : WebSocketLi
     }
 
     override fun onMessage(webSocket: WebSocket, text: String) {
-        val gson = Gson()
         val message : WebSocketMessage = gson.fromJson(text, WebSocketMessage::class.java)
-        Log.e(TAG, "onMessage, text is: $text. msgType is: ${message.websocketMessageType}")
+        Log.i(TAG, "onMessage, text is: $text. msgType is: ${message.websocketMessageType}")
 
         when( message.websocketMessageType){
             WebsocketMessageType.MOVE ->{
                 val moveMessage : MoveMessage = gson.fromJson(text, MoveMessage::class.java)
-                viewModel.playMoveFromServer(moveMessage)
+                Log.i(TAG, "Move message. move value: ${Move(moveMessage.move.toUShort())}. Move name: ${MoveUtility.getMoveNameUCI(Move(moveMessage.move.toUShort()))}")
+                viewModel.onMoveChosen(Move(moveMessage.move.toUShort()), this)
             }
             WebsocketMessageType.START ->{
                 val startMessage : GameStartMessage = gson.fromJson(text, GameStartMessage::class.java)
-                Log.e(TAG, "Start Message. text: $text. startMessage: $startMessage")
+                Log.i(TAG, "Start Message. text: $text. startMessage: $startMessage")
                 viewModel.startGame(startMessage)
             }
             WebsocketMessageType.END ->{
                 val endMessage : GameEndMessage = gson.fromJson(text, GameEndMessage::class.java)
+                Log.i(TAG, "End Message. state: ${endMessage.state}, message: ${endMessage.message}")
                 viewModel.onGameEnding(endMessage.state, endMessage.whiteElo, endMessage.blackElo, endMessage.message)
             }
             WebsocketMessageType.INVALID_MOVE -> {
+                Log.e(TAG, "\n")
                 Log.e(TAG, "Invalid Move, undoing it")
-                viewModel.undoMove()
+                Log.e(TAG, "\n")
+//                viewModel.undoMove()
             }
             WebsocketMessageType.DRAW_OFFER -> {
                 viewModel.updateDrawOffer(gson.fromJson(text, DrawOfferMessage::class.java))
@@ -96,5 +105,14 @@ class ChessWebSocketListener(private val viewModel: GameViewModel) : WebSocketLi
         viewModel.setStatus(false)
         Log.e(TAG, "Websocket failed. msg: $response and throwable: $t")
         Log.e(TAG, t.message ?: "Unknown error")
+    }
+
+    override fun onOpponentMoveChosen() {
+        val move : Move = viewModel.getLastMove()
+        val moveMsg = MoveMessage(currentUserEmail, move.moveValue.toInt())
+        val moveJson = gson.toJson(moveMsg)
+        Log.e(TAG, "Sending our move to the server. Move uce name: ${MoveUtility.getMoveNameUCI(move)}, move json is: $moveJson")
+        webSocket.send(moveJson)
+
     }
 }

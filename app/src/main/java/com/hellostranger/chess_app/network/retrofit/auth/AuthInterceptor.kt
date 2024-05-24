@@ -42,7 +42,7 @@ class AuthInterceptor(private val authApiService: AuthApiService) : Interceptor 
             return chain.proceed(newRequest)
         } else if (accessToken != "" && tokenManager.isAccessTokenExpired()) {
             tokenManager.clearSession()
-            Log.e("AuthInterceptor", "Can't refresh token.");
+            Log.e("AuthInterceptor", "Can't refresh token.")
         }
 
         // Add the access token to the request header

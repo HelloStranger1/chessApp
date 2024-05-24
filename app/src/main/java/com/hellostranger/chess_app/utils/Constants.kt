@@ -11,17 +11,25 @@ object Constants {
     //Game modes
     const val ONLINE_MODE = "Online"
     const val ANALYSIS_MODE = "Analysis"
+    const val AI_MODE = "AI"
     const val PUZZLES_MODE = "Puzzles"
+
+    // To pass around user info
+    const val USER_EMAIL = "UserEmail"
+    const val USER_NAME = "UserName"
+    const val USER_ELO = "UserElo"
+    const val USER_IMAGE = "UserImage"
+
 
     //For Analysis:
     const val START_DATA = "Start"
     const val MOVES_LIST = "MOVES"
 
     //To see profile of another user
-    const val GUEST_EMAIL = "Email"
+    const val GUEST_EMAIL = "GuestEmail"
 
-    const val NEW_MOVE_DURATION : Long = 600
-    const val OLD_MOVE_DURATION : Long = 500
+    const val DEFAULT_PUZZLE_AMOUNT = 4
+
     const val FAVORITE_GAMES_DB = "favorite-games-database"
     val plantResIDs = setOf(
         R.drawable.ic_white_king_plant,
