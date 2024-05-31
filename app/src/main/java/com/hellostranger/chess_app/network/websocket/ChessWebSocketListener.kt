@@ -4,7 +4,7 @@ import android.util.Log
 import com.google.gson.Gson
 import com.hellostranger.chess_app.core.board.Move
 import com.hellostranger.chess_app.core.helpers.MoveUtility
-import com.hellostranger.chess_app.core.Player
+import com.hellostranger.chess_app.core.players.Player
 import com.hellostranger.chess_app.viewModels.GameViewModel
 import com.hellostranger.chess_app.dto.websocket.GameEndMessage
 import com.hellostranger.chess_app.dto.websocket.GameStartMessage
@@ -65,7 +65,7 @@ class ChessWebSocketListener(private val viewModel: GameViewModel, private val c
             WebsocketMessageType.MOVE ->{
                 val moveMessage : MoveMessage = gson.fromJson(text, MoveMessage::class.java)
                 Log.i(TAG, "Move message. move value: ${Move(moveMessage.move.toUShort())}. Move name: ${MoveUtility.getMoveNameUCI(Move(moveMessage.move.toUShort()))}")
-                viewModel.onMoveChosen(Move(moveMessage.move.toUShort()), this)
+                viewModel.onMoveChosen(Move(moveMessage.move.toUShort()))
             }
             WebsocketMessageType.START ->{
                 val startMessage : GameStartMessage = gson.fromJson(text, GameStartMessage::class.java)
@@ -81,7 +81,6 @@ class ChessWebSocketListener(private val viewModel: GameViewModel, private val c
                 Log.e(TAG, "\n")
                 Log.e(TAG, "Invalid Move, undoing it")
                 Log.e(TAG, "\n")
-//                viewModel.undoMove()
             }
             WebsocketMessageType.DRAW_OFFER -> {
                 viewModel.updateDrawOffer(gson.fromJson(text, DrawOfferMessage::class.java))

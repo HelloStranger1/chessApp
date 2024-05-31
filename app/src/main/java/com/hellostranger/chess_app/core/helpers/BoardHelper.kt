@@ -5,29 +5,29 @@ import com.hellostranger.chess_app.core.board.Coord
 import com.hellostranger.chess_app.core.board.Piece
 import com.hellostranger.chess_app.core.moveGeneration.bitboards.BitBoardUtility
 
+@ExperimentalUnsignedTypes
 object BoardHelper {
-    const val a1: Int = 0
-    const val b1: Int = 1
-    const val c1: Int = 2
-    const val d1: Int = 3
-    const val e1: Int = 4
-    const val f1: Int = 5
-    const val g1: Int = 6
-    const val h1: Int = 7
+    const val A_1: Int = 0
+    const val B_1: Int = 1
+    const val C_1: Int = 2
+    const val D_1: Int = 3
+    const val E_1: Int = 4
+    const val F_1: Int = 5
+    const val G_1: Int = 6
+    const val H_1: Int = 7
 
-    const val a8: Int = 56
-    const val b8: Int = 57
-    const val c8: Int = 58
-    const val d8: Int = 59
-    const val e8: Int = 60
-    const val f8: Int = 61
-    const val g8: Int = 62
-    const val h8: Int = 63
+    const val A_8: Int = 56
+    const val B_8: Int = 57
+    const val C_8: Int = 58
+    const val D_8: Int = 59
+    const val E_8: Int = 60
+    const val F_8: Int = 61
+    const val G_8: Int = 62
+    const val H_8: Int = 63
 
-    val rookDirections: Array<Coord> = arrayOf(Coord(-1, 0), Coord(1, 0), Coord(0, 1), Coord(0, -1))
-    val bishopDirections: Array<Coord> = arrayOf(Coord(-1, 1), Coord(1, 1), Coord(1, -1), Coord(-1, -1))
-    const val fileNames: String = "abcdefgh"
-    const val rankNames: String = "12345678"
+    const val FILE_NAMES: String = "abcdefgh"
+
+    const val RANK_NAMES: String = "12345678"
 
     fun rankIndex(squareIndex: Int): Int {
         return squareIndex shr 3
@@ -45,11 +45,7 @@ object BoardHelper {
         return indexFromCoord(coord.rankIndex, coord.fileIndex)
     }
 
-    fun coordFromIndex(squareIndex: Int): Coord {
-        return Coord(fileIndex(squareIndex), rankIndex(squareIndex))
-    }
-
-    fun isLightSquare(fileIndex: Int, rankIndex: Int): Boolean {
+    private fun isLightSquare(fileIndex: Int, rankIndex: Int): Boolean {
         return (rankIndex + fileIndex) % 2 != 0
     }
 
@@ -57,32 +53,24 @@ object BoardHelper {
         return isLightSquare(rankIndex(squareIndex), fileIndex(squareIndex))
     }
 
-    fun isLightSquare(coord: Coord): Boolean {
-        return isLightSquare(coord.fileIndex, coord.rankIndex)
-    }
-
     fun squareNameFromCoord(fileIndex: Int, rankIndex: Int): String {
-        return fileNames[fileIndex].toString() + "" + (rankIndex + 1)
+        return FILE_NAMES[fileIndex].toString() + "" + (rankIndex + 1)
     }
 
     fun squareNameFromIndex(squareIndex: Int): String {
         return squareNameFromCoord(Coord(squareIndex))
     }
 
-    fun squareNameFromCoord(coord: Coord): String {
+    private fun squareNameFromCoord(coord: Coord): String {
         return squareNameFromCoord(coord.fileIndex, coord.rankIndex)
     }
 
     fun squareIndexFromName(name: String): Int {
         val fileName = name[0]
         val rankName = name[1]
-        val fileIndex = fileNames.indexOf(fileName)
-        val rankIndex = rankNames.indexOf(rankName)
+        val fileIndex = FILE_NAMES.indexOf(fileName)
+        val rankIndex = RANK_NAMES.indexOf(rankName)
         return indexFromCoord(rankIndex, fileIndex)
-    }
-
-    fun isValidCoord(x: Int, y: Int): Boolean {
-        return (x >= 0) && (x <= 7) && (y >= 0) && (y <= 7)
     }
 
     // Creates an ascii diagram of the bitboard

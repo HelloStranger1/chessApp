@@ -16,7 +16,7 @@ class MoveGenerator {
     companion object {
         const val MAX_MOVES = 218 // Max moves possible in a chess position
     }
-    enum class PromotionMode {All, QueenOnly, QueenAndKnight}
+    enum class PromotionMode {All, QueenAndKnight}
 
     var promotionsToGenerate : PromotionMode = PromotionMode.All
 
@@ -128,7 +128,7 @@ class MoveGenerator {
         if (board.currentGameState.hasKingSideCastleRights(isWhiteToMove)) {
             val castleMask : ULong = if (isWhiteToMove) Bits.whiteKingsideMask else Bits.blackKingsideMask
             if ((castleMask and castleBlockers) == 0UL) {
-                val targetSquare : Int = if (isWhiteToMove) BoardHelper.g1 else BoardHelper.g8
+                val targetSquare : Int = if (isWhiteToMove) BoardHelper.G_1 else BoardHelper.G_8
                 moves[currentMoveIndex++] = Move(friendlyKingSquare, targetSquare, Move.CASTLE_FLAG)
             }
         }
@@ -136,7 +136,7 @@ class MoveGenerator {
             val castleMaskChecks : ULong = if (isWhiteToMove) Bits.whiteQueensideMaskChecks else Bits.blackQueensideMaskChecks
             val castleMaskBlocking : ULong = if (isWhiteToMove) Bits.whiteQueensideMask else Bits.blackQueensideMask
             if ((castleMaskChecks and castleBlockers) == 0UL && (castleMaskBlocking and board.allPiecesBitboard) == 0UL) {
-                val targetSquare = if (isWhiteToMove) BoardHelper.c1 else BoardHelper.c8
+                val targetSquare = if (isWhiteToMove) BoardHelper.C_1 else BoardHelper.C_8
                 moves[currentMoveIndex++] = Move(friendlyKingSquare, targetSquare, Move.CASTLE_FLAG)
             }
         }

@@ -67,7 +67,7 @@ class SignInActivity : BaseActivity() {
 
         }
 
-        toolbarSignIn.setNavigationOnClickListener { onBackPressed() }
+        toolbarSignIn.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
     }
 
     private fun signInRegisteredUser(){
@@ -76,11 +76,7 @@ class SignInActivity : BaseActivity() {
 
         if(validateForm(email, password)){
             showProgressDialog(resources.getString(R.string.please_wait))
-            val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable ->
-                throwable.printStackTrace()
-            }
-            val scope = CoroutineScope(Dispatchers.IO + coroutineExceptionHandler)
-            scope.launch {
+            CoroutineScope(Dispatchers.IO).launch {
                 val response =
                     AuthRetrofitClient.instance.authenticate(AuthenticateRequest(email, password))
                 if(response.isSuccessful && response.body() != null){

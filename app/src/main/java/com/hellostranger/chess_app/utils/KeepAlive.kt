@@ -11,6 +11,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
+@ExperimentalUnsignedTypes
 class KeepAlive : Service() {
     private val handler =  Handler(Looper.getMainLooper())
     private val retrofitClient = BackendRetrofitClient.instance

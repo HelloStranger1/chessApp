@@ -3,6 +3,7 @@ package com.hellostranger.chess_app.activities
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import androidx.lifecycle.lifecycleScope
 import com.hellostranger.chess_app.rv.adapters.NotificationAdapter
 import com.hellostranger.chess_app.databinding.ActivityNotificationsBinding
@@ -12,36 +13,28 @@ import com.hellostranger.chess_app.network.retrofit.backend.BackendRetrofitClien
 import com.hellostranger.chess_app.utils.Constants
 import com.hellostranger.chess_app.utils.MyApp
 import com.hellostranger.chess_app.utils.TokenManager
-import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @ExperimentalUnsignedTypes
-class NotificationsActivity : AppCompatActivity() {
+class NotificationsActivity : BaseActivity() {
     private lateinit var binding: ActivityNotificationsBinding
-
     private var tokenManager : TokenManager = MyApp.tokenManager
-
     private lateinit var friendsAdapter : NotificationAdapter
-
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityNotificationsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable ->
-            throwable.printStackTrace()
-        }
-
         friendsAdapter = initializeFriendsAdapter()
 
         binding.rvFriendRequests.adapter = friendsAdapter
 
-        lifecycleScope.launch(Dispatchers.IO + coroutineExceptionHandler) {
+        // Updates the requests every 10s
+        lifecycleScope.launch(Dispatchers.IO) {
             while(true){
                 updateRequests()
                 delay(10_000)
@@ -50,34 +43,43 @@ class NotificationsActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Fetches and updates the friend requests from the server.
+     */
     private suspend fun updateRequests(){
         val response = BackendRetrofitClient.instance.getFriendRequests(tokenManager.getUserEmail())
-        if(response.isSuccessful && response.body() != null){
+        if(!response.isSuccessful || response.body() == null) {
+            Log.e("Notification Activity", "Couldn't fetch friend requests")
+            return
+        }
+        val friendRequests = handleResponse(
+            request = {BackendRetrofitClient.instance.getFriendRequests(tokenManager.getUserEmail())},
+            errorMessage = "Couldn't fetch friend requests"
+        )
+        friendRequests?.let {
             val notificationList : MutableList<Notification> = mutableListOf()
-            for(friendRequest : FriendRequest in response.body()!!){
-                notificationList.add(
-                    Notification(friendRequest.id, friendRequest.sender.image, friendRequest.sender.name, friendRequest.sender.email)
-                )
+            for(friendRequest : FriendRequest in it){
+                notificationList.add(Notification(friendRequest.id, friendRequest.sender.image, friendRequest.sender.name, friendRequest.sender.email))
             }
             runOnUiThread {
                 friendsAdapter.updateNotificationList(notificationList)
             }
+
         }
+
     }
+
     private fun initializeFriendsAdapter() : NotificationAdapter {
-        val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable ->
-            throwable.printStackTrace()
-        }
         return NotificationAdapter(
             NotificationAdapter.NotificationOnClickListener(
                 {
-                    CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
+                    CoroutineScope(Dispatchers.IO).launch {
                         BackendRetrofitClient.instance.acceptFriendRequest(tokenManager.getUserEmail(), it.id)
                         updateRequests()
                     }
                 },
                 {
-                    CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
+                    CoroutineScope(Dispatchers.IO).launch {
                         BackendRetrofitClient.instance.rejectFriendRequest(tokenManager.getUserEmail(), it.id)
                         updateRequests()
                     }

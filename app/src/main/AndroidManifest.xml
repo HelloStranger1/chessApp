@@ -22,10 +22,6 @@
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
-        <activity
-            android:name=".activities.GameHistoryActivity"
-            android:exported="false" />
-
         <service android:name=".utils.KeepAlive" />
 
         <activity

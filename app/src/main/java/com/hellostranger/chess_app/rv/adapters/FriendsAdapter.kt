@@ -1,5 +1,6 @@
 package com.hellostranger.chess_app.rv.adapters
 
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
@@ -10,12 +11,13 @@ import com.hellostranger.chess_app.models.rvEntities.Friend
 
 class FriendsAdapter(
     private val friendOnClickListener: FriendOnClickListener,
-    private val MAX_ITEMS : Int = -1
+    private val maxItems : Int = -1
 ) : RecyclerView.Adapter<FriendsAdapter.FriendViewHolder>() {
 
 
     private var friendList = mutableListOf<Friend>()
 
+    @SuppressLint("NotifyDataSetChanged")
     fun updateFriendList(updatedFriendList : List<Friend>) {
         this.friendList = updatedFriendList.toMutableList()
         notifyDataSetChanged()
@@ -50,8 +52,8 @@ class FriendsAdapter(
     }
 
     override fun getItemCount(): Int {
-        return if (friendList.size > MAX_ITEMS && MAX_ITEMS != -1) {
-            MAX_ITEMS
+        return if (friendList.size > maxItems && maxItems != -1) {
+            maxItems
         } else {
             friendList.size
         }

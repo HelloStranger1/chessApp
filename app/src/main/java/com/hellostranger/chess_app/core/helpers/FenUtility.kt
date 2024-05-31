@@ -5,6 +5,7 @@ import com.hellostranger.chess_app.core.board.Coord
 import com.hellostranger.chess_app.core.board.Move
 import com.hellostranger.chess_app.core.board.Piece
 
+@ExperimentalUnsignedTypes
 object FenUtility {
     const val START_POSITION_FEN: String = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
@@ -113,7 +114,7 @@ object FenUtility {
     }
 
     class PositionInfo(fen: String) {
-        val fen: String
+        private val fen: String
         val squares: IntArray
 
         // Castling rights
@@ -177,8 +178,8 @@ object FenUtility {
             if (sections.size > 3) {
                 val enPassantFileName = sections[3][0].toString()
 
-                if (BoardHelper.fileNames.contains(enPassantFileName)) {
-                    epFile = BoardHelper.fileNames.indexOf(enPassantFileName) + 1
+                if (BoardHelper.FILE_NAMES.contains(enPassantFileName)) {
+                    epFile = BoardHelper.FILE_NAMES.indexOf(enPassantFileName) + 1
                 }
             }
 

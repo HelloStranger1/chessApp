@@ -7,22 +7,36 @@ import com.hellostranger.chess_app.core.moveGeneration.bitboards.BitBoardUtility
 import com.hellostranger.chess_app.core.helpers.BoardHelper
 import com.hellostranger.chess_app.core.helpers.FenUtility
 import com.hellostranger.chess_app.core.helpers.FenUtility.PositionInfo
-import com.hellostranger.chess_app.core.helpers.FenUtility.currentFen
 import java.util.*
 
 
 @OptIn(ExperimentalUnsignedTypes::class)
+/**
+ * Represents a chess board and manages the state of the game.
+ * Use createBoard to create an object.
+ * @author Eyal Ben Natan
+ */
 class Board {
     companion object {
         const val WHITE_INDEX: Int = 0
         const val BLACK_INDEX: Int = 1
 
+        /**
+         * Creates a board and loads into it the fen position.
+         * @param fen: The fen position to be loaded in. if empty, is the starting board
+         * @return A board object with the position loaded in.
+         */
         fun createBoard(fen : String = FenUtility.START_POSITION_FEN) : Board {
             val board = Board()
             board.loadPosition(fen)
             return board
         }
 
+        /**
+         * Creates a copy of an existing board.
+         * @param source The board to copy.
+         * @return A new board object that is a copy of the source board.
+         */
         fun createBoard(source : Board) : Board {
             val board = Board()
             board.loadPosition(source.startPositionInfo)
@@ -40,7 +54,8 @@ class Board {
     // Stores index of white and black king
     lateinit var kingSquare: IntArray
 
-    /* Bitboards */ // Bitboard for each piece type anc colour
+    /* Bitboards */
+    // Bitboard for each piece type anc colour
     var pieceBitboards: ULongArray? = null
 
     // Bitboard for all pieces of either colour
@@ -69,7 +84,7 @@ class Board {
         get() = if (isWhiteToMove) Piece.BLACK else Piece.WHITE
     val moveColourIndex: Int
         get() = if (isWhiteToMove) WHITE_INDEX else BLACK_INDEX
-    val opponentColourIndex : Int
+    private val opponentColourIndex : Int
         get() = if (isWhiteToMove) BLACK_INDEX else WHITE_INDEX
 
     // List of hashed positions since last pawn move or capture (For repetitions)
@@ -82,10 +97,7 @@ class Board {
     lateinit var currentGameState: GameState
     val zobristKey : ULong
         get() = currentGameState.zobristKey
-    val currentFen: String
-        get() = currentFen(this, true)
-    val gameStartFen : String
-        get() = startPositionInfo.fen
+
     lateinit var allGameMoves: MutableList<Move>
 
     private lateinit var allPieceLists: Array<PieceList?>
@@ -96,7 +108,8 @@ class Board {
 
     /**
      * Make a move on the board
-     * @param inSearch controls whether this move should be recorded in game history
+     * @param move: The move to play
+     * @param inSearch: controls whether this move should be recorded in game history
      */
     fun makeMove(move: Move, inSearch: Boolean = false) {
         val startSquare = move.startSquare
@@ -121,21 +134,11 @@ class Board {
 
         // Handle Captures
         if (capturedPieceType != Piece.NONE) {
-            var captureSquare = targetSquare
-
-            if (isEnPassant) {
-                captureSquare = targetSquare + (if(isWhiteToMove) -8 else 8)
-                square[captureSquare] = Piece.NONE
-            }
             if (capturedPieceType != Piece.PAWN) {
                 totalPieceCountWithoutPawnsAndKings--
             }
-
-            // Remove captured piece from bitboards/piece list
-            allPieceLists[capturedPiece]!!.removePieceAtSquare(captureSquare)
-            pieceBitboards!![capturedPiece] = BitBoardUtility.toggleSquare(pieceBitboards!![capturedPiece], captureSquare)
-            colourBitboards!![opponentColourIndex]  = BitBoardUtility.toggleSquare(colourBitboards!![opponentColourIndex], captureSquare)
-            newZobristKey = newZobristKey xor Zobrist.piecesArray[capturedPiece][captureSquare]
+            newZobristKey =
+                handleCaptures(targetSquare, isEnPassant, capturedPiece, newZobristKey)
         }
 
         // Handle King
@@ -145,35 +148,13 @@ class Board {
 
             // Handle castling
             if (moveFlag == Move.CASTLE_FLAG) {
-                val rookPiece : Int = Piece.makePiece(Piece.ROOK, moveColour)
-                val kingside : Boolean = targetSquare == BoardHelper.g1 || targetSquare == BoardHelper.g8
-                val castlingRookFromIndex = if(kingside) targetSquare + 1 else targetSquare - 2
-                val castlingRookToIndex = if(kingside) targetSquare - 1 else targetSquare + 1
-
-                // Update Rook Position
-                pieceBitboards!![rookPiece] = BitBoardUtility.toggleSquares(pieceBitboards!![rookPiece], castlingRookFromIndex, castlingRookToIndex)
-                colourBitboards!![moveColourIndex] = BitBoardUtility.toggleSquares(colourBitboards!![moveColourIndex], castlingRookFromIndex, castlingRookToIndex)
-                allPieceLists[rookPiece]!!.movePiece(castlingRookFromIndex, castlingRookToIndex)
-                square[castlingRookFromIndex] = Piece.NONE
-                square[castlingRookToIndex] = Piece.ROOK or moveColour
-
-                newZobristKey = newZobristKey xor Zobrist.piecesArray[rookPiece][castlingRookFromIndex]
-                newZobristKey = newZobristKey xor Zobrist.piecesArray[rookPiece][castlingRookToIndex]
-
+                newZobristKey = handleCastling(targetSquare, newZobristKey)
             }
         }
 
         // Handle promotion
         if (isPromotion) {
-            totalPieceCountWithoutPawnsAndKings++
-            val promotionPieceType : Int = move.promotionPieceType
-            val promotionPiece = Piece.makePiece(promotionPieceType, moveColour)
-            allPieceLists[movedPiece]!!.removePieceAtSquare(targetSquare)
-            allPieceLists[promotionPiece]!!.addPieceAtSquare(targetSquare)
-            square[targetSquare] = promotionPiece
-
-            pieceBitboards!![movedPiece] = BitBoardUtility.toggleSquare(pieceBitboards!![movedPiece], targetSquare)
-            pieceBitboards!![promotionPiece] = BitBoardUtility.toggleSquare(pieceBitboards!![promotionPiece], targetSquare)
+            handlePromotion(move, movedPiece, targetSquare)
         }
 
         // Pawn moved 2 forward, mark this file with en passant flag
@@ -185,17 +166,7 @@ class Board {
 
         // Update castling rights
         if (prevCastleState != 0) {
-            // Any piece moving to/from rook square removes castling right for that side
-            if (targetSquare == BoardHelper.h1 || startSquare == BoardHelper.h1) {
-                newCastleRights = newCastleRights and GameState.CLEAR_WHITE_KINGSIDE_MASK
-            } else if (targetSquare == BoardHelper.a1 || startSquare == BoardHelper.a1) {
-                newCastleRights = newCastleRights and GameState.CLEAR_WHITE_QUEENSIDE_MASK
-            }
-            if (targetSquare == BoardHelper.h8 || startSquare == BoardHelper.h8) {
-                newCastleRights = newCastleRights and GameState.CLEAR_BLACK_KINGSIDE_MASK
-            } else if (targetSquare == BoardHelper.a8 || startSquare == BoardHelper.a8) {
-                newCastleRights = newCastleRights and GameState.CLEAR_BLACK_QUEENSIDE_MASK
-            }
+            newCastleRights = updateCastlingRights(targetSquare, startSquare, newCastleRights)
         }
 
         // Update zobrist key with new piece position and side to move
@@ -238,7 +209,120 @@ class Board {
         }
     }
 
-    // Undo a move previously made on the board
+    /**
+     * Returns an updated castling rights.
+     * @param targetSquare The target square of the move.
+     * @param startSquare The start square of the move.
+     * @param castleRights The current castling rights.
+     * @return The updated castling rights.
+     */
+    private fun updateCastlingRights(
+        targetSquare: Int,
+        startSquare: Int,
+        castleRights: Int
+    ): Int {
+        // Any piece moving to/from rook square removes castling right for that side
+        var newCastleRights = castleRights
+        if (targetSquare == BoardHelper.H_1 || startSquare == BoardHelper.H_1) {
+            newCastleRights = newCastleRights and GameState.CLEAR_WHITE_KINGSIDE_MASK
+        } else if (targetSquare == BoardHelper.A_1 || startSquare == BoardHelper.A_1) {
+            newCastleRights = newCastleRights and GameState.CLEAR_WHITE_QUEENSIDE_MASK
+        }
+        if (targetSquare == BoardHelper.H_8 || startSquare == BoardHelper.H_8) {
+            newCastleRights = newCastleRights and GameState.CLEAR_BLACK_KINGSIDE_MASK
+        } else if (targetSquare == BoardHelper.A_8 || startSquare == BoardHelper.A_8) {
+            newCastleRights = newCastleRights and GameState.CLEAR_BLACK_QUEENSIDE_MASK
+        }
+        return newCastleRights
+    }
+
+
+    /**
+     * handles promoting a pawn.
+     * @param move: The moved just played
+     * @param movedPiece: The old piece
+     * @param targetSquare: The target Square
+     */
+    private fun handlePromotion(
+        move: Move,
+        movedPiece: Int,
+        targetSquare: Int
+    ) {
+        totalPieceCountWithoutPawnsAndKings++
+        val promotionPieceType: Int = move.promotionPieceType
+        val promotionPiece = Piece.makePiece(promotionPieceType, moveColour)
+        allPieceLists[movedPiece]!!.removePieceAtSquare(targetSquare)
+        allPieceLists[promotionPiece]!!.addPieceAtSquare(targetSquare)
+        square[targetSquare] = promotionPiece
+
+        pieceBitboards!![movedPiece] =
+            BitBoardUtility.toggleSquare(pieceBitboards!![movedPiece], targetSquare)
+        pieceBitboards!![promotionPiece] =
+            BitBoardUtility.toggleSquare(pieceBitboards!![promotionPiece], targetSquare)
+    }
+
+    /**
+     * Handles the remaining parts of castling after moving the king.
+     * updates relevant bitboards, castling rights, and the zobrist key.
+     * @param targetSquare: The targetSquare of the rook
+     * @param zobristKey: The old zobrist key
+     * @return The new zobrist key
+     */
+    private fun handleCastling(targetSquare: Int, zobristKey: ULong): ULong {
+        var newZobristKey = zobristKey
+        val rookPiece: Int = Piece.makePiece(Piece.ROOK, moveColour)
+        val kingside: Boolean = targetSquare == BoardHelper.G_1 || targetSquare == BoardHelper.G_8
+        val castlingRookFromIndex = if (kingside) targetSquare + 1 else targetSquare - 2
+        val castlingRookToIndex = if (kingside) targetSquare - 1 else targetSquare + 1
+
+        // Update Rook Position
+        pieceBitboards!![rookPiece] = BitBoardUtility.toggleSquares(pieceBitboards!![rookPiece], castlingRookFromIndex, castlingRookToIndex)
+        colourBitboards!![moveColourIndex] = BitBoardUtility.toggleSquares(colourBitboards!![moveColourIndex], castlingRookFromIndex, castlingRookToIndex)
+        allPieceLists[rookPiece]!!.movePiece(castlingRookFromIndex, castlingRookToIndex)
+        square[castlingRookFromIndex] = Piece.NONE
+        square[castlingRookToIndex] = Piece.ROOK or moveColour
+
+        newZobristKey = newZobristKey xor Zobrist.piecesArray[rookPiece][castlingRookFromIndex]
+        newZobristKey = newZobristKey xor Zobrist.piecesArray[rookPiece][castlingRookToIndex]
+
+        return newZobristKey
+    }
+
+    /**
+     * Handles the remaining parts of a capture after moving piece
+     * updates relevant bitboards, removes the captured piece, and updates the zobrist key.
+     * @param targetSquare: The targetSquare of the rook
+     * @param isEnPassant: States if the move is enPassant
+     * @param capturedPiece: The captured piece to be removed.
+     * @param zobristKey: The old zobrist key
+     * @return The new zobrist key
+     */
+    private fun handleCaptures(
+        targetSquare: Int,
+        isEnPassant: Boolean,
+        capturedPiece: Int,
+        zobristKey: ULong
+    ): ULong {
+        var captureSquare = targetSquare
+        if (isEnPassant) {
+            captureSquare = targetSquare + (if (isWhiteToMove) -8 else 8)
+            square[captureSquare] = Piece.NONE
+        }
+
+        // Remove captured piece from bitboards/piece list
+        allPieceLists[capturedPiece]!!.removePieceAtSquare(captureSquare)
+        pieceBitboards!![capturedPiece] =
+            BitBoardUtility.toggleSquare(pieceBitboards!![capturedPiece], captureSquare)
+        colourBitboards!![opponentColourIndex] =
+            BitBoardUtility.toggleSquare(colourBitboards!![opponentColourIndex], captureSquare)
+        return zobristKey xor Zobrist.piecesArray[capturedPiece][captureSquare]
+    }
+
+    /**
+     * Undo a move that was just played on the board.
+     * @param move: The move to undo
+     * @param inSearch: controls whether this move should be recorded in game history
+     */
     fun unmakeMove(move: Move, inSearch: Boolean = false) {
         // Swap colours to move
         isWhiteToMove = !isWhiteToMove
@@ -255,9 +339,6 @@ class Board {
         val undoingCapture = currentGameState.capturedPieceType != Piece.NONE
 
         val movedPiece = if (undoingPromotion) Piece.makePiece(Piece.PAWN, moveColour) else square[movedTo]
-        if (movedPiece == Piece.NONE) {
-            Log.e("BOARD", "We are undoing an impossible move.")
-        }
         val movedPieceType = Piece.pieceType(movedPiece)
         val capturedPieceType = currentGameState.capturedPieceType
 
@@ -300,7 +381,7 @@ class Board {
             // Undo castle
             if (moveFlag == Move.CASTLE_FLAG) {
                 val rookPiece = Piece.makePiece(Piece.ROOK, moveColour)
-                val kingside = movedTo == BoardHelper.g1 || movedTo == BoardHelper.g8
+                val kingside = movedTo == BoardHelper.G_1 || movedTo == BoardHelper.G_8
                 val rookSquareBeforeCastling = if (kingside) movedTo + 1 else movedTo - 2
                 val rookSquareAfterCastling = if (kingside) movedTo - 1 else movedTo + 1
 
@@ -330,7 +411,9 @@ class Board {
         hasCachedInCheckValue = false
     }
 
-    // Switch side to play without making a move
+    /**
+     * Used to switch the side to play without making a move.
+     */
     fun makeNullMove() {
         isWhiteToMove = !isWhiteToMove
 
@@ -348,6 +431,7 @@ class Board {
         cachedInCheckValue = false
     }
 
+
     fun unmakeNullMove() {
         isWhiteToMove = !isWhiteToMove
         plyCount--
@@ -358,8 +442,10 @@ class Board {
         cachedInCheckValue = false
     }
 
-    // Is current player in check?
-    // Note: caches check value so calling multiple times does not require recalculating
+    /**
+     * Checks If current player in check?
+     * Note: caches check value so calling multiple times does not require recalculating
+     */
     fun isInCheck() : Boolean {
         if (hasCachedInCheckValue) {
             return cachedInCheckValue
@@ -370,8 +456,10 @@ class Board {
         return cachedInCheckValue
     }
 
-    // Calculate in check value
-    // Call IsInCheck instead for automatic caching of value
+    /**
+     * Calculate in check value
+     * Call IsInCheck instead for automatic caching of value
+     */
     fun calculateInCheckState() : Boolean {
         val kingSquare = kingSquare[moveColourIndex]
         val blockers : ULong = allPiecesBitboard
@@ -398,15 +486,14 @@ class Board {
         return (pawnAttackMasks and enemyPawns) != 0UL
     }
 
-    // Load the starting position
-    fun loadStartPosition() {
-        loadPosition(FenUtility.START_POSITION_FEN)
-    }
-
+    /**
+     * Loads a position from a fen
+     */
     fun loadPosition(fen : String) {
         val posInfo = FenUtility.positionFromFen(fen)
         loadPosition(posInfo)
     }
+
 
     fun loadPosition(posInfo : PositionInfo) {
         startPositionInfo = posInfo
@@ -461,12 +548,18 @@ class Board {
     }
 
 
-    // Update piece lists / bitboards based on given move info.
-    // Doesn't account for the following things:
-    // 1. removal of captured piece
-    // 2. Moving the rook when castling
-    // 3. Removal of pawn from 1st/8th rank on promotion
-    // 4. Addition of promoted piece on promotion
+    /**
+     * Update piece lists / bitboards based on given move info.
+     * Doesn't account for the following things:
+     * 1. removal of captured piece
+     * 2. Moving the rook when castling
+     * 3. Removal of pawn from 1st/8th rank on promotion
+     * 4. Addition of promoted piece on promotion
+     *
+     * @param piece: The piece to move
+     * @param startSquare: The start square
+     * @param targetSquare: The target square
+     */
     private fun movePiece(piece: Int, startSquare: Int, targetSquare: Int) {
         pieceBitboards!![piece] = BitBoardUtility.toggleSquares(pieceBitboards!![piece], startSquare, targetSquare)
         colourBitboards!![moveColourIndex] = BitBoardUtility.toggleSquares(colourBitboards!![moveColourIndex], startSquare, targetSquare)
@@ -479,6 +572,7 @@ class Board {
         square[targetSquare] = piece
     }
 
+    // Updates bitboards for all slider pieces (Queens, rooks and bishops)
     private fun updateSliderBitboards() {
         val friendlyRook   = Piece.makePiece(Piece.ROOK, moveColour)
         val friendlyQueen  = Piece.makePiece(Piece.QUEEN, moveColour)

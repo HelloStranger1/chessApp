@@ -42,7 +42,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
-                    android:text="@string/won_by_resgination"
+                    android:text="@string/won_by_resignation"
                     android:textSize="16sp"
                     android:textColor="@color/greyTint"
                     />

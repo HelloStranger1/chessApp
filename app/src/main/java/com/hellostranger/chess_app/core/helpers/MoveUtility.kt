@@ -7,6 +7,7 @@ import com.hellostranger.chess_app.core.board.Move
 import com.hellostranger.chess_app.core.board.Piece
 import kotlin.math.abs
 
+@ExperimentalUnsignedTypes
 object MoveUtility {
 
     // Converts a moveName into internal move representation

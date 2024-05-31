@@ -3,6 +3,11 @@ package com.hellostranger.chess_app.core.board
 import com.hellostranger.chess_app.core.helpers.BoardHelper
 import com.hellostranger.chess_app.core.helpers.BoardHelper.indexFromCoord
 
+@ExperimentalUnsignedTypes
+/**
+ * Represents a coordinate on the chess board.
+ * @author Eyal Ben Natan
+ */
 data class Coord(val fileIndex: Int, val rankIndex: Int) {
 
     constructor(squareIndex : Int) : this(BoardHelper.fileIndex(squareIndex), BoardHelper.rankIndex(squareIndex))

@@ -1,13 +1,12 @@
 package com.hellostranger.chess_app.activities
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
 import com.bumptech.glide.Glide
-import com.hellostranger.chess_app.rv.GameHistoryEvent
 import com.hellostranger.chess_app.database.UserRepository
 import com.hellostranger.chess_app.rv.adapters.GamesHistoryAdapter
 import com.hellostranger.chess_app.viewModels.ProfileViewModel
@@ -25,11 +24,10 @@ import com.hellostranger.chess_app.models.rvEntities.Friend
 import com.hellostranger.chess_app.models.rvEntities.GameHistory
 import com.hellostranger.chess_app.rv.adapters.FriendsAdapter
 
-private const val TAG = "ProfileActivity"
 @ExperimentalUnsignedTypes
 class ProfileActivity : BaseActivity() {
     private lateinit var binding : ActivityProfileBinding
-    private var currentUser : User? = null
+    private lateinit var currentUser : User
     private var tokenManager : TokenManager = MyApp.tokenManager
 
     private lateinit var viewModel : ProfileViewModel
@@ -41,58 +39,43 @@ class ProfileActivity : BaseActivity() {
 
     override fun onRestart() {
         super.onRestart()
-        currentUser?.email?.let { viewModel.getUserDetails(it) }
+        currentUser.email.let { viewModel.getUserDetails(it) }
     }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityProfileBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         //Initialize Room DB
-
         val favoriteGamesDb = MyApp.favoriteGameDB
-        //Take the userEmail From The intent, Compare it against the logged-in userEmail.
-        var userEmail = intent.getStringExtra(Constants.GUEST_EMAIL)
-        if(userEmail == null) {
-            userEmail = tokenManager.getUserEmail()
-            binding.llGuestExtraOptions.visibility = View.GONE
-        } else{
-            val ourEmail = tokenManager.getUserEmail()
-            if (userEmail == ourEmail) {
-                userEmail = ourEmail
-                binding.llGuestExtraOptions.visibility = View.GONE
-            } else {
-                isGuestUser = true
-            }
-        }
 
+        //Take the userEmail From The intent, Compare it against the logged-in userEmail.
+        extractUserInfo(intent)
+
+        // Create the view model
         viewModel = ViewModelProvider(this,
             ProfileViewModelFactory(UserRepository(BackendRetrofitClient.instance, tokenManager, favoriteGamesDb.dao))
         )[ProfileViewModel::class.java]
 
-        gamesHistoryAdapter = initializeGameHistoryAdapter()
-        binding.rvRecentGames.adapter = gamesHistoryAdapter
-        binding.rvRecentGames.setHasFixedSize(true)
 
-        friendsAdapter = initializeFriendsAdapter()
-        binding.rvFriends.adapter = friendsAdapter
-        binding.rvFriends.setHasFixedSize(true)
+        setUpGameHistoryAdapter()
+        setUpFriendsAdapter()
 
 
         viewModel.gameHistoryList.observe(this) {
-            Log.d(TAG, "onCreate History: $it")
             gamesHistoryAdapter.updateGameHistoryList(it)
         }
+
         viewModel.friendsList.observe(this) {
-            Log.d(TAG, "onCreate friends: $it")
             friendsAdapter.updateFriendList(it)
         }
+
         viewModel.userDetails.observe(this){
-            Log.d(TAG, "onCreate User: $it")
             setDataInUi(it)
         }
+
         viewModel.isFriendsWithUser.observe(this){
-            Log.d(TAG, "isFriendsWithUser changed to: $it")
             if(it){
                 binding.tvSendFriendRequest.visibility = View.GONE
                 binding.tvUnfriend.visibility = View.VISIBLE
@@ -102,41 +85,61 @@ class ProfileActivity : BaseActivity() {
             }
 
         }
-        viewModel.failed.observe(this) {
-            Log.e(TAG, "viewModel failed. it: $it")
-        }
 
-
-        viewModel.getAllGameHistories(userEmail)
-        viewModel.getUserDetails(userEmail)
-        viewModel.areFriendsWithUser(userEmail)
-        viewModel.getFriendsList(userEmail)
+        viewModel.getAllGameHistories(currentUser.email)
+        viewModel.getUserDetails(currentUser.email)
+        viewModel.areFriendsWithUser(currentUser.email)
+        viewModel.getFriendsList(currentUser.email)
 
         viewModel.friendRequestStatus.observe(this){
             if (it.isNotBlank()){
-                Log.e(TAG, "viewModel friendRequestStatus: $it")
                 Toast.makeText(this, it, Toast.LENGTH_LONG).show()
             }
         }
+
         binding.tvSendFriendRequest.setOnClickListener {
-            viewModel.sendFriendRequest(userEmail)
+            viewModel.sendFriendRequest(currentUser.email)
         }
+
         binding.tvUnfriend.setOnClickListener {
-            viewModel.removeFriend(userEmail)
+            viewModel.removeFriend(currentUser.email)
             binding.tvSendFriendRequest.visibility = View.VISIBLE
             binding.tvUnfriend.visibility = View.GONE
 
         }
+
         binding.ivToolbarOptions.setOnClickListener{
-            if(currentUser != null && !isGuestUser){
+            if(!isGuestUser){
                 val intent = Intent(this@ProfileActivity, UpdateProfileActivity::class.java)
-                intent.putExtra("USER", currentUser)
+                intent.putExtra(Constants.USER, currentUser)
                 startActivity(intent)
             }
         }
 
-        binding.ivToolbarBack.setOnClickListener { onBackPressed() }
+        binding.ivToolbarBack.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
     }
+
+    /**
+     * set ups the game history adapter, and sets it in the correct places
+     */
+    private fun setUpGameHistoryAdapter() {
+        gamesHistoryAdapter = initializeGameHistoryAdapter()
+        binding.rvRecentGames.adapter = gamesHistoryAdapter
+        binding.rvRecentGames.setHasFixedSize(true)
+    }
+
+    /**
+     * set ups the friends adapter, and sets it in the correct places
+     */
+    private fun setUpFriendsAdapter() {
+        friendsAdapter = initializeFriendsAdapter()
+        binding.rvFriends.adapter = friendsAdapter
+        binding.rvFriends.setHasFixedSize(true)
+    }
+
+    /**
+     * Creates the game history adapter and the necessary onClick listener
+     */
     private fun initializeGameHistoryAdapter() : GamesHistoryAdapter {
         return GamesHistoryAdapter(
             GamesHistoryAdapter.GameHistoryOnClickListener(
@@ -146,16 +149,20 @@ class ProfileActivity : BaseActivity() {
                 {
                     if(it.isSaved){
                         Toast.makeText(this@ProfileActivity, "Delete Game from favorites", Toast.LENGTH_LONG).show()
-                        viewModel.onEvent(GameHistoryEvent.DeleteGame(it))
+                        viewModel.saveGame(it)
                     } else{
                         Toast.makeText(this@ProfileActivity, "Save Game", Toast.LENGTH_LONG).show()
-                        viewModel.onEvent(GameHistoryEvent.SaveGame(it))
+                        viewModel.deleteGame(it)
 
                     }
                 }
             )
         )
     }
+
+    /**
+     * Similar to initializeGameHistoryAdapter
+     */
     private fun initializeFriendsAdapter() : FriendsAdapter {
         return FriendsAdapter(
             FriendsAdapter.FriendOnClickListener {
@@ -163,12 +170,33 @@ class ProfileActivity : BaseActivity() {
             }
         )
     }
+
+    /**
+     * Gets the user info that was passed in with the intent, and updates isGuestUser
+     */
+    private fun extractUserInfo(intent: Intent) {
+        currentUser = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra(Constants.USER, User::class.java)!!
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra(Constants.USER)!!
+        }
+
+        val ourEmail = tokenManager.getUserEmail()
+        if (currentUser.email == ourEmail) {
+            binding.llGuestExtraOptions.visibility = View.GONE
+        } else {
+            isGuestUser = true
+        }
+    }
+
+
     private fun openFriend(it : Friend) {
-        Log.i(TAG, "Opening friend with email: ${it.email} and name: ${it.name}")
         val intent = Intent(this, ProfileActivity::class.java)
         intent.putExtra(Constants.GUEST_EMAIL, it.email)
         startActivity(intent)
     }
+
     private fun openGameHistory(it : GameHistory) {
         val startMessage = GameStartMessage(
             whiteName = it.whiteName, blackName = it.blackName,
@@ -179,7 +207,6 @@ class ProfileActivity : BaseActivity() {
 
         val game = Game(id = "", gameResult = it.result, boardsFen = mutableListOf(it.startBoardFen))
         Game.setInstance(game)
-        // updatePiecesResId()
 
         val intent = Intent(this@ProfileActivity, GameActivity::class.java)
         intent.putExtra(Constants.MODE, Constants.ANALYSIS_MODE)
@@ -187,6 +214,7 @@ class ProfileActivity : BaseActivity() {
         intent.putExtra(Constants.START_DATA, startMessage)
         startActivity(intent)
     }
+
     private fun setDataInUi(user: User) {
         currentUser = user
         binding.tvUsername.text = user.name

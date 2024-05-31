@@ -1,4 +1,4 @@
-package com.hellostranger.chess_app.core
+package com.hellostranger.chess_app.core.players
 
 
 interface Player {

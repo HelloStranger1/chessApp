@@ -1,5 +1,9 @@
 package com.hellostranger.chess_app.core.board
 
+/**
+ * Holds a list of pieces.
+ * @author Eyal Ben Natan
+ */
 class PieceList(maxPieces: Int = 16) {
     // Indices of squares occupied by given piece (Only elements up to count are not garbage)
     private var occupiedSquares: IntArray = IntArray(maxPieces)

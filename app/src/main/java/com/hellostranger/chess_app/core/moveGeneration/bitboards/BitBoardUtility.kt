@@ -12,12 +12,12 @@ object BitBoardUtility {
     private const val A_FILE: ULong = 0x101010101010101UL
 
     const val RANK_1: ULong = 0b11111111UL
-    val RANK_2: ULong = RANK_1 shl 8
-    val RANK_3: ULong = RANK_2 shl 8
+    private val RANK_2: ULong = RANK_1 shl 8
+    private val RANK_3: ULong = RANK_2 shl 8
     val RANK_4: ULong = RANK_3 shl 8
     val RANK_5: ULong = RANK_4 shl 8
-    val RANK_6: ULong = RANK_5 shl 8
-    val RANK_7: ULong = RANK_6 shl 8
+    private val RANK_6: ULong = RANK_5 shl 8
+    private val RANK_7: ULong = RANK_6 shl 8
     val RANK_8: ULong = RANK_7 shl 8
 
     val notAFile: ULong = A_FILE.inv()

@@ -12,16 +12,16 @@ object Bits {
     private const val A_FILE : ULong = 0x101010101010101UL
     private const val RANK_1 : ULong = 0xFFUL
 
-    val whiteKingsideMask = (1UL shl BoardHelper.f1) or (1UL shl BoardHelper.g1)
-    val blackKingsideMask = (1UL shl BoardHelper.f8) or (1UL shl BoardHelper.g8)
+    val whiteKingsideMask = (1UL shl BoardHelper.F_1) or (1UL shl BoardHelper.G_1)
+    val blackKingsideMask = (1UL shl BoardHelper.F_8) or (1UL shl BoardHelper.G_8)
 
     // This is used to check squares that might be attacked by the opponent, so king can't move there.
-    val whiteQueensideMaskChecks = (1UL shl BoardHelper.d1) or (1UL shl BoardHelper.c1)
-    val blackQueensideMaskChecks = (1UL shl BoardHelper.d8) or (1UL shl BoardHelper.c8)
+    val whiteQueensideMaskChecks = (1UL shl BoardHelper.D_1) or (1UL shl BoardHelper.C_1)
+    val blackQueensideMaskChecks = (1UL shl BoardHelper.D_8) or (1UL shl BoardHelper.C_8)
 
     // This is the mask for the path itself. Can't have any piece in the way, but an enemy can threaten b1/b8
-    val whiteQueensideMask = whiteQueensideMaskChecks or (1UL shl BoardHelper.b1)
-    val blackQueensideMask = blackQueensideMaskChecks or (1UL shl BoardHelper.b8)
+    val whiteQueensideMask = whiteQueensideMaskChecks or (1UL shl BoardHelper.B_1)
+    val blackQueensideMask = blackQueensideMaskChecks or (1UL shl BoardHelper.B_8)
 
     val whitePassedPawnMasks : ULongArray = ULongArray(64)
     val blackPassedPawnMasks : ULongArray = ULongArray(64)

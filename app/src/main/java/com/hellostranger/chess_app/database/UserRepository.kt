@@ -4,8 +4,8 @@ import com.hellostranger.chess_app.models.rvEntities.GameHistory
 import com.hellostranger.chess_app.network.retrofit.backend.BackendApiService
 import com.hellostranger.chess_app.utils.TokenManager
 
+@ExperimentalUnsignedTypes
 class UserRepository(private val  retrofitService : BackendApiService, val tokenManager: TokenManager, private val gameHistoryDao : GameHistoryDao) {
-    suspend fun getAllGameHistories() = retrofitService.getGamesHistory(tokenManager.getUserEmail())
 
     suspend fun getAllGameHistoriesByEmail(email : String) = retrofitService.getGamesHistory(email)
 
@@ -13,17 +13,13 @@ class UserRepository(private val  retrofitService : BackendApiService, val token
 
     suspend fun removeGameHistoryFromFavorites(gameHistory : GameHistory) = gameHistoryDao.deleteGameHistory(gameHistory.id)
 
-    fun getFavoriteGameHistories() = gameHistoryDao.getGames()
     fun getFavoriteGameHistoryById(gameHistoryId: Int) = gameHistoryDao.getSpecificGame(gameHistoryId)
 
-    suspend fun getUser() = retrofitService.getUserByEmail(tokenManager.getUserEmail())
 
     suspend fun getUserByEmail(email : String) = retrofitService.getUserByEmail(email)
 
     suspend fun sendFriendRequest(recipientEmail : String) = retrofitService.sendFriendRequest(tokenManager.getUserEmail(), recipientEmail)
-    suspend fun getFriendRequest() = retrofitService.getFriendRequests(tokenManager.getUserEmail())
 
-    suspend fun acceptFriendRequest(requestId : Int) = retrofitService.acceptFriendRequest(tokenManager.getUserEmail(), requestId)
 
     suspend fun getFriends(email : String) = retrofitService.getFriends(email)
 

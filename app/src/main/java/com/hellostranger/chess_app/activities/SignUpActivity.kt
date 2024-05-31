@@ -52,7 +52,7 @@ class SignUpActivity : BaseActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setHomeAsUpIndicator(R.drawable.ic_black_color_back_24dp)
 
-        binding?.toolbarSignUpActivity?.setNavigationOnClickListener { onBackPressed() }
+        binding?.toolbarSignUpActivity?.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
     }
 
     private fun registerUser(){

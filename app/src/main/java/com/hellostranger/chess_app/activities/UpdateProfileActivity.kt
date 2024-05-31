@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.Build.VERSION
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
@@ -22,6 +23,7 @@ import com.hellostranger.chess_app.databinding.ActivityUpdateProfileBinding
 import com.hellostranger.chess_app.dto.requests.UpdateRequest
 import com.hellostranger.chess_app.models.entities.User
 import com.hellostranger.chess_app.network.retrofit.backend.BackendRetrofitClient
+import com.hellostranger.chess_app.utils.Constants
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -42,8 +44,16 @@ class UpdateProfileActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityUpdateProfileBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
         setUpActionBar()
-        currentUser = intent.getParcelableExtra("USER")!!
+
+        currentUser = if (VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra(Constants.USER, User::class.java)!!
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra(Constants.USER)!!
+        }
+
         setUserDataInUI()
         binding.ivUserImage.setOnClickListener {
             requestStoragePermission()
@@ -81,25 +91,13 @@ class UpdateProfileActivity : BaseActivity() {
         }
         if(binding.etName.text!!.isNotEmpty() && binding.etName.text!!.toString() != currentUser.name){
             CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
-                val response = BackendRetrofitClient.instance.updateUserName(tokenManager.getUserEmail(), UpdateRequest(binding.etName.text!!.toString()))
-                if(response.isSuccessful && response.body() != null){
-                    Log.i("SaveData", "Saved name to the backend server. response is: ${response.body()}")
-                }else{
-                    Log.e("SaveData", "Failed. response is: $response , ${response.body()}")
-                }
+                BackendRetrofitClient.instance.updateUserName(tokenManager.getUserEmail(), UpdateRequest(binding.etName.text!!.toString()))
             }
 
         }
-        Log.i("TAG", "mProfileImageURL: $mProfileImageURL and user image: ${currentUser.image}")
         if(mProfileImageURL != currentUser.image){
             CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
-                Log.i("TAG", mProfileImageURL)
-                val response = BackendRetrofitClient.instance.uploadProfileImage(tokenManager.getUserEmail(), UpdateRequest(mProfileImageURL))
-                if(response.isSuccessful && response.body() != null){
-                    Log.i("SaveData", "Saved name to the backend server. response is: ${response.body()}")
-                }else{
-                    Log.e("SaveData", "Failed. response is: $response , ${response.body()}")
-                }
+                BackendRetrofitClient.instance.uploadProfileImage(tokenManager.getUserEmail(), UpdateRequest(mProfileImageURL))
             }
 
         }
@@ -140,7 +138,7 @@ class UpdateProfileActivity : BaseActivity() {
                 if (isGranted ) {
                     Toast.makeText(
                         this@UpdateProfileActivity,
-                        "Permission granted now you can read the storage files.",
+                        "Permission granted, we can read storage files.",
                         Toast.LENGTH_LONG
                     ).show()
 
@@ -161,7 +159,7 @@ class UpdateProfileActivity : BaseActivity() {
         }
 
     private fun requestStoragePermission(){
-        val neededPermission = if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
+        val neededPermission = if(VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
             Manifest.permission.READ_MEDIA_IMAGES else Manifest.permission.READ_EXTERNAL_STORAGE
         if (ActivityCompat.shouldShowRequestPermissionRationale(
                 this, neededPermission)
@@ -173,17 +171,17 @@ class UpdateProfileActivity : BaseActivity() {
             requestPermission.launch(arrayOf(neededPermission))
         }
     }
-    private fun setUpActionBar(){
+    private fun setUpActionBar() {
         val toolbarUpdateProfileActivity = binding.toolbarMyProfileActivity
         setSupportActionBar(toolbarUpdateProfileActivity)
         val actionBar = supportActionBar
-        if(actionBar != null){
+        if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true)
             actionBar.setHomeAsUpIndicator(R.drawable.ic_white_arrow_back)
             actionBar.title = resources.getString(R.string.my_profile)
         }
 
-        toolbarUpdateProfileActivity.setNavigationOnClickListener { onBackPressed() }
+        toolbarUpdateProfileActivity.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
     }
 
 

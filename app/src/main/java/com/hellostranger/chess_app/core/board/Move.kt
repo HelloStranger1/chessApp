@@ -1,5 +1,13 @@
 package com.hellostranger.chess_app.core.board
 
+/**
+ * Represents a move.
+ * The move uses various bits on the value to represent the move.
+ * the first 4 bits are for the flag: Promotion, Castling, En Passant and so on.
+ * the next 6 bits are the the target square of the move (from 0 to 63)
+ * and the last 6 bits are for the start square of the move. (from 0 to 63)
+ * @author Eyal Ben Nata
+ */
 class Move(var moveValue: UShort) {
 
     companion object {
@@ -14,6 +22,7 @@ class Move(var moveValue: UShort) {
         const val PROMOTE_TO_ROOK_FLAG: Int = 0b0110
         const val PROMOTE_TO_BISHOP_FLAG: Int = 0b0111
 
+        // Masks
         private const val START_SQUARE_MASK : UShort = 0b0000000000111111u
         private const val TARGET_SQUARE_MASK : UShort = 0b0000111111000000u
         private const val FLAG_MASK : UShort = 0b1111000000000000u
@@ -28,8 +37,6 @@ class Move(var moveValue: UShort) {
 
     }
 
-
-    // Masks
 
 
     constructor(startSquare: Int, targetSquare: Int) : this((startSquare or (targetSquare shl 6)).toUShort())

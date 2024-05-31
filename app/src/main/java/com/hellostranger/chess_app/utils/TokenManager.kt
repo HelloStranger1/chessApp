@@ -59,10 +59,6 @@ class TokenManager(context : Context){
     fun isAccessTokenExpired() : Boolean {
         return System.currentTimeMillis() >= getAccessExpiration()
     }
-    fun isRefreshTokenExpired() : Boolean{
-        val currentTimeMillis = System.currentTimeMillis()
-        return currentTimeMillis >= getRefreshExpiration()
-    }
 
 
     private fun getAccessExpiration() : Long{

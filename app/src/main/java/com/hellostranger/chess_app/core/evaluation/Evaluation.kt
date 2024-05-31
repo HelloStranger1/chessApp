@@ -1,6 +1,7 @@
 package com.hellostranger.chess_app.core.evaluation
 
 import com.hellostranger.chess_app.core.board.Board
+import com.hellostranger.chess_app.core.board.Coord
 import com.hellostranger.chess_app.core.board.Piece
 import com.hellostranger.chess_app.core.board.PieceList
 import com.hellostranger.chess_app.core.helpers.BoardHelper
@@ -9,6 +10,9 @@ import com.hellostranger.chess_app.core.moveGeneration.bitboards.Bits
 import kotlin.math.min
 
 @ExperimentalUnsignedTypes
+/**
+ * Used to evaluate a position.
+ */
 class Evaluation {
     companion object {
         const val PAWN_VALUE = 100
@@ -22,6 +26,15 @@ class Evaluation {
         val kingPawnShieldScores = intArrayOf(4, 7, 4, 3, 6, 3)
 
     }
+    private val pawnShieldSquaresWhite : Array<IntArray> = Array(64) {IntArray(0)}
+    private val pawnShieldSquaresBlack : Array<IntArray> = Array(64) {IntArray(0)}
+
+    init {
+        for (squareIndex in 0 until 64) {
+            createPawnShieldSquare(squareIndex)
+        }
+    }
+
 
     lateinit var board: Board
     private lateinit var whiteEval : EvaluationData
@@ -75,7 +88,7 @@ class Evaluation {
         var uncastledKingPenalty  = 0
 
         if (kingFile <= 2 || kingFile >= 5) {
-            val squares = if(isWhite) PrecomputedEvaluationData.pawnShieldSquaresWhite[kingSquare] else PrecomputedEvaluationData.pawnShieldSquaresBlack[kingSquare]
+            val squares = if(isWhite) pawnShieldSquaresWhite[kingSquare] else pawnShieldSquaresBlack[kingSquare]
 
             for (i in 0 until squares.size / 2) {
                 val shieldSquareIndex = squares[i]
@@ -193,6 +206,29 @@ class Evaluation {
             value += PieceSquareTable.read(table, pieceList[i], isWhite)
         }
         return value
+    }
+    private fun createPawnShieldSquare(squareIndex : Int) {
+        val shieldIndicesWhite : MutableList<Int> = mutableListOf()
+        val shieldIndicesBlack : MutableList<Int> = mutableListOf()
+        val coord = Coord(squareIndex)
+        val rank = coord.rankIndex
+        val file = coord.fileIndex.coerceIn(1..6)
+
+        for (fileOffset in -1..1) {
+            addIfValid(Coord(file + fileOffset, rank + 1), shieldIndicesWhite)
+            addIfValid(Coord(file + fileOffset, rank + 2), shieldIndicesWhite)
+
+            addIfValid(Coord(file + fileOffset, rank - 1), shieldIndicesBlack)
+            addIfValid(Coord(file + fileOffset, rank - 2), shieldIndicesBlack)
+        }
+
+        pawnShieldSquaresWhite[squareIndex] = shieldIndicesWhite.toIntArray()
+        pawnShieldSquaresBlack[squareIndex] = shieldIndicesBlack.toIntArray()
+    }
+    private fun addIfValid(coord: Coord, list : MutableList<Int>) {
+        if (coord.isValidSquare) {
+            list.add(coord.squareIndex)
+        }
     }
 
     data class  EvaluationData(

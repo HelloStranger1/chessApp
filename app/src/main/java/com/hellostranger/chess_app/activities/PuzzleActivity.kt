@@ -10,7 +10,6 @@ import com.hellostranger.chess_app.R
 import com.hellostranger.chess_app.core.board.Board
 import com.hellostranger.chess_app.core.board.Coord
 import com.hellostranger.chess_app.core.board.Move
-import com.hellostranger.chess_app.core.board.Piece
 import com.hellostranger.chess_app.core.helpers.BoardHelper
 import com.hellostranger.chess_app.core.helpers.MoveUtility
 import com.hellostranger.chess_app.core.moveGeneration.MoveGenerator
@@ -24,7 +23,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.math.cos
 
 private const val TAG = "PuzzleActivityTag"
 @ExperimentalUnsignedTypes
@@ -97,142 +95,6 @@ class PuzzleActivity : BaseActivity(), ChessGameInterface, PopupMenu.OnMenuItemC
         popupMenu.setOnMenuItemClickListener(this@PuzzleActivity)
         popupMenu.show()
     }
-//    private fun convertMoveToMoveMessage(move : String) : MoveMessage{
-//        val moveMessage = MoveMessage(
-//            "",
-//            startCol = (move[0] - 'a'),
-//            startRow = (move[1]).digitToInt() -1,
-//            endCol = (move[2] - 'a'),
-//            endRow = (move[3]).digitToInt() -1,
-//            MoveType.REGULAR
-//        )
-//        if(move.length > 4){
-//            if(move[4] == 'q') {
-//                moveMessage.moveType = MoveType.PROMOTION_QUEEN
-//            }
-//            if(move[4] == 'r'){
-//                moveMessage.moveType = MoveType.PROMOTION_ROOK
-//            }
-//            if(move[4] == 'b') {
-//                moveMessage.moveType = MoveType.PROMOTION_BISHOP
-//            }
-//            if(move[4] == 'n'){
-//                moveMessage.moveType = MoveType.PROMOTION_KNIGHT
-//            }
-//        }
-//        if(move == "e1g1" || move == "e1c1" || move == "e8g8" || move == "e8c8"){
-//            moveMessage.moveType = MoveType.CASTLE
-//        }
-//        return moveMessage
-//        return MoveMessage("", 0)
-//    }
-
-//    override fun pieceAt(col: Int, row: Int, isFlipped: Boolean): Piece? {
-//        return if(isFlipped){
-//           boardHistory[mCurrentBoardShown].squaresArray[7 - row][7 - col].piece
-//        } else{
-//            boardHistory[mCurrentBoardShown].squaresArray[row][col].piece
-//        }
-//    }
-//    private fun isCastlingMove(moveMessage: MoveMessage): Boolean {
-//        val startSquare =
-//            boardHistory[mCurrentBoardShown].getSquareAt(moveMessage.startCol, moveMessage.startRow)
-//        val endSquare = boardHistory[mCurrentBoardShown].getSquareAt(moveMessage.endCol, moveMessage.endRow)
-//
-//        if (startSquare == null || endSquare == null) {
-//            Log.e(
-//                TAG,
-//                "Move isn't a castling move because one of the squares are null. moveMessage is: $moveMessage and the squares are: $startSquare, $endSquare"
-//            )
-//            return false
-//        }
-//        return boardHistory[mCurrentBoardShown].isCastlingMove(startSquare, endSquare)
-//    }
-
-//    override fun getPiecesMoves(piece: Piece): ArrayList<Square> {
-//        val movableSquares : ArrayList<Square> = ArrayList()
-//        val startSquare : Square = boardHistory[mCurrentBoardShown].getSquareAt(piece.colIndex, piece.rowIndex)!!
-//        for(square : Square in piece.getMovableSquares(boardHistory[mCurrentBoardShown])){
-//            if(boardHistory[mCurrentBoardShown].isValidMove(startSquare, square)){
-//                movableSquares.add(square)
-//            }
-//        }
-//        Log.i(TAG, "the move's of piece: $piece are: $movableSquares")
-//        return movableSquares
-//    }
-
-//    fun validateMove(moveMessage: MoveMessage) : Boolean {
-//        val board = boardHistory[mCurrentBoardShown]
-//        val startSquare = board.getSquareAt(moveMessage.startCol, moveMessage.startRow)!!
-//        val endSquare = board.getSquareAt(moveMessage.endCol, moveMessage.endRow)!!
-//
-//        if(startSquare.piece == null || isWhite != (startSquare.piece!!.color == Color.WHITE)) {
-//            return false
-//        }
-//        if(!board.isValidMove(startSquare, endSquare)){
-//            return false
-//        }
-//        return true
-//    }
-//    override fun playMove(moveMessage: MoveMessage, isFlipped: Boolean) {
-//        var updatedMoveMessage = moveMessage
-//        if(isFlipped){
-//            updatedMoveMessage = MoveMessage(
-//                moveMessage.playerEmail, 7 - moveMessage.startCol, 7 - moveMessage.startRow, 7 - moveMessage.endCol, 7 - moveMessage.endRow, moveMessage.moveType
-//            )
-//        }
-//        if(isWhite){
-//            if(updatedMoveMessage.endRow == 7 &&
-//                boardHistory[mCurrentBoardShown].squaresArray[updatedMoveMessage.startRow][updatedMoveMessage.startCol].piece!!.pieceType == PieceType.PAWN &&
-//                heldMoveMessage == null) {
-//                heldMoveMessage = updatedMoveMessage
-//                setPiecePromotionMenu()
-//                return
-//            }
-//        } else{
-//            if(updatedMoveMessage.endRow == 0 &&
-//                boardHistory[mCurrentBoardShown].squaresArray[updatedMoveMessage.startRow][updatedMoveMessage.startCol].piece!!.pieceType == PieceType.PAWN &&
-//                heldMoveMessage == null) {
-//                heldMoveMessage = updatedMoveMessage
-//                setPiecePromotionMenu()
-//                return
-//            }
-//        }
-//        if(isCastlingMove(updatedMoveMessage)){
-//            updatedMoveMessage.moveType = MoveType.CASTLE
-//        }
-//        if(!validateMove(updatedMoveMessage)) {
-//            return
-//        }
-//
-//        val correctMove = convertMoveToMoveMessage(currentPuzzle.moves[mCurrentBoardShown])
-//        if(
-//            updatedMoveMessage.startCol == correctMove.startCol &&
-//            updatedMoveMessage.startRow == correctMove.startRow &&
-//            updatedMoveMessage.endCol == correctMove.endCol &&
-//            updatedMoveMessage.endRow == correctMove.endRow &&
-//            updatedMoveMessage.moveType == correctMove.moveType
-//        ){
-//            val isOnLastMove = mCurrentBoardShown == currentPuzzle.moves.size - 1
-//            showCorrectMoveUi(isOnLastMove);
-//            playMoveForPuzzle(updatedMoveMessage)
-//            if(!isOnLastMove){
-//                CoroutineScope(Dispatchers.Main).launch {
-//                    delay(100)
-//                    playMoveForPuzzle(convertMoveToMoveMessage(currentPuzzle.moves[mCurrentBoardShown]))
-//                }
-//
-//            } else{
-//                binding.llNextPuzzle.visibility = View.VISIBLE
-//                Toast.makeText(this, "Finished The puzzle!", Toast.LENGTH_LONG).show()
-//
-//            }
-//
-//        } else{
-//            Log.e(TAG, "MovePlayed: $updatedMoveMessage. the move we were expecting: $correctMove")
-//            showWrongMoveUi()
-//        }
-//    }
     private fun retryPuzzle(){
         updateCurrentPuzzle()
         updateUIToStartPuzzle()
@@ -254,35 +116,29 @@ class PuzzleActivity : BaseActivity(), ChessGameInterface, PopupMenu.OnMenuItemC
             }
             return
         }
-        //TODO: We ran out of puzzles
+
         showProgressDialog("Please wait while we fetch new puzzles...", false)
         CoroutineScope(Dispatchers.IO).launch {
-            val response =
-                PuzzleRetrofitClient.instance.getRandomPuzzle(4)
-            if (response.isSuccessful && response.body() != null) {
-                Log.e("TAG", "(PuzzleActivity) Got puzzles. response: ${response.body()}")
-                PuzzlesList.instance.addPuzzles(response.body()!!)
-                Log.e("TAG", "(PuzzleActivity) PuzzleList: ${PuzzlesList.instance}")
+            handleResponse(
+                request = {PuzzleRetrofitClient.instance.getRandomPuzzle(4)},
+                errorMessage = "Couldn't fetch puzzles."
+            )?.let {
+                PuzzlesList.instance.addPuzzles(it)
             }
             withContext(Dispatchers.Main){
                 goToNextPuzzle()
             }
+            runOnUiThread {
+                hideProgressDialog()
+            }
         }
     }
-//    private fun playMoveForPuzzle(updatedMoveMessage: MoveMessage){
-//        val newBoard = boardHistory[mCurrentBoardShown].clone().movePiece(updatedMoveMessage)
-//        newBoard.previousMove = updatedMoveMessage
-//        boardHistory.add(newBoard)
-//        mCurrentBoardShown += 1
-//        binding.chessView.postInvalidate()
-//    }
 
     private fun showCorrectMoveUi(isLastMove : Boolean){
         binding.ivLogo.setImageResource(R.drawable.ic_green_checkmark)
         if(isLastMove){
             binding.tv1.text = getString(R.string.success)
             binding.tv2.visibility = View.INVISIBLE
-            //TODO: Add the option to go to next puzzle
         } else{
             binding.tv1.text = getString(R.string.best_move)
             binding.tv2.text = getString(R.string.keep_going)
@@ -296,52 +152,33 @@ class PuzzleActivity : BaseActivity(), ChessGameInterface, PopupMenu.OnMenuItemC
 
     }
 
-
-//    override fun isOnLastMove(): Boolean {
-//       return mCurrentBoardShown == boardHistory.size -1
-//    }
-//
-//    override fun goToLastMove() {
-//        mCurrentBoardShown = boardHistory.size - 1
-//        binding.chessView.invalidate()
-//    }
-//
-//    override fun getLastMovePlayed(): MoveMessage? {
-//        return boardHistory[mCurrentBoardShown].previousMove
-//    }
-
     override fun onMenuItemClick(menuItem: MenuItem): Boolean {
         if(heldMoveMessage.isNull){
             Log.e(TAG, "held Move message is null")
             return false
         }
-        when (menuItem.itemId){
+        val chosenMove : Move = when (menuItem.itemId){
             R.id.queen -> {
-                val chosenMove = Move(heldMoveMessage.startSquare, heldMoveMessage.targetSquare, Move.PROMOTE_TO_QUEEN_FLAG)
-                onMoveChosen(chosenMove)
-                binding.chessView.invalidate()
-                return true
+                Move(heldMoveMessage.startSquare, heldMoveMessage.targetSquare, Move.PROMOTE_TO_QUEEN_FLAG)
             }
+
             R.id.rook -> {
-                val chosenMove = Move(heldMoveMessage.startSquare, heldMoveMessage.targetSquare, Move.PROMOTE_TO_ROOK_FLAG)
-                onMoveChosen(chosenMove)
-                binding.chessView.invalidate()
-                return true
+                Move(heldMoveMessage.startSquare, heldMoveMessage.targetSquare, Move.PROMOTE_TO_ROOK_FLAG)
             }
+
             R.id.bishop -> {
-                val chosenMove = Move(heldMoveMessage.startSquare, heldMoveMessage.targetSquare, Move.PROMOTE_TO_BISHOP_FLAG)
-                onMoveChosen(chosenMove)
-                binding.chessView.invalidate()
-                return true
+                Move(heldMoveMessage.startSquare, heldMoveMessage.targetSquare, Move.PROMOTE_TO_BISHOP_FLAG)
             }
+
             R.id.knight -> {
-                val chosenMove = Move(heldMoveMessage.startSquare, heldMoveMessage.targetSquare, Move.PROMOTE_TO_KNIGHT_FLAG)
-                onMoveChosen(chosenMove)
-                binding.chessView.invalidate()
-                return true
+                Move(heldMoveMessage.startSquare, heldMoveMessage.targetSquare, Move.PROMOTE_TO_KNIGHT_FLAG)
             }
+
             else -> {return false}
         }
+        onMoveChosen(chosenMove)
+        binding.chessView.invalidate()
+        return true
     }
 
     override fun playMove(startCoord: Coord, endCoord: Coord) {
@@ -365,7 +202,6 @@ class PuzzleActivity : BaseActivity(), ChessGameInterface, PopupMenu.OnMenuItemC
         if (isLegal) {
             if (isPromotion) {
                 heldMoveMessage = Move(chosenMove.startSquare, chosenMove.targetSquare)
-                Log.i(TAG, "Held move message is now (in UCE): ${MoveUtility.getMoveNameUCI(heldMoveMessage)}")
                 setPiecePromotionMenu()
             } else {
                 onMoveChosen(chosenMove)

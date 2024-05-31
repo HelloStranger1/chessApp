@@ -1,7 +1,9 @@
 package com.hellostranger.chess_app.core
 
+import com.hellostranger.chess_app.core.board.GameResult
 import com.hellostranger.chess_app.core.helpers.FenUtility
 
+@ExperimentalUnsignedTypes
 data class Game(
     var id : String,
     var gameResult: GameResult,

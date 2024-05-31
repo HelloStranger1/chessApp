@@ -26,15 +26,9 @@ class TranspositionTable(private val board: Board) {
         const val UPPER_BOUND = 2
     }
 
-    val count : Int = 1_000_000
+    private val count : Int = 1_000_000
     var entries : Array<Entry> = Array(count) { Entry() }
-    var enabled : Boolean = true
-
-    fun clear() {
-        for (i in 0 until entries.count()) {
-            entries[i] = Entry()
-        }
-    }
+    private var enabled : Boolean = true
 
     val index : Int
         get() = (board.currentGameState.zobristKey % count.toUInt()).toInt()

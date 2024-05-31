@@ -5,11 +5,13 @@ package com.hellostranger.chess_app.core.board
 import kotlin.random.Random
 import kotlin.random.nextULong
 
-// Helper class for the calculation of zobrist hash.
-// This is a single 64bit value that (non-uniquely) represents the current state of the game.
-
-// It is mainly used for quickly detecting positions that have already been evaluated, to avoid
-// potentially performing lots of duplicate work during game search.
+/** Helper class for the calculation of zobrist hash.
+ * This is a single 64bit value that (non-uniquely) represents the current state of the game.
+ *
+ * It is mainly used for quickly detecting positions that have already been evaluated, to avoid
+ * potentially performing lots of duplicate work during game search.
+ * @author Eyal Ben Natan
+ */
 object Zobrist {
     // Random numbers are generated for each aspect of the game state, and are used for calculating the hash:
 

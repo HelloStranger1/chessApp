@@ -5,6 +5,10 @@ import com.hellostranger.chess_app.core.board.Piece
 import com.hellostranger.chess_app.core.helpers.BoardHelper
 
 
+@ExperimentalUnsignedTypes
+/**
+ * Holds position-based square tables for each piece.
+ */
 object PieceSquareTable {
     private val tables: Array<IntArray> = Array(Piece.MaxPieceIndex + 1) { IntArray(0) }
 

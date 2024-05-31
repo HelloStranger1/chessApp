@@ -2,8 +2,6 @@ package com.hellostranger.chess_app
 
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,8 +12,8 @@ import androidx.appcompat.widget.AppCompatButton
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
 import com.bumptech.glide.Glide
-import com.hellostranger.chess_app.core.Arbiter
-import com.hellostranger.chess_app.core.GameResult
+import com.hellostranger.chess_app.core.helpers.Arbiter
+import com.hellostranger.chess_app.core.board.GameResult
 
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
 private const val ARG_WHITE_NAME = "whiteName"
@@ -25,11 +23,6 @@ private const val ARG_BLACK_IMAGE = "blackImg"
 private const val ARG_OUR_ELO = "ourElo"
 private const val ARG_RESULT = "gameResult"
 private const val ARG_RESULT_DESC = "resultDesc"
-/**
- * A simple [Fragment] subclass.
- * Use the [GameResultFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 @ExperimentalUnsignedTypes
 class GameResultFragment : DialogFragment() {
 
@@ -99,33 +92,18 @@ class GameResultFragment : DialogFragment() {
         whiteTextView!!.text = whiteName
         blackTextView!!.text = blackName
         resultTextView!!.text = if(Arbiter.isWhiteWinResult(gameResult!!)) "1 - 0" else if(Arbiter.isDrawResult(gameResult!!)) "0.5 - 0.5" else "0 - 1"
-        when (gameResult) {
-            GameResult.BlackIsMated -> {
-                whiteImageView!!.background = ContextCompat.getDrawable(requireContext(), R.drawable.image_border_win)
-                blackImageView!!.background = ContextCompat.getDrawable(requireContext(), R.drawable.image_border_lose)
-                resultTextTextView!!.text = "White won by checkmate"
-            }
-            GameResult.BlackResigned-> {
-                whiteImageView!!.background = ContextCompat.getDrawable(requireContext(), R.drawable.image_border_win)
-                blackImageView!!.background = ContextCompat.getDrawable(requireContext(), R.drawable.image_border_lose)
-                resultTextTextView!!.text = "White won by resignation"
-            }
-            GameResult.WhiteResigned -> {
-                whiteImageView!!.background = ContextCompat.getDrawable(requireContext(), R.drawable.image_border_lose)
-                blackImageView!!.background = ContextCompat.getDrawable(requireContext(), R.drawable.image_border_win)
-                resultTextTextView!!.text = "Black won by resignation"
-            }
-            GameResult.WhiteIsMated-> {
-                whiteImageView!!.background = ContextCompat.getDrawable(requireContext(), R.drawable.image_border_lose)
-                blackImageView!!.background = ContextCompat.getDrawable(requireContext(), R.drawable.image_border_win)
-                resultTextTextView!!.text = "Black won by checkmate"
-            }
-            else -> {
-                whiteImageView!!.background = ContextCompat.getDrawable(requireContext(), R.drawable.image_border_draw)
-                blackImageView!!.background = ContextCompat.getDrawable(requireContext(), R.drawable.image_border_draw)
-                resultTextTextView!!.text = "Draw"
-            }
+
+        if (Arbiter.isWhiteWinResult(gameResult!!)) {
+            whiteImageView!!.background = ContextCompat.getDrawable(requireContext(), R.drawable.image_border_win)
+            blackImageView!!.background = ContextCompat.getDrawable(requireContext(), R.drawable.image_border_lose)
+        } else if (Arbiter.isBlackWinResult(gameResult!!)) {
+            whiteImageView!!.background = ContextCompat.getDrawable(requireContext(), R.drawable.image_border_lose)
+            blackImageView!!.background = ContextCompat.getDrawable(requireContext(), R.drawable.image_border_win)
+        } else {
+            whiteImageView!!.background = ContextCompat.getDrawable(requireContext(), R.drawable.image_border_draw)
+            blackImageView!!.background = ContextCompat.getDrawable(requireContext(), R.drawable.image_border_draw)
         }
+        resultDescTextView!!.text = Arbiter.getResultDescription(gameResult!!)
         resultDescTextView!!.text = gameResultDesc
         eloTextView!!.text = ourElo.toString()
 
@@ -137,14 +115,6 @@ class GameResultFragment : DialogFragment() {
     }
 
     companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         *
-         * @return A new instance of fragment GameResultFragment.
-         */
-        // TODO: Rename and change types and number of parameters
         @JvmStatic
         fun newInstance(whiteName: String, blackName: String, whiteImage : String, blackImage : String, ourElo : Int, result : GameResult, resultDesc : String) : GameResultFragment =
             GameResultFragment().apply {
@@ -156,7 +126,6 @@ class GameResultFragment : DialogFragment() {
                     putInt(ARG_OUR_ELO, ourElo)
                     putString(ARG_RESULT_DESC, resultDesc)
                     putSerializable(ARG_RESULT, result)
-                    Log.i("TAG", "resultDesc $resultDesc")
                 }
             }
     }

@@ -27,10 +27,7 @@ class AuthInterceptor(private val authApiService: AuthApiService) : Interceptor 
                 }else{
                     tokenManager.clearSession()
                     Log.e("AuthInterceptor", "Couldn't refresh token")
-                    //TODO: If user's refresh token is invalid, send him back to the intro screen.
                 }
-                // Update the refreshed access token and its expiration time in the session
-
             }
 
             // Create a new request with the refreshed access token

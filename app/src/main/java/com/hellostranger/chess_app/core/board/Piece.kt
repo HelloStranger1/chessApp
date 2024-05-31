@@ -1,5 +1,10 @@
 package com.hellostranger.chess_app.core.board
 
+/**
+ * Represents a chess piece.
+ * Each piece type is granted a value from 0 to 6, and the 4th bit represents the colour.
+ * @author Eyal Ben Natan
+ */
 object Piece {
     // Piece types
     const val NONE: Int = 0
@@ -57,10 +62,6 @@ object Piece {
         return isColour(piece, WHITE)
     }
 
-    fun pieceColour(piece: Int): Int {
-        return piece and COLOUR_MASK
-    }
-
     fun pieceType(piece: Int): Int {
         return piece and TYPE_MASK
     }
@@ -73,11 +74,6 @@ object Piece {
     // Bishop or Queen
     fun isDiagonalSlider(piece: Int): Boolean {
         return (piece and QUEEN) == QUEEN || (piece and BISHOP) == BISHOP
-    }
-
-    // Bishop, Rook or Queen
-    fun isSlidingPiece(piece: Int): Boolean {
-        return (piece and 4) != 0
     }
 
     fun getSymbol(piece: Int): Char {

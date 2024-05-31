@@ -19,10 +19,11 @@ import com.google.gson.Gson
 import com.hellostranger.chess_app.GameResultFragment
 import com.hellostranger.chess_app.viewModels.GameViewModel
 import com.hellostranger.chess_app.R
-import com.hellostranger.chess_app.core.Arbiter
-import com.hellostranger.chess_app.core.Bot
+import com.hellostranger.chess_app.core.helpers.Arbiter
+import com.hellostranger.chess_app.core.players.Bot
 import com.hellostranger.chess_app.core.Game
-import com.hellostranger.chess_app.core.PlayerInfo
+import com.hellostranger.chess_app.core.board.GameResult
+import com.hellostranger.chess_app.core.players.PlayerInfo
 import com.hellostranger.chess_app.core.board.Board
 import com.hellostranger.chess_app.core.board.Coord
 import com.hellostranger.chess_app.core.board.Move
@@ -30,14 +31,14 @@ import com.hellostranger.chess_app.core.board.Piece
 import com.hellostranger.chess_app.core.helpers.BoardHelper
 import com.hellostranger.chess_app.core.helpers.MoveUtility
 import com.hellostranger.chess_app.core.moveGeneration.MoveGenerator
-import com.hellostranger.chess_app.core.Player
+import com.hellostranger.chess_app.core.players.Player
 import com.hellostranger.chess_app.databinding.ActivityGameViewBinding
 import com.hellostranger.chess_app.dto.websocket.ConcedeGameMessage
 import com.hellostranger.chess_app.dto.websocket.GameStartMessage
 import com.hellostranger.chess_app.dto.websocket.WebSocketMessage
 import com.hellostranger.chess_app.gameHelpers.ChessGameInterface
-import com.hellostranger.chess_app.dto.enums.MoveType
 import com.hellostranger.chess_app.dto.websocket.DrawOfferMessage
+import com.hellostranger.chess_app.models.entities.User
 import com.hellostranger.chess_app.network.websocket.ChessWebSocketListener
 import com.hellostranger.chess_app.utils.Constants
 import com.hellostranger.chess_app.utils.MyApp
@@ -53,15 +54,18 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
     private lateinit var binding : ActivityGameViewBinding
     private var tokenManager : TokenManager = MyApp.tokenManager
 
+    /*              Websocket variables              */
     private var chessWebSocket: WebSocket? = null
     private var chessWebSocketListener : ChessWebSocketListener? = null
 
+    /*              Bot (AI) variables              */
     private var botPlayer : Bot? = null
 
     private lateinit var viewModel: GameViewModel
     private lateinit var gameMode : String
+
     private var heldMoveMessage : Move = Move.NullMove //To hold the move message while waiting for the player to chose promotion
-    private var isDrawOffered : Boolean = false
+    private var isDrawOffered : Boolean = false // Holds whether or not the opponent offered a draw. Reset when we make a move
 
     private val currentPlayerEmail = MyApp.tokenManager.getUserEmail()
     private var isPlayingWhite = false
@@ -78,68 +82,23 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         viewModel = ViewModelProvider(this)[GameViewModel::class.java]
         gameMode = intent.getStringExtra(Constants.MODE)!!
 
-        setUpChessView()
+        binding.chessView.chessGameInterface = this
 
-        if(gameMode == Constants.ANALYSIS_MODE){
-            binding.chessView.isLocked = true
-            loadGameForAnalysis()
-        } else if(gameMode == Constants.ONLINE_MODE) {
-            initializeSocket()
-        } else if (gameMode == Constants.AI_MODE) {
-            loadGameAgainstBot(intent)
-        }
-
-        viewModel.socketStatus.observe(this){
-            Log.e(TAG, "socketStatus changed to: $it")
-        }
+        initGame()
 
         viewModel.gameResult.observe(this) {
-            Toast.makeText(this@GameActivity, "GameStatus changed to: $it", Toast.LENGTH_LONG).show()
             Log.e(TAG, "gameStatus changed to: $it")
             if (savedInstanceState == null && Arbiter.isDrawResult(it) || Arbiter.isWinResult(it)) {
-                val ourElo = if (isPlayingWhite) viewModel.whitePlayerInfo!!.elo else viewModel.blackPlayerInfo!!.elo
-                val whitePlayerInfo = viewModel.whitePlayerInfo!!
-                val blackPlayerInfo = viewModel.blackPlayerInfo!!
-                val fragment = GameResultFragment.newInstance(whitePlayerInfo.name, blackPlayerInfo.name, whitePlayerInfo.image, blackPlayerInfo.image, ourElo, it, viewModel.gameOverDescription)
-                supportFragmentManager.commit {
-                    setReorderingAllowed(true)
-                    add(R.id.fragment_container_view, fragment)
-                }
-                binding.shadow.visibility = View.VISIBLE
+                onGameOver(it)
             }
         }
-
-//        viewModel.gameStatus.observe(this){
-//            val result : Int = when (it) {
-//                GameState.WHITE_WIN -> 0
-//                GameState.DRAW, GameState.ABORTED -> 1
-//                GameState.BLACK_WIN -> 2
-//                else -> -1
-//            }
-//            if(savedInstanceState == null && result != -1){
-//                val ourElo = viewModel.ourElo
-//
-//                viewModel.startMessageData.value?.let { msg ->
-//                    val fragment : GameResultFragment = GameResultFragment.newInstance(msg.whiteName, msg.blackName,
-//                        msg.whiteImage, msg.blackImage, ourElo, result, viewModel.gameOverDescription)
-//                    supportFragmentManager.commit {
-//                        setReorderingAllowed(true)
-//                        add(R.id.fragment_container_view, fragment)
-//                    }
-//                    binding.shadow.visibility = View.VISIBLE
-//                }
-//            }
-//        }
-
 
         viewModel.hasGameStarted.observe(this) {
             if (it == true) {
                 startGame(viewModel.isWhite, viewModel.whitePlayerInfo!!, viewModel.blackPlayerInfo!!)
             }
         }
-//        viewModel.currentBoard.observe(this){
-//            binding.chessView.invalidate()
-//        }
+
         viewModel.drawOffer.observe(this) {
             if (it.isWhite != viewModel.isWhite) {
                 Toast.makeText(this, "Player ${it.playerEmail} Offered a draw. ", Toast.LENGTH_LONG).show()
@@ -148,11 +107,11 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         }
 
         binding.ibArrowBack.setOnClickListener{
-            Log.i(TAG, "Pressed arrow back")
             viewModel.showPreviousBoard()
             binding.chessView.isLocked = true
             binding.chessView.invalidate()
         }
+
         binding.ibArrowForward.setOnClickListener{
             viewModel.showNextBoard()
             if (viewModel.isOnLastMove()) {
@@ -166,18 +125,59 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         }
 
 
-
         binding.ibExtraSettings.setOnClickListener {
-            if(gameMode == Constants.ONLINE_MODE){
-                showOnlineOptionsMenu()
-            } else{
-                //TODO: Add extra settings for analysis, like adding a comment
+            if(gameMode == Constants.ONLINE_MODE || gameMode == Constants.AI_MODE){
+                showGameOptionsMenu()
             }
+        }
+    }
 
+    /**
+     * Called when the game finishes. Creates the Game result fragment.
+     */
+    private fun onGameOver(result: GameResult) {
+        val ourElo =
+            if (isPlayingWhite) viewModel.whitePlayerInfo!!.elo else viewModel.blackPlayerInfo!!.elo
+        val whitePlayerInfo = viewModel.whitePlayerInfo!!
+        val blackPlayerInfo = viewModel.blackPlayerInfo!!
+        val fragment = GameResultFragment.newInstance(
+            whitePlayerInfo.name,
+            blackPlayerInfo.name,
+            whitePlayerInfo.image,
+            blackPlayerInfo.image,
+            ourElo,
+            result,
+            viewModel.gameOverDescription
+        )
+        supportFragmentManager.commit {
+            setReorderingAllowed(true)
+            add(R.id.fragment_container_view, fragment)
+        }
+        binding.shadow.visibility = View.VISIBLE
+    }
+
+    /**
+     * Initializes everything depending on the game mode. for example, with a bot, create the bot.
+     */
+    private fun initGame() {
+        when (gameMode) {
+            Constants.ANALYSIS_MODE -> {
+                binding.chessView.isLocked = true
+                loadGameForAnalysis()
+            }
+            Constants.ONLINE_MODE -> {
+                initializeSocket()
+            }
+            Constants.AI_MODE -> {
+                loadGameAgainstBot(intent)
+            }
         }
     }
 
 
+    /**
+     * Returns the enemy player according to the game mode.
+     */
     private fun getEnemyPlayer() : Player {
         return when (gameMode) {
             Constants.ONLINE_MODE -> {
@@ -194,6 +194,10 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
             }
         }
     }
+
+    /**
+     * Initializes the info of the players in the UI and in the view model.
+     */
     private fun startGame(isWhite : Boolean, whitePlayerInfo : PlayerInfo, blackPlayerInfo : PlayerInfo){
         if (isWhite) {
             viewModel.whitePlayer = this
@@ -207,9 +211,18 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         setPlayerTwoData(blackPlayerInfo, false)
         isPlayingWhite = isWhite
     }
-    private fun showOnlineOptionsMenu(){
+
+    /**
+     * Displays The options menu in a game.
+     * Changes the text according to the draw offer status from the opponent.
+     * bot cannot accept draw, so it is ignored.
+     */
+    private fun showGameOptionsMenu(){
         val popupMenu = PopupMenu(this@GameActivity, binding.ibExtraSettings)
         popupMenu.menuInflater.inflate(R.menu.popup_game_options_menu, popupMenu.menu)
+        if (isDrawOffered) {
+            popupMenu.menu.getItem(R.id.draw).setTitle(R.string.accept_draw)
+        }
         popupMenu.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId){
                 R.id.resign -> {
@@ -217,7 +230,7 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
                     return@setOnMenuItemClickListener true
                 }
                 R.id.draw -> {
-                    sendDrawOffer()
+                    sendDrawOffer() // Does nothing against a bot.
                     return@setOnMenuItemClickListener true
                 }
                 else -> {return@setOnMenuItemClickListener true}
@@ -225,11 +238,19 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         }
         popupMenu.show()
     }
+
+    /**
+     * Sends the draw offer to the server.
+     */
     private fun sendDrawOffer() {
         if (viewModel.socketStatus.value == true) {
             sendMessageToServer(DrawOfferMessage(currentPlayerEmail, viewModel.isWhite))
         }
     }
+
+    /**
+     * Flips the board and user data.
+     */
     private fun flipUserData(){
         binding.chessView.flipBoard()
         binding.chessView.invalidate()
@@ -243,9 +264,10 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         }
 
     }
-    private fun setUpChessView(){
-        binding.chessView.chessGameInterface = this
-    }
+
+    /**
+     * Initializes the websocket
+     */
     private fun initializeSocket(){
         chessWebSocketListener = ChessWebSocketListener(viewModel, currentPlayerEmail)
         chessWebSocketListener!!.connectWebSocket(
@@ -254,51 +276,59 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         )
         chessWebSocket = chessWebSocketListener!!.getWebSocketInstance()
     }
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+
+    /**
+     * Loads the game for analysis by playing all of the moves.
+     */
     private fun loadGameForAnalysis(){
-        val startData = intent.getParcelableExtra(Constants.START_DATA, GameStartMessage::class.java)!!
-        val movesString : String = intent.getStringExtra(Constants.MOVES_LIST)!!
+        // Get start data
+        val startData = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra(Constants.START_DATA, GameStartMessage::class.java)!!
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra(Constants.START_DATA)!!
+        }
 
         viewModel.startGame(startData)
 
+        val movesString : String = intent.getStringExtra(Constants.MOVES_LIST)!!
+        // Iterate over the moves and play them
         val movesList : List<String> = movesString.split(",")
         for (moveStr in movesList) {
             if (moveStr.length >= 4) {
-                viewModel.onMoveChosen(MoveUtility.getMoveFromUCIName(moveStr, viewModel.board), this)
+                viewModel.onMoveChosen(MoveUtility.getMoveFromUCIName(moveStr, viewModel.board))
             }
         }
-        Log.i(TAG, "Game board has: ${viewModel.board.allGameMoves.size} moves")
         binding.chessView.invalidate()
     }
 
+    /**
+     * Loads a game against a bot. Also updates the user information in the UI.
+     */
     private fun loadGameAgainstBot(intent: Intent) {
         val isWhite : Boolean = Random.nextBoolean()
-        val ourName = intent.getStringExtra(Constants.USER_NAME)!!
-        val ourEmail = intent.getStringExtra(Constants.USER_EMAIL)!!
-        val ourElo = intent.getIntExtra(Constants.USER_ELO, 0)
-        val ourImage = intent.getStringExtra(Constants.USER_IMAGE)!!
-        val startData = if (isWhite) {
-            GameStartMessage(ourName, "BOT", ourEmail, "", ourImage, "", ourElo, 99999)
+        val currentUser = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra(Constants.USER, User::class.java)!!
         } else {
-            GameStartMessage("BOT", ourName, "", ourEmail, "", ourImage, 99999, ourElo)
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra(Constants.USER)!!
+        }
+        val startData = if (isWhite) {
+            GameStartMessage(currentUser.name, "BOT", currentUser.email, "", currentUser.email, "", currentUser.elo, 1800)
+        } else {
+            GameStartMessage("BOT", currentUser.name, "", currentUser.email, "", currentUser.image, 1800, currentUser.elo)
         }
         botPlayer = Bot(7_500, 2_500, viewModel)
         viewModel.startGame(startData)
         if (!isWhite) {
             botPlayer!!.onOpponentMoveChosen()
         }
-    }
-
-    private fun matchCharToMoveType(char : Char): MoveType {
-        return when (char) {
-            'O' -> MoveType.REGULAR
-            'C' -> MoveType.CASTLE
-            'Q' -> MoveType.PROMOTION_QUEEN
-            'R' -> MoveType.PROMOTION_ROOK
-            'B' -> MoveType.PROMOTION_BISHOP
-            'K' -> MoveType.PROMOTION_KNIGHT
-            else -> {
-                MoveType.REGULAR}
+        if (isWhite) {
+            viewModel.whitePlayerInfo = PlayerInfo(currentUser.name, currentUser.email, currentUser.image, currentUser.elo)
+            viewModel.blackPlayerInfo = PlayerInfo("BOT", "", "", 1800)
+        } else {
+            viewModel.whitePlayerInfo = PlayerInfo("BOT", "", "", 1800)
+            viewModel.blackPlayerInfo = PlayerInfo(currentUser.name, currentUser.email, currentUser.image, currentUser.elo)
         }
     }
 
@@ -338,74 +368,6 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
 
         }
     }
-//    override fun pieceAt(col : Int, row : Int, isFlipped : Boolean): Piece? {
-//        return if(isFlipped){
-//            viewModel.currentBoard.value!!.squaresArray[7 - row][7 - col].piece
-//        } else{
-//            viewModel.currentBoard.value!!.squaresArray[row][col].piece
-//        }
-//
-//    }
-//
-//    override fun getPiecesMoves(piece: Piece): ArrayList<Square> {
-//        val movableSquares : ArrayList<Square> = ArrayList()
-//        val startSquare : Square = viewModel.currentBoard.value!!.getSquareAt(piece.colIndex, piece.rowIndex)!!
-//        for(square : Square in piece.getMovableSquares(viewModel.currentBoard.value!!)){
-//            if(viewModel.currentBoard.value!!.isValidMove(startSquare, square)){
-//                movableSquares.add(square)
-//            }
-//        }
-//        Log.i(TAG, "the move's of piece: $piece are: $movableSquares")
-//        return movableSquares
-//    }
-
-    /*
-    Called by ChessView when the player makes a move. Takes in a MoveMessage object.
-    Performs a basic check that the move is valid (actually moving a piece, piece is owned by the player, etc). Backend server will validate the move.
-     */
-//    override fun playMove(moveMessage: MoveMessage, isFlipped: Boolean) {
-//
-//        moveMessage.playerEmail = viewModel.currentPlayerEmail //Chess View is unaware of the playerEmail, adding it to the message.
-//        var updatedMoveMessage = moveMessage
-//        if(isFlipped){
-//            updatedMoveMessage = MoveMessage(
-//                moveMessage.playerEmail, 7 - moveMessage.startCol, 7 - moveMessage.startRow, 7 - moveMessage.endCol, 7 - moveMessage.endRow, moveMessage.moveType
-//            )
-//        }
-//        if(viewModel.isWhite){
-//            if(updatedMoveMessage.endRow == 7 &&
-//                viewModel.currentBoard.value!!.squaresArray[updatedMoveMessage.startRow][updatedMoveMessage.startCol].piece!!.pieceType == PieceType.PAWN &&
-//                heldMoveMessage == null) {
-//                heldMoveMessage = updatedMoveMessage
-//                setPiecePromotionMenu()
-//                return
-//            }
-//        } else{
-//            if(updatedMoveMessage.endRow == 0 &&
-//                viewModel.currentBoard.value!!.squaresArray[updatedMoveMessage.startRow][updatedMoveMessage.startCol].piece!!.pieceType == PieceType.PAWN &&
-//                heldMoveMessage == null) {
-//                heldMoveMessage = updatedMoveMessage
-//                setPiecePromotionMenu()
-//                return
-//            }
-//        }
-//        if(viewModel.isCastlingMove(updatedMoveMessage)){
-//            updatedMoveMessage.moveType = MoveType.CASTLE
-//        }
-//        val isValidMove : Boolean = viewModel.validateMove(updatedMoveMessage)
-//        viewModel.temporaryPlayMove(updatedMoveMessage)
-//        if(isValidMove){
-//            binding.chessView.invalidate()
-//            if(gameMode == Constants.ONLINE_MODE){
-//                sendMessageToServer(updatedMoveMessage)
-//            }
-//        }
-//        isDrawOffered = false
-//       /* if(!gameService.validateMove(updatedMoveMessage)) return
-//
-//        gameService.temporaryMakeMove(updatedMoveMessage)*/ //Instead of waiting for the server to validate the move, we play it temporarily and undo it if the server says it is invalid.
-//
-//    }
     override fun playMove(startCoord: Coord, endCoord: Coord) {
         val startIndex  = BoardHelper.indexFromCoord(startCoord)
         val targetIndex = BoardHelper.indexFromCoord(endCoord)
@@ -434,9 +396,10 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
                 Log.i(TAG, "Held move message is now (in UCE): ${MoveUtility.getMoveNameUCI(heldMoveMessage)}")
                 setPiecePromotionMenu()
             } else {
-                viewModel.onMoveChosen(chosenMove, this)
+                viewModel.onMoveChosen(chosenMove)
             }
         }
+        isDrawOffered = false
 
     }
 
@@ -470,15 +433,6 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         }
 
     }
-
-    /*
-    Plays a move that is received from the server.
-    The move might be from us, since the server echos a move if it is legal, or it might be from the opponent.
-     */
-    /*override fun onMoveReceived(moveMessage: MoveMessage) {
-        gameService.playMove(moveMessage,currentPlayerEmail)
-        binding.chessView.invalidate()
-    }*/
 
     /*
     Sets information for the player at The Bottom
@@ -523,38 +477,33 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
             Log.e(TAG, "held Move message is null")
             return false
         }
-        when (menuItem.itemId){
+        val chosenMove : Move = when (menuItem.itemId){
             R.id.queen -> {
-                val chosenMove = Move(heldMoveMessage.startSquare, heldMoveMessage.targetSquare, Move.PROMOTE_TO_QUEEN_FLAG)
-                viewModel.onMoveChosen(chosenMove, this)
-                binding.chessView.invalidate()
-                return true
+                Move(heldMoveMessage.startSquare, heldMoveMessage.targetSquare, Move.PROMOTE_TO_QUEEN_FLAG)
             }
+
             R.id.rook -> {
-                val chosenMove = Move(heldMoveMessage.startSquare, heldMoveMessage.targetSquare, Move.PROMOTE_TO_ROOK_FLAG)
-                viewModel.onMoveChosen(chosenMove, this)
-                binding.chessView.invalidate()
-                return true
+                Move(heldMoveMessage.startSquare, heldMoveMessage.targetSquare, Move.PROMOTE_TO_ROOK_FLAG)
             }
+
             R.id.bishop -> {
-                val chosenMove = Move(heldMoveMessage.startSquare, heldMoveMessage.targetSquare, Move.PROMOTE_TO_BISHOP_FLAG)
-                viewModel.onMoveChosen(chosenMove, this)
-                binding.chessView.invalidate()
-                return true
-            }R.id.knight -> {
-                val chosenMove = Move(heldMoveMessage.startSquare, heldMoveMessage.targetSquare, Move.PROMOTE_TO_KNIGHT_FLAG)
-                viewModel.onMoveChosen(chosenMove, this)
-                binding.chessView.invalidate()
-                return true
+                Move(heldMoveMessage.startSquare, heldMoveMessage.targetSquare, Move.PROMOTE_TO_BISHOP_FLAG)
             }
+
+            R.id.knight -> {
+                Move(heldMoveMessage.startSquare, heldMoveMessage.targetSquare, Move.PROMOTE_TO_KNIGHT_FLAG)
+            }
+
             else -> {return false}
         }
+        viewModel.onMoveChosen(chosenMove)
+        binding.chessView.invalidate()
+        return true
     }
 
     override fun getBoard(): Board = viewModel.board
 
     override fun onOpponentMoveChosen() {
-
         binding.chessView.invalidate()
     }
 

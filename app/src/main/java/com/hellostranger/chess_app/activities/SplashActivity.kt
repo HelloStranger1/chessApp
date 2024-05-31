@@ -1,15 +1,18 @@
 package com.hellostranger.chess_app.activities
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.view.WindowInsets
 import android.view.WindowManager
 import com.hellostranger.chess_app.utils.MyApp
 import com.hellostranger.chess_app.R
 
+@SuppressLint("CustomSplashScreen")
 @ExperimentalUnsignedTypes
 class SplashActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -30,7 +33,7 @@ class SplashActivity : AppCompatActivity() {
 
 
 
-        Handler().postDelayed({
+        Handler(Looper.getMainLooper()).postDelayed({
             if(!MyApp.tokenManager.isAccessTokenExpired()){
                 startActivity(Intent(this, MainActivity::class.java))
             }else{

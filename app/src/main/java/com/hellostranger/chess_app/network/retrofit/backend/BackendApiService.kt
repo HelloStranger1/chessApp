@@ -14,6 +14,7 @@ import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 
+@ExperimentalUnsignedTypes
 interface BackendApiService {
 
     @POST("/api/games/create-private")
@@ -21,8 +22,6 @@ interface BackendApiService {
 
     @POST("/api/games/join/private/{shortenedId}")
     suspend fun joinPrivateGame(@Path("shortenedId") shortenedId : String, @Body request: JoinRequest) : Response<Game>
-    @POST("/api/games/join/{gameId}")
-    suspend fun joinGame(@Path("gameId") gameId : String, @Body request: JoinRequest) : Response<Game>
 
     @POST("/api/games/join/random")
     suspend fun joinRandomGame(@Body request: JoinRequest) : Response<Game>

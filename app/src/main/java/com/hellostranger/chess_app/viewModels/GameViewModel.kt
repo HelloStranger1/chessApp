@@ -4,12 +4,13 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.hellostranger.chess_app.core.GameResult
-import com.hellostranger.chess_app.core.PlayerInfo
+import com.hellostranger.chess_app.core.helpers.Arbiter
+import com.hellostranger.chess_app.core.board.GameResult
+import com.hellostranger.chess_app.core.players.PlayerInfo
 import com.hellostranger.chess_app.core.board.Board
 import com.hellostranger.chess_app.core.board.Move
 import com.hellostranger.chess_app.core.moveGeneration.MoveGenerator
-import com.hellostranger.chess_app.core.Player
+import com.hellostranger.chess_app.core.players.Player
 import com.hellostranger.chess_app.dto.websocket.DrawOfferMessage
 import com.hellostranger.chess_app.dto.websocket.GameStartMessage
 import com.hellostranger.chess_app.utils.MyApp
@@ -20,7 +21,6 @@ import java.util.Stack
 private const val GameVMTAG = "GameViewModel"
 @ExperimentalUnsignedTypes
 class GameViewModel : ViewModel() {
-//    val currentPlayerEmail = MyApp.tokenManager.getUserEmail()
 
     /* Websocket variables */
     private val _socketStatus = MutableLiveData(false)
@@ -33,12 +33,6 @@ class GameViewModel : ViewModel() {
     var whitePlayerInfo : PlayerInfo? = null
     var blackPlayerInfo : PlayerInfo? = null
 
-//    private val _userPlayerInfo = MutableLiveData<PlayerInfo>()
-//    val userPlayerInfo : LiveData<PlayerInfo> = _userPlayerInfo
-//
-//    private val _opponentPlayerInfo = MutableLiveData<PlayerInfo>()
-//    val opponentPlayerInfo : LiveData<PlayerInfo> = _opponentPlayerInfo
-
     private val _hasGameStarted = MutableLiveData(false)
     val hasGameStarted : LiveData<Boolean> = _hasGameStarted
 
@@ -50,31 +44,11 @@ class GameViewModel : ViewModel() {
     var board : Board = Board.createBoard()
     private var moveGenerator: MoveGenerator = MoveGenerator()
 
-
     private val movesToPlay = Stack<Move>()
-
-
-/*
-    private val _currentBoard = MutableLiveData(currentGame.board)
-    val currentBoard : LiveData<Board> = _currentBoard
-*/
-
-/*
-    private val _startMessageData = MutableLiveData<GameStartMessage>()
-    val startMessageData : LiveData<GameStartMessage> = _startMessageData
-*/
-
-/*
-    private val boardsHistory = ArrayList<Board>()
-*/
 
     private val _drawOffer = MutableLiveData<DrawOfferMessage>()
     val drawOffer : LiveData<DrawOfferMessage> = _drawOffer
 
-
-/*
-    private var currentMoveShown = 0
-*/
     private var isOurTurn = false
     var isWhite = false
     var gameOverDescription = ""
@@ -83,90 +57,38 @@ class GameViewModel : ViewModel() {
     fun setStatus(status : Boolean) = viewModelScope.launch(Dispatchers.Main) {
         _socketStatus.value = status
     }
-    fun onMoveChosen(move: Move, player : Player) {
-/*
-        val playerColour = if(player == whitePlayer) Piece.WHITE else Piece.BLACK
-
-        if (!Piece.isColour(board.square[move.startSquare], playerColour) || playerColour != board.moveColour) {
-            Log.e(GameVMTAG, "ERROR! Not your colour or not your turn!")
-            return
-        }
-*/
+    fun onMoveChosen(move: Move) {
         if (!isOnLastMove()) {
             while (movesToPlay.isNotEmpty()) {
                 board.makeMove(movesToPlay.pop())
-
             }
         }
         board.makeMove(move)
+        if (socketStatus.value == false) {
+            val gameState = Arbiter.getGameState(board)
+            if (Arbiter.isWinResult(gameState) || Arbiter.isDrawResult(gameState)) {
+                onGameEnding(gameState, whitePlayerInfo?.elo ?: 800, blackPlayerInfo?.elo ?: 800, Arbiter.getResultDescription(gameState))
+            }
+            return
+
+        }
         currentPlayer.onOpponentMoveChosen()
     }
 
-
-    fun isMoveLegal(move : Move) : Boolean {
-        val possibleMoves = moveGenerator.generateMoves(board)
-        return possibleMoves.indexOf(move) != -1
-    }
-/*
-    fun validateMove(moveMessage: MoveMessage) : Boolean{
-        val board = _currentBoard.value!!
-        val startSquare = board.getSquareAt(moveMessage.startCol, moveMessage.startRow)!!
-        val endSquare = board.getSquareAt(moveMessage.endCol, moveMessage.endRow)!!
-
-        if(!isOurTurn || startSquare.piece == null || isWhite != (startSquare.piece!!.color == Color.WHITE)) {
-            return false
-        }
-        if(!board.isValidMove(startSquare, endSquare)){
-            return false
-        }
-        return true
-    }
-
-*/
     fun showPreviousBoard() {
         if (board.allGameMoves.isNotEmpty()) {
             movesToPlay.push(board.allGameMoves.last())
             board.unmakeMove(board.allGameMoves.last())
         }
-}
-/*
-    fun showPreviousBoard() = viewModelScope.launch(Dispatchers.Main){
-        if(currentMoveShown > 0){
-            currentMoveShown--
-            _currentBoard.value = boardsHistory[currentMoveShown]
-        }
     }
-*/
 
     fun showNextBoard() {
         if (movesToPlay.isNotEmpty()) {
             board.makeMove(movesToPlay.pop())
         }
     }
-/*
-    fun getNextBoard() : Board?{
-        if(currentMoveShown < boardsHistory.size - 1){
-            return boardsHistory[currentMoveShown + 1]
-        }
-        return null
-    }
-*/
-
-/*
-    fun showNextBoard() = viewModelScope.launch(Dispatchers.Main){
-        if(currentMoveShown < boardsHistory.size - 1){
-            currentMoveShown++
-            _currentBoard.value = boardsHistory[currentMoveShown]
-        }
-    }
-*/
-
 
     fun getLastMove() = board.allGameMoves.last()
-    fun undoMove() {
-        board.unmakeMove(board.allGameMoves.last())
-    }
-
 
     fun startGame(startMessage: GameStartMessage) = viewModelScope.launch(Dispatchers.Main){
         isWhite = (startMessage.whiteEmail == MyApp.tokenManager.getUserEmail())
@@ -193,55 +115,6 @@ class GameViewModel : ViewModel() {
         whitePlayerInfo?.elo ?: whiteElo
         blackPlayerInfo?.elo ?: blackElo
         _gameResult.value = result
-    }
-
-//    fun playMoveFromServer(moveMessage: MoveMessage) = viewModelScope.launch(Dispatchers.Main){
-//        if(boardsHistory.isEmpty()){
-//            boardsHistory.add(_currentBoard.value!!)
-//        }
-//
-//        val newBoard = boardsHistory.last().clone().movePiece(moveMessage)
-//        if(newBoard != _currentBoard.value){
-//            newBoard.previousMove = moveMessage
-//            _currentBoard.value = newBoard
-//        }
-//
-//        boardsHistory.add(_currentBoard.value!!)
-//        currentMoveShown = boardsHistory.size - 1
-//        isOurTurn = (moveMessage.playerEmail != currentPlayerEmail)
-//        currentGame.isP1Turn = !currentGame.isP1Turn
-//    }
-
-//    fun temporaryPlayMove(moveMessage: MoveMessage) = viewModelScope.launch(Dispatchers.Main){
-//        if(boardsHistory.isEmpty()){
-//            boardsHistory.add(_currentBoard.value!!)
-//        }
-//        if(validateMove(moveMessage)){
-//            _currentBoard.value = boardsHistory.last().clone().movePiece(moveMessage)
-//            _currentBoard.value!!.previousMove = moveMessage
-//            currentGame.isP1Turn = !currentGame.isP1Turn
-//        } else{
-//            Log.e(GameVMTAG, "Temp-move is invalid.")
-//        }
-//
-//    }
-/*
-    fun isCastlingMove(moveMessage: MoveMessage): Boolean {
-        val startSquare = _currentBoard.value!!.getSquareAt(moveMessage.startCol, moveMessage.startRow)
-        val endSquare   = _currentBoard.value!!.getSquareAt(moveMessage.endCol, moveMessage.endRow)
-        if (startSquare == null || endSquare == null) {
-            return false
-        }
-        return _currentBoard.value!!.isCastlingMove(startSquare, endSquare)
-    }
-*/
-    fun goToLatestMove() {
-        while (movesToPlay.isNotEmpty()) {
-            board.makeMove(movesToPlay.pop())
-        }
-
-        currentPlayer.onOpponentMoveChosen()
-
     }
     fun isOnLastMove() = movesToPlay.isEmpty()
 

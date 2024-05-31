@@ -1,5 +1,9 @@
 package com.hellostranger.chess_app.core.board
 
+/**
+ * Represents various relevant parts of a game state
+ * @author Eyal Ben Natan
+ */
 class GameState(
     val capturedPieceType: Int = Piece.NONE,
     val enPassantFile: Int = 0,

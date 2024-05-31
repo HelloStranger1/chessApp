@@ -41,8 +41,9 @@
     <string name="knight">Knight</string>
     <string name="resign">Resign</string>
     <string name="offer_draw">Offer Draw</string>
+    <string name="accept_draw">Accept Draw Offer</string>
     <string name="joined_at">Joined at: %1$s</string>
-    <string name="challenge_to_a_game">Challange to a game</string>
+    <string name="challenge_to_a_game">Challenge to a game</string>
     <string name="send_friend_request">Send friend request</string>
     <string name="unfriend">Unfriend</string>
     <string name="challenges">Challenges</string>
@@ -55,10 +56,9 @@
     <string name="not_the_move">That\'s not the move!</string>
     <string name="try_again">Try something else.</string>
     <string name="your_turn">Your turn</string>
-    <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="friends">Friends</string>
-    <string name="won_by_resgination">%1$s won by resignation</string>
+    <string name="won_by_resignation">%1$s won by resignation</string>
     <string name="new_elo_rating">new elo rating</string>
     <string name="go_back_a_move">go back a move</string>
     <string name="go_forward_a_move">go forward a move</string>

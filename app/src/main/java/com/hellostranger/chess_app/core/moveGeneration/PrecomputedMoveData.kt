@@ -2,7 +2,6 @@
 
 package com.hellostranger.chess_app.core.moveGeneration
 
-import com.hellostranger.chess_app.core.board.Board
 import com.hellostranger.chess_app.core.board.Coord
 import com.hellostranger.chess_app.core.helpers.BoardHelper
 
@@ -36,52 +35,13 @@ object PrecomputedMoveData {
     // that means that there are 7 squares to the north of b1 (the square with index 1 in board array)
     val numSquaresToEdge: Array<IntArray> = Array(64) { IntArray(0) }
 
-    // Stores array of indices for each square a knight can land on from any square on the board
-    // So for example, knightMoves[0] is equal to {10, 17}, meaning a knight on a1 can jump to c2 and b3
-    val knightMoves: Array<ByteArray> = Array(64) { ByteArray(0) }
-    val kingMoves: Array<ByteArray> = Array(64) { ByteArray(0) }
-
-    // Pawn attack directions for white and black (NW, NE; SW SE)
-    val pawnAttackDirections = arrayOf(
-        byteArrayOf(4, 6),
-        byteArrayOf(7, 5)
-    )
-
-    val pawnAttacksWhite: Array<IntArray> = Array(64) { IntArray(0) }
-    val pawnAttacksBlack: Array<IntArray> = Array(64) { IntArray(0) }
-    val directionLookup: IntArray
-
-    val kingAttackBitboards: ULongArray
-    val knightAttackBitboards: ULongArray
-    val pawnAttackBitboards: Array<ULongArray>
-
-    val rookMoves: ULongArray = ULongArray(64)
-    val bishopMoves: ULongArray = ULongArray(64)
-    val queenMoves: ULongArray = ULongArray(64)
-
     // Aka manhattan distance (answers how many moves for a rook to get from square a to square b)
     var orthogonalDistance: Array<IntArray>
     // Aka chebyshev distance (answers how many moves for a king to get from square a to square b)
-    var kingDistance: Array<IntArray>
     var centreManhattanDistance: IntArray
-
-    fun numRookMovesToReachSquare(startSquare: Int, targetSquare: Int): Int {
-        return orthogonalDistance[startSquare][targetSquare]
-    }
-
-    fun numKingMovesToReachSquare(startSquare: Int, targetSquare: Int): Int {
-        return kingDistance[startSquare][targetSquare]
-    }
 
     // Initialize lookup data
     init {
-
-        // Calculate knight jumps and available squares for each square on the board.
-        // See comments by variable definitions for more info.
-        val allKnightJumps = intArrayOf(15, 17, -17, -15, 10, -6, 6, -10)
-        knightAttackBitboards = ULongArray(64)
-        kingAttackBitboards = ULongArray(64)
-        pawnAttackBitboards = Array(64) { ULongArray(2) }
 
         for (squareIndex in 0 until 64) {
             val y = squareIndex / 8
@@ -99,105 +59,10 @@ object PrecomputedMoveData {
                 minOf(north, east),
                 minOf(y, x)
             )
-
-            // Calculate all squares knight can jump to from current square
-            val legalKnightJumps = mutableListOf<Byte>()
-            var knightBitboard = 0UL
-            for (knightJumpDelta in allKnightJumps) {
-                val knightJumpSquare = squareIndex + knightJumpDelta
-                if (knightJumpSquare in 0 until 64) {
-                    val knightSquareY = knightJumpSquare / 8
-                    val knightSquareX = knightJumpSquare - knightSquareY * 8
-                    // Ensure knight has moved max of 2 squares on x/y axis (to reject indices that have wrapped around side of board)
-                    val maxCoordMoveDst = max(abs(x - knightSquareX), abs(y - knightSquareY))
-                    if (maxCoordMoveDst == 2) {
-                        legalKnightJumps.add(knightJumpSquare.toByte())
-                        knightBitboard = knightBitboard or (1UL shl knightJumpSquare)
-                    }
-                }
-            }
-            knightMoves[squareIndex] = legalKnightJumps.toByteArray()
-            knightAttackBitboards[squareIndex] = knightBitboard
-
-            // Calculate all squares king can move to from current square (not including castling)
-            val legalKingMoves = mutableListOf<Byte>()
-            for (kingMoveDelta in directionOffsets) {
-                val kingMoveSquare = squareIndex + kingMoveDelta
-                if (kingMoveSquare in 0 until 64) {
-                    val kingSquareY = kingMoveSquare / 8
-                    val kingSquareX = kingMoveSquare - kingSquareY * 8
-                    // Ensure king has moved max of 1 square on x/y axis (to reject indices that have wrapped around side of board)
-                    val maxCoordMoveDst = max(abs(x - kingSquareX), abs(y - kingSquareY))
-                    if (maxCoordMoveDst == 1) {
-                        legalKingMoves.add(kingMoveSquare.toByte())
-                        kingAttackBitboards[squareIndex] = kingAttackBitboards[squareIndex] or (1UL shl kingMoveSquare)
-                    }
-                }
-            }
-            kingMoves[squareIndex] = legalKingMoves.toByteArray()
-
-            // Calculate legal pawn captures for white and black
-            val pawnCapturesWhite = mutableListOf<Int>()
-            val pawnCapturesBlack = mutableListOf<Int>()
-            pawnAttackBitboards[squareIndex] = ULongArray(2)
-            if (x > 0) {
-                if (y < 7) {
-                    pawnCapturesWhite.add(squareIndex + 7)
-                    pawnAttackBitboards[squareIndex][Board.WHITE_INDEX] = pawnAttackBitboards[squareIndex][Board.WHITE_INDEX] or (1UL shl (squareIndex + 7))
-                }
-                if (y > 0) {
-                    pawnCapturesBlack.add(squareIndex - 9)
-                    pawnAttackBitboards[squareIndex][Board.BLACK_INDEX] = pawnAttackBitboards[squareIndex][Board.BLACK_INDEX] or (1UL shl (squareIndex - 9))
-                }
-            }
-            if (x < 7) {
-                if (y < 7) {
-                    pawnCapturesWhite.add(squareIndex + 9)
-                    pawnAttackBitboards[squareIndex][Board.WHITE_INDEX] = pawnAttackBitboards[squareIndex][Board.WHITE_INDEX] or (1UL shl (squareIndex + 9))
-                }
-                if (y > 0) {
-                    pawnCapturesBlack.add(squareIndex - 7)
-                    pawnAttackBitboards[squareIndex][Board.BLACK_INDEX] = pawnAttackBitboards[squareIndex][Board.BLACK_INDEX] or (1UL shl (squareIndex - 7))
-                }
-            }
-            pawnAttacksWhite[squareIndex] = pawnCapturesWhite.toIntArray()
-            pawnAttacksBlack[squareIndex] = pawnCapturesBlack.toIntArray()
-
-            // Rook moves
-            for (directionIndex in 0 until 4) {
-                val currentDirOffset = directionOffsets[directionIndex]
-                for (n in 0 until numSquaresToEdge[squareIndex][directionIndex]) {
-                    val targetSquare = squareIndex + currentDirOffset * (n + 1)
-                    rookMoves[squareIndex] = rookMoves[squareIndex] or (1UL shl targetSquare)
-                }
-            }
-            // Bishop moves
-            for (directionIndex in 4 until 8) {
-                val currentDirOffset = directionOffsets[directionIndex]
-                for (n in 0 until numSquaresToEdge[squareIndex][directionIndex]) {
-                    val targetSquare = squareIndex + currentDirOffset * (n + 1)
-                    bishopMoves[squareIndex] = bishopMoves[squareIndex] or (1UL shl targetSquare)
-                }
-            }
-            queenMoves[squareIndex] = rookMoves[squareIndex] or bishopMoves[squareIndex]
-        }
-
-        directionLookup = IntArray(127)
-        for (i in 0 until 127) {
-            val offset = i - 63
-            val absOffset = abs(offset)
-            val absDir = when {
-                absOffset % 9 == 0 -> 9
-                absOffset % 8 == 0 -> 8
-                absOffset % 7 == 0 -> 7
-                else -> 1
-            }
-            directionLookup[i] = absDir * offset.sign
         }
 
         // Distance lookup
         orthogonalDistance = Array(64) { IntArray(64) }
-        kingDistance = Array(64) { IntArray(64) }
         centreManhattanDistance = IntArray(64)
         for (squareA in 0 until 64) {
             val coordA = Coord(squareA)
@@ -209,7 +74,6 @@ object PrecomputedMoveData {
                 val rankDistance = abs(coordA.rankIndex - coordB.rankIndex)
                 val fileDistance = abs(coordA.fileIndex - coordB.fileIndex)
                 orthogonalDistance[squareA][squareB] = fileDistance + rankDistance
-                kingDistance[squareA][squareB] = max(fileDistance, rankDistance)
             }
         }
 

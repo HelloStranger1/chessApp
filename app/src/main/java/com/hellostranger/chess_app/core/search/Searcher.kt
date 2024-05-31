@@ -15,27 +15,27 @@ import kotlin.math.min
 @ExperimentalUnsignedTypes
 class Searcher(val board: Board) {
     companion object {
-        const val maxExtensions = 16
-        const val immediateMateScore = 100_000
-        const val positiveInfinity = 999_999
-        const val negativeInfinity = -999_999
+        const val MAX_EXTENSION = 16
+        const val IMMEDIATE_MATE_SCORE = 100_000
+        const val POSITIVE_INFINITY = 999_999
+        const val NEGATIVE_INFINITY = -999_999
 
         fun isMateScore(score : Int) : Boolean {
             if (score == Int.MIN_VALUE) {
                 return false
             }
             val maxMateDepth = 1_000
-            return abs(score) > immediateMateScore - maxMateDepth
+            return abs(score) > IMMEDIATE_MATE_SCORE - maxMateDepth
         }
         fun numPlyToMateScore(score: Int) : Int {
-            return immediateMateScore - abs(score)
+            return IMMEDIATE_MATE_SCORE - abs(score)
         }
     }
 
     var onSearchComplete : ((move : Move) -> Unit)? = null
 
     // State
-    var currentDepth : Int = 0
+    private var currentDepth : Int = 0
     private var isPlayingWhite = true
     private lateinit var bestMoveThisIteration : Move
     private var bestEvalThisIteration = 0
@@ -45,10 +45,8 @@ class Searcher(val board: Board) {
     private var searchCanceled : Boolean = false
 
     // Diagnostics
-    var searchDiagnostics = SearchDiagnostics()
+    private var searchDiagnostics = SearchDiagnostics()
     private var currentIterationDepth : Int = 0
-    private val searchIterationTimer : Timer = Timer()
-    private val searchTotalTimer : Timer = Timer()
     private var debugInfo : String = ""
 
 
@@ -80,8 +78,6 @@ class Searcher(val board: Board) {
         currentDepth = 0
         debugInfo = "Starting search with FEN ${FenUtility.currentFen(board)}"
         searchDiagnostics = SearchDiagnostics()
-        searchTotalTimer.restart()
-
 
         runIterativeDeepeningSearch()
 
@@ -98,10 +94,9 @@ class Searcher(val board: Board) {
         for (searchDepth in 1..256) {
             hasSearchedAtLeastOnMove = false
             debugInfo += "\nStarting Iteration $searchDepth"
-            searchIterationTimer.restart()
             currentIterationDepth = searchDepth
 
-            search(searchDepth, 0, negativeInfinity, positiveInfinity)
+            search(searchDepth, 0, NEGATIVE_INFINITY, POSITIVE_INFINITY)
 
             if (searchCanceled) {
                 if (hasSearchedAtLeastOnMove) {
@@ -164,8 +159,8 @@ class Searcher(val board: Board) {
             // Skip this position if a mating sequence has already been found earlier in the search, which would be shorter
             // than any mate we could find from here. This is done by observing that alpha can't possibly be worse
             // (and likewise beta can't  possibly be better) than being mated in the current position.
-            alpha = max(alpha, -immediateMateScore + plyFromRoot)
-            beta = min(beta, immediateMateScore - plyFromRoot)
+            alpha = max(alpha, -IMMEDIATE_MATE_SCORE + plyFromRoot)
+            beta = min(beta, IMMEDIATE_MATE_SCORE - plyFromRoot)
             if (alpha > beta) {
                 return alpha
             }
@@ -192,7 +187,7 @@ class Searcher(val board: Board) {
         moveOrderer.orderMoves(prevBestMove, board, moves, moveGenerator.opponentAttackMap, moveGenerator.opponentPawnAttackMap, false, plyFromRoot)
         if (moves.isEmpty()) {
             return if (moveGenerator.inCheck()) {
-                -(immediateMateScore - plyFromRoot)
+                -(IMMEDIATE_MATE_SCORE - plyFromRoot)
             } else {
                 0
             }
@@ -213,7 +208,7 @@ class Searcher(val board: Board) {
             board.makeMove(moves[i], inSearch = true)
 
             var extension = 0
-            if (numExtensions < maxExtensions) {
+            if (numExtensions < MAX_EXTENSION) {
                 val movedPieceType = Piece.pieceType(board.square[move.targetSquare])
                 val targetRank = BoardHelper.rankIndex(move.targetSquare)
                 if (board.isInCheck()) {
@@ -228,7 +223,7 @@ class Searcher(val board: Board) {
             // Reduce the depth of the search for moves later in the move list as these are less likely to be good
             // (assuming our move ordering isn't terrible)
             if (extension == 0 && plyRemaining >= 3 && i >= 3 && !isCapture) {
-                eval = -search(plyRemaining - 2, plyRemaining + 1, -alpha - 1, -alpha, numExtensions, move, isCapture)
+                eval = -search(plyRemaining - 2, plyRemaining + 1, -alpha - 1, -alpha, numExtensions, move, false)
                 // If the evaluation is better than expected, we'd better to a full-depth search to get a more accurate evaluation
                 needsFullSearch = eval > alpha
             }
@@ -326,50 +321,15 @@ class Searcher(val board: Board) {
         return alpha
     }
 
-    fun clearForNewPosition() {
-        transpositionTable.clear()
-        moveOrderer.clearKillers()
-    }
-
-
-
-
     class SearchDiagnostics {
         var numCompletedIterations : Int = 0
         var numPositionsEvaluated : Int = 0
         var numCutOffs : ULong = 0UL
 
-        var moveVal : String = ""
         var move : String = ""
         var eval : Int = 0
         var moveIsFromPartialSearch = false
-        var numQChecks : Int = 0
-        var numQMates : Int = 0
-
-        var maxExtensionReached : Int = 0
     }
-
-    class Timer {
-        private var startTime : Long = 0L
-        private var endTime : Long = 0L
-
-        fun restart() {
-            endTime = 0L
-            start()
-        }
-        fun start() {
-            startTime = System.currentTimeMillis()
-        }
-
-        fun stop() {
-            endTime = System.currentTimeMillis()
-        }
-
-        fun elapsedTime() : Long {
-            return endTime - startTime
-        }
-    }
-
 
 
 }

@@ -3,7 +3,7 @@ package com.hellostranger.chess_app.models.rvEntities
 import androidx.room.Entity
 import androidx.room.Ignore
 import androidx.room.PrimaryKey
-import com.hellostranger.chess_app.core.GameResult
+import com.hellostranger.chess_app.core.board.GameResult
 
 @Entity
 data class GameHistory @JvmOverloads constructor(
