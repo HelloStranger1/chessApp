@@ -153,7 +153,7 @@ class Searcher(val board: Board) {
         if (plyFromRoot > 0) {
             // Detect draw by three-fold repetition.
             // (Note: returns a draw score even if this position has only appeared once for sake of simplicity)
-            if (board.fiftyMoveCount >= 100 ||repetitionTable.contains(board.zobristKey)) {
+            if (board.fiftyMoveCount >= 100 || repetitionTable.contains(board.zobristKey)) {
                 return 0
             }
             // Skip this position if a mating sequence has already been found earlier in the search, which would be shorter

@@ -14,9 +14,6 @@ object Constants {
     const val AI_MODE = "AI"
 
     // To pass around user info
-    const val USER_NAME = "UserName"
-    const val USER_ELO = "UserElo"
-    const val USER_IMAGE = "UserImage"
     const val USER = "USER"
 
 

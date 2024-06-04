@@ -27,13 +27,11 @@ import com.hellostranger.chess_app.network.retrofit.backend.BackendRetrofitClien
 import com.hellostranger.chess_app.network.retrofit.puzzleApi.PuzzleRetrofitClient
 import com.hellostranger.chess_app.utils.Constants
 import com.hellostranger.chess_app.utils.KeepAlive
-import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import retrofit2.Response
 
-private const val TAG = "MainActivity"
 @ExperimentalUnsignedTypes
 class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedListener {
 
@@ -45,12 +43,6 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
     private var tokenManager : TokenManager = MyApp.tokenManager
     private val puzzleClient  = PuzzleRetrofitClient.instance
     private val backendClient = BackendRetrofitClient.instance
-
-
-
-    private val coroutineExceptionHandler = CoroutineExceptionHandler{ _, throwable ->
-        throwable.printStackTrace()
-    }
 
     override fun onRestart() {
         super.onRestart()
@@ -176,16 +168,15 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
     private fun startPuzzlesMode() {
         performActionWithProgressDialog("Fetching puzzle...") {
             // Fetch the puzzles
-            val puzzlesList: List<Puzzle>? = handleResponse(
+             handleResponse(
                 request = { puzzleClient.getRandomPuzzle(Constants.DEFAULT_PUZZLE_AMOUNT) },
                 errorMessage = "Couldn't fetch puzzles. Puzzle amount was: ${Constants.DEFAULT_PUZZLE_AMOUNT}"
-            )
+            )?.let {
+                 // Start the activity.
+                 PuzzlesList.instance.addPuzzles(it)
+                 startActivity(Intent(this@MainActivity, PuzzleActivity::class.java))
+             }
 
-            // Start the activity.
-            puzzlesList?.let {
-                PuzzlesList.instance.addPuzzles(it)
-                startActivity(Intent(this@MainActivity, PuzzleActivity::class.java))
-            }
         }
     }
 
@@ -232,7 +223,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
      */
     private fun performActionWithProgressDialog(message : String, action : suspend () -> Unit) {
         showProgressDialog(message, false)
-        CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
+        CoroutineScope(Dispatchers.IO).launch {
             action()
             runOnUiThread {
                 hideProgressDialog()
@@ -334,7 +325,9 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         when(item.itemId){
             R.id.nav_my_profile ->{
                 // Goes into the profile activity with our details
-                startActivity(Intent(this, ProfileActivity::class.java))
+                val intent = Intent(this, ProfileActivity::class.java)
+                intent.putExtra(Constants.USER, currentUser)
+                startActivity(intent)
             }
             R.id.nav_notifications ->{
                 // Goes to the notification activity.

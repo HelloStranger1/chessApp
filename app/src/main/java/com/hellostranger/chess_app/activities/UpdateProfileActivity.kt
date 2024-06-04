@@ -1,6 +1,7 @@
 package com.hellostranger.chess_app.activities
 
 import android.Manifest
+import android.app.AlertDialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -164,12 +165,38 @@ class UpdateProfileActivity : BaseActivity() {
         if (ActivityCompat.shouldShowRequestPermissionRationale(
                 this, neededPermission)
         ){
-            showRationaleDialog("Chess App","Chess App " + "needs to Access Your External Storage")
+            showRationaleDialog(
+                "Chess App",
+                "Chess App " + "needs to Access Your External Storage"
+            ) { requestPermission.launch(arrayOf(neededPermission)) }
+            requestPermission.launch(arrayOf(neededPermission))
         }
         else {
             // You can directly ask for the permission.
             requestPermission.launch(arrayOf(neededPermission))
         }
+    }
+    /**
+     * Show a rationale dialog.
+     * @param title: The title
+     * @param message: The message
+     * @param onAccept: The function to be called when user accepts
+     */
+    @Suppress("SameParameterValue")
+    private fun showRationaleDialog(
+        title: String,
+        message: String,
+        onAccept: () -> Unit,
+    ) {
+
+        val builder: AlertDialog.Builder = AlertDialog.Builder(this)
+        builder.setTitle(title)
+            .setMessage(message)
+            .setPositiveButton("Ok") { dialog, _ ->
+                dialog.dismiss()
+                onAccept.invoke()
+            }
+        builder.create().show()
     }
     private fun setUpActionBar() {
         val toolbarUpdateProfileActivity = binding.toolbarMyProfileActivity

@@ -22,7 +22,6 @@ private const val ARG_WHITE_IMAGE = "whiteImg"
 private const val ARG_BLACK_IMAGE = "blackImg"
 private const val ARG_OUR_ELO = "ourElo"
 private const val ARG_RESULT = "gameResult"
-private const val ARG_RESULT_DESC = "resultDesc"
 @ExperimentalUnsignedTypes
 class GameResultFragment : DialogFragment() {
 
@@ -32,7 +31,6 @@ class GameResultFragment : DialogFragment() {
     private var blackImage : String? = null
     private var ourElo : Int = 0
     private var gameResult : GameResult? = null
-    private var gameResultDesc : String? = null
 
     private var whiteImageView : ImageView? = null
     private var blackImageView : ImageView? = null
@@ -54,7 +52,6 @@ class GameResultFragment : DialogFragment() {
             blackImage = it.getString(ARG_BLACK_IMAGE)
             ourElo = it.getInt(ARG_OUR_ELO)
             gameResult = it.getSerializable(ARG_RESULT, GameResult::class.java)
-            gameResultDesc = it.getString(ARG_RESULT_DESC)
         }
 
 
@@ -91,20 +88,23 @@ class GameResultFragment : DialogFragment() {
             .into(blackImageView!!)
         whiteTextView!!.text = whiteName
         blackTextView!!.text = blackName
-        resultTextView!!.text = if(Arbiter.isWhiteWinResult(gameResult!!)) "1 - 0" else if(Arbiter.isDrawResult(gameResult!!)) "0.5 - 0.5" else "0 - 1"
-
         if (Arbiter.isWhiteWinResult(gameResult!!)) {
             whiteImageView!!.background = ContextCompat.getDrawable(requireContext(), R.drawable.image_border_win)
             blackImageView!!.background = ContextCompat.getDrawable(requireContext(), R.drawable.image_border_lose)
+            resultTextView!!.text = "1 - 0"
+            resultTextTextView!!.text = "White Won"
         } else if (Arbiter.isBlackWinResult(gameResult!!)) {
             whiteImageView!!.background = ContextCompat.getDrawable(requireContext(), R.drawable.image_border_lose)
             blackImageView!!.background = ContextCompat.getDrawable(requireContext(), R.drawable.image_border_win)
+            resultTextView!!.text = "0 - 1"
+            resultTextTextView!!.text = "Black Won"
         } else {
             whiteImageView!!.background = ContextCompat.getDrawable(requireContext(), R.drawable.image_border_draw)
             blackImageView!!.background = ContextCompat.getDrawable(requireContext(), R.drawable.image_border_draw)
+            resultTextView!!.text = "0.5 - 0.5"
+            resultTextTextView!!.text = "Draw"
         }
         resultDescTextView!!.text = Arbiter.getResultDescription(gameResult!!)
-        resultDescTextView!!.text = gameResultDesc
         eloTextView!!.text = ourElo.toString()
 
         btnBackToMenu?.setOnClickListener {
@@ -116,7 +116,7 @@ class GameResultFragment : DialogFragment() {
 
     companion object {
         @JvmStatic
-        fun newInstance(whiteName: String, blackName: String, whiteImage : String, blackImage : String, ourElo : Int, result : GameResult, resultDesc : String) : GameResultFragment =
+        fun newInstance(whiteName: String, blackName: String, whiteImage : String, blackImage : String, ourElo : Int, result : GameResult) : GameResultFragment =
             GameResultFragment().apply {
                 arguments = Bundle().apply {
                     putString(ARG_WHITE_NAME, whiteName)
@@ -124,7 +124,6 @@ class GameResultFragment : DialogFragment() {
                     putString(ARG_WHITE_IMAGE, whiteImage)
                     putString(ARG_BLACK_IMAGE, blackImage)
                     putInt(ARG_OUR_ELO, ourElo)
-                    putString(ARG_RESULT_DESC, resultDesc)
                     putSerializable(ARG_RESULT, result)
                 }
             }

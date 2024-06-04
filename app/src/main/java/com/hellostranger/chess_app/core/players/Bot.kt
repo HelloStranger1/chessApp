@@ -14,8 +14,7 @@ import kotlinx.coroutines.launch
 import kotlin.random.Random
 
 @ExperimentalUnsignedTypes
-class Bot(private val baseThinkTimeMs : Long, private val extraThinkTimeMs : Long, private val viewModel: GameViewModel) :
-    Player {
+class Bot(private val baseThinkTimeMs : Long, private val extraThinkTimeMs : Long, private val viewModel: GameViewModel) : Player {
     private var searcher : Searcher = Searcher(viewModel.board)
     private var isMoveFound = false
     private var move : Move = Move.NullMove
@@ -27,7 +26,9 @@ class Bot(private val baseThinkTimeMs : Long, private val extraThinkTimeMs : Lon
         }
     }
 
+
     override fun onOpponentMoveChosen() {
+        Log.i("TAG", "Starting to think")
         searcher = Searcher(Board.createBoard(viewModel.board))
         isMoveFound = false
         val timeToThink : Long = (baseThinkTimeMs + extraThinkTimeMs * Random.nextDouble()).toLong()

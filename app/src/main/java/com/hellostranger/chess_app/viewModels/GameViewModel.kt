@@ -18,7 +18,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.Stack
 
-private const val GameVMTAG = "GameViewModel"
 @ExperimentalUnsignedTypes
 class GameViewModel : ViewModel() {
 
@@ -42,8 +41,6 @@ class GameViewModel : ViewModel() {
         get() = if (board.isWhiteToMove) whitePlayer else blackPlayer
 
     var board : Board = Board.createBoard()
-    private var moveGenerator: MoveGenerator = MoveGenerator()
-
     private val movesToPlay = Stack<Move>()
 
     private val _drawOffer = MutableLiveData<DrawOfferMessage>()
@@ -67,9 +64,9 @@ class GameViewModel : ViewModel() {
         if (socketStatus.value == false) {
             val gameState = Arbiter.getGameState(board)
             if (Arbiter.isWinResult(gameState) || Arbiter.isDrawResult(gameState)) {
-                onGameEnding(gameState, whitePlayerInfo?.elo ?: 800, blackPlayerInfo?.elo ?: 800, Arbiter.getResultDescription(gameState))
+                onGameEnding(gameState, whitePlayerInfo?.elo ?: 800, blackPlayerInfo?.elo ?: 800)
+                return
             }
-            return
 
         }
         currentPlayer.onOpponentMoveChosen()
@@ -90,16 +87,16 @@ class GameViewModel : ViewModel() {
 
     fun getLastMove() = board.allGameMoves.last()
 
-    fun startGame(startMessage: GameStartMessage) = viewModelScope.launch(Dispatchers.Main){
+    fun startGame(startMessage: GameStartMessage) {
         isWhite = (startMessage.whiteEmail == MyApp.tokenManager.getUserEmail())
         isOurTurn = isWhite
         if (_gameResult.value == GameResult.NotStarted || _gameResult.value == GameResult.Waiting) {
-            _gameResult.value = GameResult.InProgress
+            _gameResult.postValue(GameResult.InProgress)
         }
 
         whitePlayerInfo = PlayerInfo(startMessage.whiteName, startMessage.whiteEmail, startMessage.whiteImage, startMessage.whiteElo)
         blackPlayerInfo = PlayerInfo(startMessage.blackName, startMessage.blackEmail, startMessage.blackImage, startMessage.blackElo)
-        _hasGameStarted.value = true
+        _hasGameStarted.postValue(true )
 
 
     }
@@ -107,8 +104,7 @@ class GameViewModel : ViewModel() {
         _drawOffer.value = drawOfferMessage
     }
 
-    fun onGameEnding(result : GameResult, whiteElo : Int, blackElo : Int, description : String) = viewModelScope.launch(Dispatchers.Main) {
-        gameOverDescription = description
+    fun onGameEnding(result : GameResult, whiteElo : Int, blackElo : Int) = viewModelScope.launch(Dispatchers.Main) {
         if (_socketStatus.value == true) {
             _socketStatus.value = false
         }

@@ -3,6 +3,7 @@ package com.hellostranger.chess_app.core.helpers
 import com.hellostranger.chess_app.core.board.GameResult
 import com.hellostranger.chess_app.core.board.Board
 import com.hellostranger.chess_app.core.moveGeneration.MoveGenerator
+import java.util.Stack
 
 
 @ExperimentalUnsignedTypes
@@ -59,7 +60,26 @@ object Arbiter {
         if (insufficientMaterial(board)) {
             return GameResult.InsufficientMaterial
         }
+        if (repetition(board)) {
+            return GameResult.Repetition
+        }
         return GameResult.InProgress
+    }
+
+    /**
+     * Checks for repetition
+     */
+    private fun repetition(board: Board) : Boolean {
+        val repetitionCount = HashMap<ULong, Int>()
+        val history = Array(board.repetitionPositionHistory!!.size + 1) {0UL}
+        board.repetitionPositionHistory!!.copyInto(history) // We copy the stack into an array
+        for (key in history) {
+            repetitionCount[key] = repetitionCount.getOrDefault(key, 0) + 1
+            if (repetitionCount[key] == 3) {
+                return true
+            }
+        }
+        return false
     }
 
     // Test for insufficient material (Note: not all cases are implemented)

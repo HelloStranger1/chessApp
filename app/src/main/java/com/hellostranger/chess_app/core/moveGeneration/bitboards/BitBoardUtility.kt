@@ -3,6 +3,7 @@
 package com.hellostranger.chess_app.core.moveGeneration.bitboards
 
 import android.util.Log
+import com.hellostranger.chess_app.core.board.Piece
 import com.hellostranger.chess_app.core.moveGeneration.bitboards.Bits.reverse
 import com.hellostranger.chess_app.core.helpers.BoardHelper
 
@@ -53,6 +54,7 @@ object BitBoardUtility {
     fun containsSquare(bitboard: ULong, square: Int): Boolean {
         return ((bitboard shr square) and 1UL) != 0UL
     }
+
 
     fun pawnAttacks(pawnBitboard: ULong, isWhite: Boolean): ULong {
         // Pawn attacks are calculated like so: (example given with white to move)

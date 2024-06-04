@@ -23,6 +23,9 @@ import com.hellostranger.chess_app.utils.Constants
 import com.hellostranger.chess_app.models.rvEntities.Friend
 import com.hellostranger.chess_app.models.rvEntities.GameHistory
 import com.hellostranger.chess_app.rv.adapters.FriendsAdapter
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @ExperimentalUnsignedTypes
 class ProfileActivity : BaseActivity() {
@@ -193,8 +196,15 @@ class ProfileActivity : BaseActivity() {
 
     private fun openFriend(it : Friend) {
         val intent = Intent(this, ProfileActivity::class.java)
-        intent.putExtra(Constants.GUEST_EMAIL, it.email)
-        startActivity(intent)
+        CoroutineScope(Dispatchers.IO).launch {
+            handleResponse(
+                {BackendRetrofitClient.instance.getUserByEmail(it.email)},
+                "Couldn't fetch guest user"
+            )?.let {
+                intent.putExtra(Constants.USER, it)
+                startActivity(intent)
+            }
+        }
     }
 
     private fun openGameHistory(it : GameHistory) {
@@ -212,6 +222,7 @@ class ProfileActivity : BaseActivity() {
         intent.putExtra(Constants.MODE, Constants.ANALYSIS_MODE)
         intent.putExtra(Constants.MOVES_LIST, it.gameMoves)
         intent.putExtra(Constants.START_DATA, startMessage)
+        intent.putExtra(Constants.USER, currentUser)
         startActivity(intent)
     }
 

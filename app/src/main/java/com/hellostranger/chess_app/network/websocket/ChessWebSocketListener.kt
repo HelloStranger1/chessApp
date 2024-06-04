@@ -25,7 +25,7 @@ class ChessWebSocketListener(private val viewModel: GameViewModel, private val c
     private lateinit var webSocket: WebSocket
 
 
-    val gson = Gson()
+    private val gson = Gson()
     fun connectWebSocket(path : String, token : String) {
         val client = OkHttpClient.Builder().build()
         val request = Request.Builder()
@@ -75,7 +75,7 @@ class ChessWebSocketListener(private val viewModel: GameViewModel, private val c
             WebsocketMessageType.END ->{
                 val endMessage : GameEndMessage = gson.fromJson(text, GameEndMessage::class.java)
                 Log.i(TAG, "End Message. state: ${endMessage.state}, message: ${endMessage.message}")
-                viewModel.onGameEnding(endMessage.state, endMessage.whiteElo, endMessage.blackElo, endMessage.message)
+                viewModel.onGameEnding(endMessage.state, endMessage.whiteElo, endMessage.blackElo)
             }
             WebsocketMessageType.INVALID_MOVE -> {
                 Log.e(TAG, "\n")

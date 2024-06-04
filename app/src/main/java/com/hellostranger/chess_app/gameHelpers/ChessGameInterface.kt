@@ -4,6 +4,7 @@ import com.hellostranger.chess_app.core.board.Board
 import com.hellostranger.chess_app.core.board.Coord
 
 
+@ExperimentalUnsignedTypes
 interface ChessGameInterface {
     fun playMove(startCoord: Coord, endCoord: Coord)
     fun getBoard() : Board?

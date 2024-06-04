@@ -12,22 +12,9 @@ import com.hellostranger.chess_app.R
 import retrofit2.Response
 
 open class BaseActivity : AppCompatActivity() {
-    private lateinit var mProgressDialog: Dialog
+    private lateinit var mProgressDialog: Dialog // Holds the dialog
 
 
-    fun showRationaleDialog(
-        title: String,
-        message: String,
-    ) {
-
-        val builder: AlertDialog.Builder = AlertDialog.Builder(this)
-        builder.setTitle(title)
-            .setMessage(message)
-            .setPositiveButton("Cancel") { dialog, _ ->
-                dialog.dismiss()
-            }
-        builder.create().show()
-    }
 
     /**
      * Shows a simple progress dialog.
@@ -73,6 +60,10 @@ open class BaseActivity : AppCompatActivity() {
     }
 
 
+    /**
+     * Shows an error snackbar
+     * @param message: The message
+     */
     fun showErrorSnackBar(message: String) {
         val snackBar =
             Snackbar.make(findViewById(android.R.id.content), message, Snackbar.LENGTH_LONG)

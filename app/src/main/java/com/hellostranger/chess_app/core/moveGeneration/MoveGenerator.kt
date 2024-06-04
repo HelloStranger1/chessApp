@@ -123,18 +123,25 @@ class MoveGenerator {
         if (inCheck || !generateQuietMoves) {
             return
         }
+        generateCastlingMoves(moves)
+    }
 
+    private fun generateCastlingMoves(moves: Array<Move?>) {
         val castleBlockers = opponentAttackMap or board.allPiecesBitboard
         if (board.currentGameState.hasKingSideCastleRights(isWhiteToMove)) {
-            val castleMask : ULong = if (isWhiteToMove) Bits.whiteKingsideMask else Bits.blackKingsideMask
+            val castleMask: ULong =
+                if (isWhiteToMove) Bits.whiteKingsideMask else Bits.blackKingsideMask
             if ((castleMask and castleBlockers) == 0UL) {
-                val targetSquare : Int = if (isWhiteToMove) BoardHelper.G_1 else BoardHelper.G_8
+                val targetSquare: Int = if (isWhiteToMove) BoardHelper.G_1 else BoardHelper.G_8
                 moves[currentMoveIndex++] = Move(friendlyKingSquare, targetSquare, Move.CASTLE_FLAG)
             }
         }
+
         if (board.currentGameState.hasQueenSideCastleRights(isWhiteToMove)) {
-            val castleMaskChecks : ULong = if (isWhiteToMove) Bits.whiteQueensideMaskChecks else Bits.blackQueensideMaskChecks
-            val castleMaskBlocking : ULong = if (isWhiteToMove) Bits.whiteQueensideMask else Bits.blackQueensideMask
+            val castleMaskChecks: ULong =
+                if (isWhiteToMove) Bits.whiteQueensideMaskChecks else Bits.blackQueensideMaskChecks
+            val castleMaskBlocking: ULong =
+                if (isWhiteToMove) Bits.whiteQueensideMask else Bits.blackQueensideMask
             if ((castleMaskChecks and castleBlockers) == 0UL && (castleMaskBlocking and board.allPiecesBitboard) == 0UL) {
                 val targetSquare = if (isWhiteToMove) BoardHelper.C_1 else BoardHelper.C_8
                 moves[currentMoveIndex++] = Move(friendlyKingSquare, targetSquare, Move.CASTLE_FLAG)
@@ -154,62 +161,98 @@ class MoveGenerator {
             orthogonalSliders = orthogonalSliders and pinRays.inv()
             diagonalSliders = diagonalSliders and pinRays.inv()
         }
-        // Ortho
-        while (orthogonalSliders != 0UL) {
-            val startSquare = BitBoardUtility.getLSB(orthogonalSliders)
-            orthogonalSliders = BitBoardUtility.clearLSB(orthogonalSliders)
-            var moveSquares = BitBoardUtility.getRookAttacks(startSquare, allPieces) and moveMask
+        generatePieceMoves(
+            moves,
+            orthogonalSliders,
+            {startSquare -> BitBoardUtility.getRookAttacks(startSquare, allPieces)},
+            moveMask,
+            true
+        )
+//        // Ortho
+//        while (orthogonalSliders != 0UL) {
+//            val startSquare = BitBoardUtility.getLSB(orthogonalSliders)
+//            orthogonalSliders = BitBoardUtility.clearLSB(orthogonalSliders)
+//            var moveSquares = BitBoardUtility.getRookAttacks(startSquare, allPieces) and moveMask
+//
+//            // When pinned, can only move along the pin ray
+//            if (isPinned(startSquare)) {
+//                moveSquares = moveSquares and alignMask[startSquare][friendlyKingSquare]
+//            }
+//
+//            while (moveSquares != 0UL) {
+//                val targetSquare = BitBoardUtility.getLSB(moveSquares)
+//                moveSquares = BitBoardUtility.clearLSB(moveSquares)
+//                moves[currentMoveIndex++] = Move(startSquare, targetSquare)
+//            }
+//        }
 
-            // When pinned, can only move along the pin ray
-            if (isPinned(startSquare)) {
-                moveSquares = moveSquares and alignMask[startSquare][friendlyKingSquare]
+        generatePieceMoves(
+            moves,
+            diagonalSliders,
+            {startSquare -> BitBoardUtility.getBishopAttacks(startSquare, allPieces)},
+            moveMask,
+            true
+        )
+//        // Diagonal
+//        while (diagonalSliders != 0UL) {
+//            val startSquare = BitBoardUtility.getLSB(diagonalSliders)
+//            diagonalSliders = BitBoardUtility.clearLSB(diagonalSliders)
+//            var moveSquares = BitBoardUtility.getBishopAttacks(startSquare, allPieces) and moveMask
+//
+//            // When pinned, can only move along the pin ray
+//            if (isPinned(startSquare)) {
+//                moveSquares = moveSquares and alignMask[startSquare][friendlyKingSquare]
+//            }
+//
+//            while (moveSquares != 0UL) {
+//                val targetSquare = BitBoardUtility.getLSB(moveSquares)
+//                moveSquares = BitBoardUtility.clearLSB(moveSquares)
+//                moves[currentMoveIndex++] = Move(startSquare, targetSquare)
+//            }
+//        }
+    }
+    private fun generatePieceMoves(moves : Array<Move?>, piecesBitboard : ULong, attackFunction : (Int) -> ULong, moveMask : ULong, checkPins : Boolean = false) {
+        var pieces = piecesBitboard
+        while (pieces != 0UL) {
+            val startSquare = BitBoardUtility.getLSB(pieces)
+            pieces = BitBoardUtility.clearLSB(pieces)
+
+            var attacks = attackFunction(startSquare) and moveMask
+            if (checkPins && isPinned(startSquare)) {
+                attacks = attacks and alignMask[startSquare][friendlyKingSquare]
             }
-
-            while (moveSquares != 0UL) {
-                val targetSquare = BitBoardUtility.getLSB(moveSquares)
-                moveSquares = BitBoardUtility.clearLSB(moveSquares)
+            while (attacks != 0UL) {
+                val targetSquare = BitBoardUtility.getLSB(attacks)
+                attacks = BitBoardUtility.clearLSB(attacks)
                 moves[currentMoveIndex++] = Move(startSquare, targetSquare)
             }
         }
-
-        // Diagonal
-        while (diagonalSliders != 0UL) {
-            val startSquare = BitBoardUtility.getLSB(diagonalSliders)
-            diagonalSliders = BitBoardUtility.clearLSB(diagonalSliders)
-            var moveSquares = BitBoardUtility.getBishopAttacks(startSquare, allPieces) and moveMask
-
-            // When pinned, can only move along the pin ray
-            if (isPinned(startSquare)) {
-                moveSquares = moveSquares and alignMask[startSquare][friendlyKingSquare]
-            }
-
-            while (moveSquares != 0UL) {
-                val targetSquare = BitBoardUtility.getLSB(moveSquares)
-                moveSquares = BitBoardUtility.clearLSB(moveSquares)
-                moves[currentMoveIndex++] = Move(startSquare, targetSquare)
-            }
-        }
-
     }
 
     private fun generateKnightMoves(moves: Array<Move?>) {
         val friendlyKnightPiece = Piece.makePiece(Piece.KNIGHT, board.moveColour)
-        var knights : ULong = board.pieceBitboards!![friendlyKnightPiece] and notPinRays
+        val knights : ULong = board.pieceBitboards!![friendlyKnightPiece] and notPinRays
         val moveMask : ULong = emptyOrEnemySquares and checkRayBitmask and moveTypeMask
 
-        while (knights != 0UL) {
-            val knightSquare = BitBoardUtility.getLSB(knights)
-            knights = BitBoardUtility.clearLSB(knights)
-            var moveSquares : ULong = BitBoardUtility.knightAttacks[knightSquare] and moveMask
+        generatePieceMoves(
+            moves,
+            knights,
+            {startSquare -> BitBoardUtility.knightAttacks[startSquare]},
+            moveMask
+        )
 
-            while (moveSquares != 0UL) {
-                val targetSquare = BitBoardUtility.getLSB(moveSquares)
-                moveSquares = BitBoardUtility.clearLSB(moveSquares)
-                moves[currentMoveIndex++] = Move(knightSquare, targetSquare)
-            }
-        }
+//        while (knights != 0UL) {
+//            val knightSquare = BitBoardUtility.getLSB(knights)
+//            knights = BitBoardUtility.clearLSB(knights)
+//            var moveSquares : ULong = BitBoardUtility.knightAttacks[knightSquare] and moveMask
+//
+//            while (moveSquares != 0UL) {
+//                val targetSquare = BitBoardUtility.getLSB(moveSquares)
+//                moveSquares = BitBoardUtility.clearLSB(moveSquares)
+//                moves[currentMoveIndex++] = Move(knightSquare, targetSquare)
+//            }
+//        }
     }
-
     private fun generatePawnMoves(moves: Array<Move?>) {
         val pushDir : Int = if (isWhiteToMove) 1 else -1
         val pushOffset : Int = pushDir * 8
@@ -315,6 +358,8 @@ class MoveGenerator {
         if (board.currentGameState.enPassantFile <= 0) {
             return
         }
+
+
         val epFileIndex = board.currentGameState.enPassantFile - 1
         val epRankIndex = if(isWhiteToMove) 5 else 2
         val targetSquare = epRankIndex * 8 + epFileIndex
@@ -354,8 +399,8 @@ class MoveGenerator {
     private fun isPinned(square : Int) : Boolean {
         return ((pinRays shr square) and 1UL) != 0UL
     }
-    private fun generateSlidingAttackMap() {
-        opponentSlidingAttackMap = 0UL
+    private fun generateSlidingAttackMap() : ULong {
+        var slidingAttackMap = 0UL
 
         var pieceBoard : ULong = board.enemyOrthogonalSliders
         val blockers : ULong = board.allPiecesBitboard and (1UL shl friendlyKingSquare).inv()
@@ -365,7 +410,7 @@ class MoveGenerator {
             pieceBoard = BitBoardUtility.clearLSB(pieceBoard)
             val moveBoard : ULong = BitBoardUtility.getSliderAttacks(startSquare, blockers, true)
 
-            opponentSlidingAttackMap = opponentSlidingAttackMap or moveBoard
+            slidingAttackMap = slidingAttackMap or moveBoard
         }
 
         pieceBoard = board.enemyDiagonalSliders
@@ -374,12 +419,13 @@ class MoveGenerator {
             pieceBoard = BitBoardUtility.clearLSB(pieceBoard)
             val moveBoard : ULong = BitBoardUtility.getSliderAttacks(startSquare, blockers, false)
 
-            opponentSlidingAttackMap = opponentSlidingAttackMap or moveBoard
+            slidingAttackMap = slidingAttackMap or moveBoard
         }
+        return slidingAttackMap
     }
 
     private fun calculateAttackData() {
-        generateSlidingAttackMap()
+        opponentSlidingAttackMap = generateSlidingAttackMap()
         // Search squares in all directions around friendly king for checks/pins by enemy sliding pieces (queen, rook, bishop)
         var startDirIndex = 0
         var endDirIndex = 8
@@ -447,23 +493,6 @@ class MoveGenerator {
 
         notPinRays = pinRays.inv()
 
-        var opponentKnightAttacks = 0UL
-        var knights : ULong = board.pieceBitboards!![Piece.makePiece(Piece.KNIGHT, board.opponentColour)]
-        val friendlyKingBoard = board.pieceBitboards!![Piece.makePiece(Piece.KING, board.moveColour)]
-
-        while (knights != 0UL) {
-            val knightSquare : Int = BitBoardUtility.getLSB(knights)
-            knights = BitBoardUtility.clearLSB(knights)
-            val knightAttacks = BitBoardUtility.knightAttacks[knightSquare]
-            opponentKnightAttacks = opponentKnightAttacks or knightAttacks
-
-            if ((knightAttacks and friendlyKingBoard) != 0UL) {
-                inDoubleCheck = inCheck
-                inCheck = true
-                checkRayBitmask = checkRayBitmask or (1UL shl knightSquare)
-            }
-        }
-
         // Pawns
         val opponentPawnsBoard : ULong = board.pieceBitboards!![Piece.makePiece(Piece.PAWN, board.opponentColour)]
         opponentPawnAttackMap = BitBoardUtility.pawnAttacks(opponentPawnsBoard, !isWhiteToMove)
@@ -477,13 +506,36 @@ class MoveGenerator {
 
         val enemyKingSquare : Int = board.kingSquare[enemyIndex]
 
-        opponentAttackMapNoPawns = opponentSlidingAttackMap or opponentKnightAttacks or BitBoardUtility.kingMoves[enemyKingSquare]
+        opponentAttackMapNoPawns = opponentSlidingAttackMap or generateKnightsAttackMap() or BitBoardUtility.kingMoves[enemyKingSquare]
         opponentAttackMap = opponentAttackMapNoPawns or opponentPawnAttackMap
 
         if (!inCheck) {
             checkRayBitmask = ULong.MAX_VALUE
         }
     }
+
+    private fun generateKnightsAttackMap() : ULong {
+        var opponentKnightAttacks = 0UL
+        var knights : ULong = board.pieceBitboards!![Piece.makePiece(Piece.KNIGHT, board.opponentColour)]
+        val friendlyKingBoard = board.pieceBitboards!![Piece.makePiece(Piece.KING, board.moveColour)]
+
+        while (knights != 0UL) {
+            val knightSquare : Int = BitBoardUtility.getLSB(knights)
+            knights = BitBoardUtility.clearLSB(knights)
+            val knightAttacks = BitBoardUtility.knightAttacks[knightSquare]
+
+            opponentKnightAttacks = opponentKnightAttacks or knightAttacks
+
+            if ((knightAttacks and friendlyKingBoard) != 0UL) {
+                inDoubleCheck = inCheck
+                inCheck = true
+                checkRayBitmask = checkRayBitmask or (1UL shl knightSquare)
+            }
+        }
+        return opponentKnightAttacks
+    }
+
+
 
     // Test if capturing a pawn with en-passant reveals a sliding piece attack against the king
     // Note: this is only used for cases where pawn appears to not be pinned due to opponent pawn being on same rank

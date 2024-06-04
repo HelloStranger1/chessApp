@@ -69,7 +69,6 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
 
     private val currentPlayerEmail = MyApp.tokenManager.getUserEmail()
     private var isPlayingWhite = false
-
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -88,7 +87,7 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
 
         viewModel.gameResult.observe(this) {
             Log.e(TAG, "gameStatus changed to: $it")
-            if (savedInstanceState == null && Arbiter.isDrawResult(it) || Arbiter.isWinResult(it)) {
+            if (savedInstanceState == null && Arbiter.isDrawResult(it) || Arbiter.isWinResult(it) && gameMode != Constants.ANALYSIS_MODE) {
                 onGameOver(it)
             }
         }
@@ -146,8 +145,7 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
             whitePlayerInfo.image,
             blackPlayerInfo.image,
             ourElo,
-            result,
-            viewModel.gameOverDescription
+            result
         )
         supportFragmentManager.commit {
             setReorderingAllowed(true)
@@ -187,7 +185,7 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
                 this
             }
             Constants.AI_MODE -> {
-                botPlayer!!
+                this
             }
             else -> {
                 this
@@ -290,6 +288,8 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         }
 
         viewModel.startGame(startData)
+        viewModel.whitePlayer = this
+        viewModel.blackPlayer = this
 
         val movesString : String = intent.getStringExtra(Constants.MOVES_LIST)!!
         // Iterate over the moves and play them
@@ -318,18 +318,22 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         } else {
             GameStartMessage("BOT", currentUser.name, "", currentUser.email, "", currentUser.image, 1800, currentUser.elo)
         }
-        botPlayer = Bot(7_500, 2_500, viewModel)
-        viewModel.startGame(startData)
+        botPlayer = Bot(5_000, 1_00, viewModel)
         if (!isWhite) {
             botPlayer!!.onOpponentMoveChosen()
         }
         if (isWhite) {
             viewModel.whitePlayerInfo = PlayerInfo(currentUser.name, currentUser.email, currentUser.image, currentUser.elo)
             viewModel.blackPlayerInfo = PlayerInfo("BOT", "", "", 1800)
+            viewModel.whitePlayer = this
+            viewModel.blackPlayer = this
         } else {
             viewModel.whitePlayerInfo = PlayerInfo("BOT", "", "", 1800)
             viewModel.blackPlayerInfo = PlayerInfo(currentUser.name, currentUser.email, currentUser.image, currentUser.elo)
+            viewModel.blackPlayer = this
+            viewModel.whitePlayer = this
         }
+        viewModel.startGame(startData)
     }
 
 

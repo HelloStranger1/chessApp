@@ -6,6 +6,7 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import com.hellostranger.chess_app.database.UserRepository
 import com.hellostranger.chess_app.viewModels.ProfileViewModel
 
+@ExperimentalUnsignedTypes
 class ProfileViewModelFactory(
     private val userRepository: UserRepository,
     ) : ViewModelProvider.Factory {

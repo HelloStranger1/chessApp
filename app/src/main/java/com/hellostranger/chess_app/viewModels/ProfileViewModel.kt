@@ -11,6 +11,7 @@ import com.hellostranger.chess_app.models.rvEntities.Friend
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import retrofit2.Response
 
 const val PROFILE_VM_TAG = "ProfileViewModel"
 @ExperimentalUnsignedTypes
@@ -25,37 +26,34 @@ class ProfileViewModel(
 
 
     fun getUserDetails(email : String) = viewModelScope.launch(Dispatchers.IO) {
-        val response = userRepository.getUserByEmail(email)
-        if(response.isSuccessful){
-            userDetails.postValue(response.body())
-        } else{
-            Log.e(PROFILE_VM_TAG, "Couldn't load user, response is: $response and body: ${response.body()}")
+        handleResponse(
+            {userRepository.getUserByEmail(email)},
+            "Couldn't load user"
+        )?.let {
+            userDetails.postValue(it)
         }
     }
 
     fun areFriendsWithUser(friendEmail : String)  = viewModelScope.launch(Dispatchers.IO) {
-        val response = userRepository.getFriends(userRepository.tokenManager.getUserEmail())
-        if (!response.isSuccessful || response.body() == null) {
-            Log.e(PROFILE_VM_TAG, "Error when fetching user friends. response: $response, error body: ${response.errorBody()}")
-            return@launch
-        }
-        val userFriends : List<User> = response.body()!!
-        for(friend : User in userFriends){
-            if(friend.email == friendEmail){
-                isFriendsWithUser.postValue(true)
-                return@launch
+        handleResponse(
+            {userRepository.getFriends(userRepository.tokenManager.getUserEmail())},
+            "Error when fetching user friends."
+        )?.let{
+            for (friend : User in it) {
+                if (friend.email == friendEmail) {
+                    isFriendsWithUser.postValue(true)
+                    return@launch
+                }
             }
         }
         isFriendsWithUser.postValue(false)
     }
     fun sendFriendRequest(email: String) = viewModelScope.launch(Dispatchers.IO){
-        val response = userRepository.sendFriendRequest(email)
-        if(response.isSuccessful && response.body() != null){
-            friendRequestStatus.postValue(response.body())
-        } else if(!response.isSuccessful){
-            Log.e(PROFILE_VM_TAG, "Friend request failed. error: $response , ${response.errorBody()}")
-            friendRequestStatus.postValue((response.body() ?: "").toString())
-        }
+        val response = handleResponse(
+            {userRepository.sendFriendRequest(email)},
+            "Friend request failed."
+        )
+        friendRequestStatus.postValue(response ?: "")
     }
 
     fun removeFriend(email : String) = viewModelScope.launch(Dispatchers.IO){
@@ -79,36 +77,54 @@ class ProfileViewModel(
     }
     fun getAllGameHistories(email : String) = viewModelScope.launch(Dispatchers.IO) {
         val response = userRepository.getAllGameHistoriesByEmail(email)
-        if (!response.isSuccessful || response.body() == null) {
-            Log.e(PROFILE_VM_TAG, "Couldn't fetch all game histories. response is: $response and error: ${response.errorBody()}")
-        }
-        if(response.isSuccessful){
-            for(gameHistory in response.body()!!){
+        val gameHistories = handleResponse(
+            {userRepository.getAllGameHistoriesByEmail(email)},
+            "Couldn't fetch all game histories."
+        )
+        gameHistories?.let {
+            for (gameHistory in it) {
                 if(userRepository.getFavoriteGameHistoryById(gameHistoryId = gameHistory.id) != null){
                     gameHistory.isSaved = true
                 }
             }
             gameHistoryList.postValue(response.body())
-        } else{
-            Log.e("TAG", "Couldn't get game history. response is: $response and body: ${response.body()}")
         }
     }
 
 
     fun getFriendsList(email: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            val response = userRepository.getFriends(email)
-            if (response.isSuccessful) {
+            val userList = handleResponse(
+                {userRepository.getFriends(email)},
+                "Couldn't get friends list"
+            )
+            userList?.let {
                 val tempFriendList : MutableList<Friend> = mutableListOf()
-                for (user in response.body()!!) {
+                for (user in it) {
                     val friend = Friend(user.image, user.email, user.name)
                     tempFriendList.add(friend)
                 }
                 friendsList.postValue(tempFriendList)
-            } else {
-                Log.e("TAG", "Couldn't get friends list")
             }
         }
+    }
+
+    /**
+     * A wrapper function to make a request, check if it failed, and log out if it did.
+     * @param request: The function to make the request (retrofit)
+     * @param errorMessage: An error message to be logged out in case on an error
+     * @return The response of the request. the type is generic, matching the request. If the request failed, will be null, otherwise it is not null.
+     */
+    suspend fun <T> handleResponse(
+        request : suspend () -> Response<T>,
+        errorMessage : String
+    ) : T? {
+        val response = request()
+        if (!response.isSuccessful || response.body() == null) {
+            Log.e(PROFILE_VM_TAG, "$errorMessage. error is: ${response.errorBody()?.toString()}")
+            return null
+        }
+        return response.body()!!
     }
 
 

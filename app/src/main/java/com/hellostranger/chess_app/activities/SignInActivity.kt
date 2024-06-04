@@ -14,6 +14,7 @@ import androidx.appcompat.widget.Toolbar
 import com.hellostranger.chess_app.utils.MyApp
 import com.hellostranger.chess_app.R
 import com.hellostranger.chess_app.dto.auth.AuthenticateRequest
+import com.hellostranger.chess_app.dto.auth.AuthenticationResponse
 import com.hellostranger.chess_app.network.retrofit.auth.AuthRetrofitClient
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -29,10 +30,7 @@ class SignInActivity : BaseActivity() {
     private var btnSignIn : AppCompatButton? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContentView(R.layout.activity_sign_in)
-
-       /* auth = Firebase.auth*/
 
         etEmail = findViewById(R.id.et_email_sign_in)
         etPass = findViewById(R.id.et_password_sign_in)
@@ -77,26 +75,26 @@ class SignInActivity : BaseActivity() {
         if(validateForm(email, password)){
             showProgressDialog(resources.getString(R.string.please_wait))
             CoroutineScope(Dispatchers.IO).launch {
-                val response =
-                    AuthRetrofitClient.instance.authenticate(AuthenticateRequest(email, password))
-                if(response.isSuccessful && response.body() != null){
-                    Log.e("TAG", "Logged in the user. response: " + response.body())
-                    MyApp.tokenManager.saveAccessToken(response.body()!!.accessToken, response.body()!!.accessExpiresIn)
-                    MyApp.tokenManager.saveRefreshToken(response.body()!!.refreshToken, response.body()!!.refreshExpiresIn)
-                    MyApp.tokenManager.saveUserEmail(email)
+                val response = handleResponse(
+                    {AuthRetrofitClient.instance.authenticate(AuthenticateRequest(email, password))},
+                    "Couldn't authorize user"
+                )
+                if (response == null) {
                     runOnUiThread {
-                        hideProgressDialog()
-                        val intent = Intent(this@SignInActivity, MainActivity::class.java)
-                        startActivity(intent)
-                    }
-                } else if(!response.isSuccessful){
-                    runOnUiThread{
                         Toast.makeText(
                             this@SignInActivity,
-                            "Response failed, it is: ${response.message()}",
+                            "Couldn't sign in.",
                             Toast.LENGTH_LONG
                         ).show()
                     }
+                    return@launch
+                }
+                MyApp.tokenManager.saveAccessToken(response.accessToken, response.accessExpiresIn)
+                MyApp.tokenManager.saveRefreshToken(response.refreshToken, response.refreshExpiresIn)
+                MyApp.tokenManager.saveUserEmail(email)
+                runOnUiThread {
+                    hideProgressDialog()
+                    startActivity(Intent(this@SignInActivity, MainActivity::class.java))
                 }
             }
         }

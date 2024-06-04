@@ -11,6 +11,7 @@ import android.widget.Toast
 import com.hellostranger.chess_app.utils.MyApp
 import com.hellostranger.chess_app.R
 import com.hellostranger.chess_app.databinding.ActivitySignUpBinding
+import com.hellostranger.chess_app.dto.auth.AuthenticateRequest
 import com.hellostranger.chess_app.dto.requests.RegisterRequest
 import com.hellostranger.chess_app.network.retrofit.auth.AuthRetrofitClient
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -60,37 +61,38 @@ class SignUpActivity : BaseActivity() {
         val email: String = binding?.etEmailSignUp?.text.toString().trim{ it <= ' ' }
         val password: String = binding?.etPasswordSignUp?.text.toString().trim{ it <= ' ' }
 
-        if(validateForm(name, email, password)){
-            showProgressDialog(resources.getString(R.string.please_wait))
-
-            val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable ->
-                throwable.printStackTrace()
-            }
-            CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
-                val response =
-                    AuthRetrofitClient.instance.register(RegisterRequest(name, email, password))
-                if(response.isSuccessful && response.body() != null){
-                    Log.e("TAG", "registered the user. response: " + response.body())
-                    MyApp.tokenManager.saveAccessToken(response.body()!!.accessToken, response.body()!!.accessExpiresIn)
-                    MyApp.tokenManager.saveRefreshToken(response.body()!!.refreshToken, response.body()!!.refreshExpiresIn)
-                    MyApp.tokenManager.saveUserEmail(email)
-                    runOnUiThread {
-                        hideProgressDialog()
-                        val intent = Intent(this@SignUpActivity, MainActivity::class.java)
-                        startActivity(intent)
-                    }
-                } else if(!response.isSuccessful){
-                    runOnUiThread{
-                        Toast.makeText(
-                            this@SignUpActivity,
-                            "Response failed, it is: ${response.message()}",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-                }
-            }
-
+        if (!validateForm(name, email, password)) {
+            return
         }
+        showProgressDialog(resources.getString(R.string.please_wait))
+
+        CoroutineScope(Dispatchers.IO).launch {
+            val response = handleResponse(
+                {AuthRetrofitClient.instance.register(RegisterRequest(name, email, password))},
+                "Couldn't register user"
+            )
+            if (response == null) {
+                runOnUiThread {
+                    Toast.makeText(
+                        this@SignUpActivity,
+                        "Couldn't sign up.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    hideProgressDialog()
+                }
+                return@launch
+            }
+
+            MyApp.tokenManager.saveAccessToken(response.accessToken, response.accessExpiresIn)
+            MyApp.tokenManager.saveRefreshToken(response.refreshToken, response.refreshExpiresIn)
+            MyApp.tokenManager.saveUserEmail(email)
+            runOnUiThread {
+                hideProgressDialog()
+                startActivity(Intent(this@SignUpActivity, MainActivity::class.java))
+            }
+        }
+
+
     }
     private fun validateForm(name : String, email : String, password : String) : Boolean {
         return when {

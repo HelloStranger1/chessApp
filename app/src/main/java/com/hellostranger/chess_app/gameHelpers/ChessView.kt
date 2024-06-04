@@ -99,7 +99,7 @@ class ChessView(context : Context?, attrs : AttributeSet?) : View(context, attrs
             }
             MotionEvent.ACTION_UP ->{
                 val targetCoord = getCoordFromEvent(event.x, event.y)
-                if (!targetCoord.isValidSquare || targetCoord == movingPieceStartCoord) {
+                if (!targetCoord.isValidSquare || targetCoord == movingPieceStartCoord || !movingPieceStartCoord.isValidSquare) {
                     resetMovingPiece()
                     invalidate()
                     return false
