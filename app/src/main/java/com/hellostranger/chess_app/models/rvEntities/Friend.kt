@@ -4,5 +4,4 @@ data class Friend(
     val image : String,
     val email : String,
     val name : String
-
 )

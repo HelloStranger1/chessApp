@@ -182,9 +182,9 @@ class Searcher(val board: Board) {
             return quiescenceSearch(alpha, beta)
         }
 
-        val moves : Array<Move> = moveGenerator.generateMoves(board, arrayOfNulls(256), capturesOnly = false)
+        var moves : Array<Move> = moveGenerator.generateMoves(board, arrayOfNulls(256), capturesOnly = false)
         val prevBestMove : Move = if (plyFromRoot == 0) bestMove else transpositionTable.tryToGetStoredMove() ?: Move.NullMove
-        moveOrderer.orderMoves(prevBestMove, board, moves, moveGenerator.opponentAttackMap, moveGenerator.opponentPawnAttackMap, false, plyFromRoot)
+        moves = moveOrderer.orderMoves(prevBestMove, board, moves, moveGenerator.opponentAttackMap, moveGenerator.opponentPawnAttackMap, false, plyFromRoot)
         if (moves.isEmpty()) {
             return if (moveGenerator.inCheck()) {
                 -(IMMEDIATE_MATE_SCORE - plyFromRoot)
@@ -301,8 +301,8 @@ class Searcher(val board: Board) {
             alpha = eval
         }
 
-        val moves = moveGenerator.generateMoves(board, arrayOfNulls(128), capturesOnly = true)
-        moveOrderer.orderMoves(Move.NullMove, board, moves, moveGenerator.opponentAttackMap, moveGenerator.opponentPawnAttackMap, true , 0)
+        var moves = moveGenerator.generateMoves(board, arrayOfNulls(128), capturesOnly = true)
+        moves = moveOrderer.orderMoves(Move.NullMove, board, moves, moveGenerator.opponentAttackMap, moveGenerator.opponentPawnAttackMap, true , 0)
         for (i in moves.indices) {
             board.makeMove(moves[i], true)
             eval = -quiescenceSearch(-beta, -alpha)

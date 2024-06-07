@@ -10,6 +10,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.converter.scalars.ScalarsConverterFactory
 
 
+@ExperimentalUnsignedTypes
 object BackendRetrofitClient {
     private const val BASE_URL = "http://10.0.2.2:8080"
 

@@ -21,9 +21,6 @@ object Constants {
     const val START_DATA = "Start"
     const val MOVES_LIST = "MOVES"
 
-    //To see profile of another user
-    const val GUEST_EMAIL = "GuestEmail"
-
     const val DEFAULT_PUZZLE_AMOUNT = 4
 
     const val FAVORITE_GAMES_DB = "favorite-games-database"

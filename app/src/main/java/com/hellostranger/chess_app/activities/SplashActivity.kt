@@ -29,10 +29,7 @@ class SplashActivity : AppCompatActivity() {
             )
         }
 
-
-
-
-
+        // Checks if you are logged in and sends you to the appropriate activity.
         Handler(Looper.getMainLooper()).postDelayed({
             if(!MyApp.tokenManager.isAccessTokenExpired()){
                 startActivity(Intent(this, MainActivity::class.java))

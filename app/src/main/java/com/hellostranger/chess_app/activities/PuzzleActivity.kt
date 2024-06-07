@@ -26,6 +26,9 @@ import kotlinx.coroutines.withContext
 
 private const val TAG = "PuzzleActivityTag"
 @ExperimentalUnsignedTypes
+/**
+ * Activity for playing chess puzzles.
+ */
 class PuzzleActivity : BaseActivity(), ChessGameInterface, PopupMenu.OnMenuItemClickListener {
     private lateinit var binding : ActivityPuzzleBinding
     private lateinit var board : Board
@@ -49,9 +52,12 @@ class PuzzleActivity : BaseActivity(), ChessGameInterface, PopupMenu.OnMenuItemC
         updateUIToStartPuzzle()
 
 
+        // Retry puzzle on button click
         binding.btnRetry.setOnClickListener {
             retryPuzzle()
         }
+
+        // Go to next puzzle on button click
         binding.btnNext.setOnClickListener {
             goToNextPuzzle()
         }
@@ -59,6 +65,9 @@ class PuzzleActivity : BaseActivity(), ChessGameInterface, PopupMenu.OnMenuItemC
 
     }
 
+    /**
+     * Updates the UI to the initial state for starting a new puzzle.
+     */
     private fun updateUIToStartPuzzle(){
         binding.llNextPuzzle.visibility = View.GONE
         binding.tv1.text = getString(R.string.your_turn)
@@ -73,18 +82,27 @@ class PuzzleActivity : BaseActivity(), ChessGameInterface, PopupMenu.OnMenuItemC
 
     }
 
-    private fun startCurrentPuzzle(){
+    /**
+     * Starts the current puzzle by setting up the board and making the initial move.
+     */
+    private fun startCurrentPuzzle() {
         board = Board.createBoard(currentPuzzle.fen)
         board.makeMove(MoveUtility.getMoveFromUCIName(currentPuzzle.moves[0], board))
         isWhite = board.isWhiteToMove
         currentMoveShown++
     }
+    /**
+     * Updates the current puzzle to the latest one from the puzzle list.
+     */
     private fun updateCurrentPuzzle(){
         currentPuzzle = PuzzlesList.instance.getCurrentPuzzle()!!
         currentMoveShown = 0
         // updatePiecesResId()
-
     }
+
+    /**
+     * Displays the piece promotion menu.
+     */
     private fun setPiecePromotionMenu(){
         val popupMenu = PopupMenu(this@PuzzleActivity, binding.llInfo)
         if(isWhite){
@@ -95,6 +113,9 @@ class PuzzleActivity : BaseActivity(), ChessGameInterface, PopupMenu.OnMenuItemC
         popupMenu.setOnMenuItemClickListener(this@PuzzleActivity)
         popupMenu.show()
     }
+    /**
+     * Restarts the current puzzle.
+     */
     private fun retryPuzzle(){
         updateCurrentPuzzle()
         updateUIToStartPuzzle()
@@ -104,6 +125,10 @@ class PuzzleActivity : BaseActivity(), ChessGameInterface, PopupMenu.OnMenuItemC
             binding.chessView.postInvalidate()
         }
     }
+
+    /**
+     * Proceeds to the next puzzle or fetches new puzzles if needed.
+     */
     private fun goToNextPuzzle(){
         if(PuzzlesList.instance.goToNextPuzzle() != null){
             updateCurrentPuzzle()
@@ -134,6 +159,10 @@ class PuzzleActivity : BaseActivity(), ChessGameInterface, PopupMenu.OnMenuItemC
         }
     }
 
+    /**
+     * Shows the UI for a correct move.
+     * @param isLastMove: Boolean - Whether this is the last move of the puzzle.
+     */
     private fun showCorrectMoveUi(isLastMove : Boolean){
         binding.ivLogo.setImageResource(R.drawable.ic_green_checkmark)
         if(isLastMove){
@@ -145,6 +174,9 @@ class PuzzleActivity : BaseActivity(), ChessGameInterface, PopupMenu.OnMenuItemC
 
         }
     }
+    /**
+     * Shows the UI for an incorrect move.
+     */
     private fun showWrongMoveUi(){
         binding.ivLogo.setImageResource(R.drawable.ic_wrong_move)
         binding.tv1.text = getString(R.string.not_the_move)
@@ -152,6 +184,11 @@ class PuzzleActivity : BaseActivity(), ChessGameInterface, PopupMenu.OnMenuItemC
 
     }
 
+    /**
+     * Handles menu item click events for piece promotion.
+     * @param menuItem: MenuItem - The selected menu item.
+     * @return Boolean - Whether the item click was handled.
+     */
     override fun onMenuItemClick(menuItem: MenuItem): Boolean {
         if(heldMoveMessage.isNull){
             Log.e(TAG, "held Move message is null")
@@ -181,6 +218,11 @@ class PuzzleActivity : BaseActivity(), ChessGameInterface, PopupMenu.OnMenuItemC
         return true
     }
 
+    /**
+     * Handles the move made by the player.
+     * @param startCoord: Coord - The starting coordinate of the move.
+     * @param endCoord: Coord - The ending coordinate of the move.
+     */
     override fun playMove(startCoord: Coord, endCoord: Coord) {
         val startIndex  = BoardHelper.indexFromCoord(startCoord)
         val targetIndex = BoardHelper.indexFromCoord(endCoord)
@@ -209,11 +251,20 @@ class PuzzleActivity : BaseActivity(), ChessGameInterface, PopupMenu.OnMenuItemC
         }
 
     }
+    /**
+     * Plays the move for the puzzle and updates the board.
+     * @param move: Move - The move to be played.
+     */
     private fun playMoveForPuzzle(move : Move) {
         board.makeMove(move)
         currentMoveShown++
         binding.chessView.postInvalidate()
     }
+
+    /**
+     * Called when a move is chosen. Checks if the move is correct and updates the UI accordingly.
+     * @param move: Move - The chosen move.
+     */
     private fun onMoveChosen(move : Move) {
         if (MoveUtility.getMoveNameUCI(move) == currentPuzzle.moves[currentMoveShown]) {
             val isOnLastMove = currentMoveShown == currentPuzzle.moves.size - 1
@@ -237,6 +288,10 @@ class PuzzleActivity : BaseActivity(), ChessGameInterface, PopupMenu.OnMenuItemC
         }
     }
 
+    /**
+     * Returns the current state of the board.
+     * @return Board - The current board.
+     */
     override fun getBoard(): Board {
         return board
     }

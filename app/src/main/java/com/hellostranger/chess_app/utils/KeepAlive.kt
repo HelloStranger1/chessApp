@@ -12,6 +12,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @ExperimentalUnsignedTypes
+/**
+ * This is a service that sends keep alive requests to the server every minute.
+ */
 class KeepAlive : Service() {
     private val handler =  Handler(Looper.getMainLooper())
     private val retrofitClient = BackendRetrofitClient.instance

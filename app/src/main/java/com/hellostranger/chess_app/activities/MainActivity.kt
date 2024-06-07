@@ -40,9 +40,9 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
     private val currentEmail : String
         get() = tokenManager.getUserEmail()
 
-    private var tokenManager : TokenManager = MyApp.tokenManager
-    private val puzzleClient  = PuzzleRetrofitClient.instance
-    private val backendClient = BackendRetrofitClient.instance
+    private var tokenManager : TokenManager = MyApp.tokenManager // The token manager, that manages JwtToken and user email.
+    private val puzzleClient  = PuzzleRetrofitClient.instance // The client for our puzzles api
+    private val backendClient = BackendRetrofitClient.instance // The client for our backend
 
     override fun onRestart() {
         super.onRestart()

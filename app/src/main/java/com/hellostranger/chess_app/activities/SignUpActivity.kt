@@ -20,11 +20,17 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @ExperimentalUnsignedTypes
+/**
+ * Activity for user sign-up.
+ */
 class SignUpActivity : BaseActivity() {
 
 
     private var binding: ActivitySignUpBinding? = null
 
+    /**
+     * Called when the activity is first created. Initializes the activity.
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySignUpBinding.inflate(layoutInflater)
@@ -47,6 +53,10 @@ class SignUpActivity : BaseActivity() {
         setUpActionBar()
 
     }
+
+    /**
+     * Sets up the action bar for the activity.
+     */
     private fun setUpActionBar(){
 
         setSupportActionBar(binding?.toolbarSignUpActivity)
@@ -56,6 +66,9 @@ class SignUpActivity : BaseActivity() {
         binding?.toolbarSignUpActivity?.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
     }
 
+    /**
+     * Registers a new user by sending a request to the backend.
+     */
     private fun registerUser(){
         val name: String = binding?.etNameSignUp?.text.toString().trim{ it <= ' ' }
         val email: String = binding?.etEmailSignUp?.text.toString().trim{ it <= ' ' }
@@ -94,6 +107,13 @@ class SignUpActivity : BaseActivity() {
 
 
     }
+    /**
+     * Validates the sign-up form.
+     * @param name: String - The entered name.
+     * @param email: String - The entered email address.
+     * @param password: String - The entered password.
+     * @return Boolean - Returns true if the form is valid, false otherwise.
+     */
     private fun validateForm(name : String, email : String, password : String) : Boolean {
         return when {
             TextUtils.isEmpty(name) -> {

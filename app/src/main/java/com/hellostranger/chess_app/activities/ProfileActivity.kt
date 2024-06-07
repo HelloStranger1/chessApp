@@ -28,6 +28,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @ExperimentalUnsignedTypes
+/**
+ * Activity for displaying and managing a user's profile.
+ */
 class ProfileActivity : BaseActivity() {
     private lateinit var binding : ActivityProfileBinding
     private lateinit var currentUser : User
@@ -40,11 +43,17 @@ class ProfileActivity : BaseActivity() {
     private var isGuestUser : Boolean = false
 
 
+    /**
+     * Called when the activity is restarted. Fetches user details.
+     */
     override fun onRestart() {
         super.onRestart()
         currentUser.email.let { viewModel.getUserDetails(it) }
     }
 
+    /**
+     * Called when the activity is first created. Initializes the activity.
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityProfileBinding.inflate(layoutInflater)
@@ -66,18 +75,22 @@ class ProfileActivity : BaseActivity() {
         setUpFriendsAdapter()
 
 
+        // Observe the game history list and update the adapter when it changes.
         viewModel.gameHistoryList.observe(this) {
             gamesHistoryAdapter.updateGameHistoryList(it)
         }
 
+        // Observe the friends list and update the adapter when it changes.
         viewModel.friendsList.observe(this) {
             friendsAdapter.updateFriendList(it)
         }
 
+        // Observe the user details and update the UI when they change.
         viewModel.userDetails.observe(this){
             setDataInUi(it)
         }
 
+        // Observe the friendship status and update the UI accordingly.
         viewModel.isFriendsWithUser.observe(this){
             if(it){
                 binding.tvSendFriendRequest.visibility = View.GONE
@@ -89,21 +102,25 @@ class ProfileActivity : BaseActivity() {
 
         }
 
+        // Initial data fetch
         viewModel.getAllGameHistories(currentUser.email)
         viewModel.getUserDetails(currentUser.email)
         viewModel.areFriendsWithUser(currentUser.email)
         viewModel.getFriendsList(currentUser.email)
 
+        // Observe the friend request status and display a toast message.
         viewModel.friendRequestStatus.observe(this){
             if (it.isNotBlank()){
                 Toast.makeText(this, it, Toast.LENGTH_LONG).show()
             }
         }
 
+        // Send friend request on click.
         binding.tvSendFriendRequest.setOnClickListener {
             viewModel.sendFriendRequest(currentUser.email)
         }
 
+        // Remove friend on click.
         binding.tvUnfriend.setOnClickListener {
             viewModel.removeFriend(currentUser.email)
             binding.tvSendFriendRequest.visibility = View.VISIBLE
@@ -111,6 +128,7 @@ class ProfileActivity : BaseActivity() {
 
         }
 
+        // Open update profile activity on click if not a guest user.
         binding.ivToolbarOptions.setOnClickListener{
             if(!isGuestUser){
                 val intent = Intent(this@ProfileActivity, UpdateProfileActivity::class.java)
@@ -119,11 +137,12 @@ class ProfileActivity : BaseActivity() {
             }
         }
 
+        // Handle back navigation.
         binding.ivToolbarBack.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
     }
 
     /**
-     * set ups the game history adapter, and sets it in the correct places
+     * Sets up the friends adapter and assigns it to the RecyclerView.
      */
     private fun setUpGameHistoryAdapter() {
         gamesHistoryAdapter = initializeGameHistoryAdapter()
@@ -141,7 +160,8 @@ class ProfileActivity : BaseActivity() {
     }
 
     /**
-     * Creates the game history adapter and the necessary onClick listener
+     * Creates the game history adapter and the necessary onClick listener.
+     * @return GamesHistoryAdapter - The initialized adapter.
      */
     private fun initializeGameHistoryAdapter() : GamesHistoryAdapter {
         return GamesHistoryAdapter(
@@ -164,7 +184,8 @@ class ProfileActivity : BaseActivity() {
     }
 
     /**
-     * Similar to initializeGameHistoryAdapter
+     * Creates the friends adapter and the necessary onClick listener.
+     * @return FriendsAdapter - The initialized adapter.
      */
     private fun initializeFriendsAdapter() : FriendsAdapter {
         return FriendsAdapter(
@@ -175,7 +196,8 @@ class ProfileActivity : BaseActivity() {
     }
 
     /**
-     * Gets the user info that was passed in with the intent, and updates isGuestUser
+     * Extracts user info passed in with the intent and updates isGuestUser.
+     * @param intent: Intent - The intent containing user info.
      */
     private fun extractUserInfo(intent: Intent) {
         currentUser = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -194,6 +216,10 @@ class ProfileActivity : BaseActivity() {
     }
 
 
+    /**
+     * Opens the friend's profile.
+     * @param it: Friend - The friend to be opened.
+     */
     private fun openFriend(it : Friend) {
         val intent = Intent(this, ProfileActivity::class.java)
         CoroutineScope(Dispatchers.IO).launch {
@@ -207,6 +233,10 @@ class ProfileActivity : BaseActivity() {
         }
     }
 
+    /**
+     * Opens the game history.
+     * @param it: GameHistory - The game history to be opened.
+     */
     private fun openGameHistory(it : GameHistory) {
         val startMessage = GameStartMessage(
             whiteName = it.whiteName, blackName = it.blackName,
@@ -226,6 +256,10 @@ class ProfileActivity : BaseActivity() {
         startActivity(intent)
     }
 
+    /**
+     * Sets the user data in the UI.
+     * @param user: User - The user data to be displayed.
+     */
     private fun setDataInUi(user: User) {
         currentUser = user
         binding.tvUsername.text = user.name

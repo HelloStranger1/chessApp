@@ -1,5 +1,6 @@
 package com.hellostranger.chess_app.rv.adapters
 
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -15,6 +16,7 @@ class NotificationAdapter(
 
     private var notificationList = mutableListOf<Notification>()
 
+    @SuppressLint("NotifyDataSetChanged")
     fun updateNotificationList(updatedNotificationList : List<Notification>){
         this.notificationList = updatedNotificationList.toMutableList()
         notifyDataSetChanged()

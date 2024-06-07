@@ -26,14 +26,6 @@ class PuzzlesList{
         mCurrentPuzzle += 1
         return puzzles[mCurrentPuzzle]
     }
-
-    fun clearPuzzles(){
-        puzzles.clear()
-        mCurrentPuzzle = -1
-    }
-    fun addPuzzle(puzzle : Puzzle){
-        puzzles.add(puzzle)
-    }
     fun addPuzzles(puzzlesList : List<Puzzle>){
         if(mCurrentPuzzle == -1){
             mCurrentPuzzle = 0

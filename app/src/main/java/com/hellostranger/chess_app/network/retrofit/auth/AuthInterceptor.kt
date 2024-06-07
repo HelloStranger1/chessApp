@@ -13,17 +13,15 @@ class AuthInterceptor(private val authApiService: AuthApiService) : Interceptor 
     override fun intercept(chain: Interceptor.Chain): Response {
         val originalRequest = chain.request()
         val accessToken = tokenManager.getAccessToken()
-        Log.e("AuthInterceptor", "should refresh token? ${tokenManager.shouldRefreshAccessToken()} the token is: ${tokenManager.getAccessToken()}")
         if (accessToken != "" && tokenManager.shouldRefreshAccessToken()) {
             val refreshToken = tokenManager.getRefreshToken()
-
             // Make the token refresh request
             val refreshedToken = runBlocking {
                 val response = authApiService.refreshToken("Bearer $refreshToken")
                 if(response.isSuccessful){
                     tokenManager.saveAccessToken(response.body()!!.accessToken, response.body()!!.accessExpiresIn)
                     response.body()!!.accessToken
-                    Log.e("AuthInterceptor", "Refreshed access token using refresh token")
+                    Log.i("AuthInterceptor", "Refreshed access token using refresh token")
                 }else{
                     tokenManager.clearSession()
                     Log.e("AuthInterceptor", "Couldn't refresh token")
@@ -46,7 +44,7 @@ class AuthInterceptor(private val authApiService: AuthApiService) : Interceptor 
         val authorizedRequest = originalRequest.newBuilder()
             .header("Authorization", "Bearer $accessToken")
             .build()
-        Log.e("TAG", "Intercepted and corrected. authorizedRequest is: $authorizedRequest ")
+        Log.i("AuthInterceptor", "Intercepted and corrected. authorizedRequest is: $authorizedRequest ")
 
         return chain.proceed(authorizedRequest)
     }

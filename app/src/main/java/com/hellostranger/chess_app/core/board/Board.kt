@@ -198,6 +198,7 @@ class Board {
             newFiftyMoveCounter = 0
         }
 
+        // Updates the game state
         val newState = GameState(capturedPieceType, newEnPassantFile, newCastleRights, newFiftyMoveCounter, newZobristKey)
         gameStateHistory.push(newState)
         currentGameState = newState
@@ -432,6 +433,9 @@ class Board {
     }
 
 
+    /**
+     * Unmake a null move
+     */
     fun unmakeNullMove() {
         isWhiteToMove = !isWhiteToMove
         plyCount--
@@ -495,6 +499,9 @@ class Board {
     }
 
 
+    /**
+     * Loads a position into the board from PositionInfo
+     */
     fun loadPosition(posInfo : PositionInfo) {
         startPositionInfo = posInfo
         initialize()
@@ -588,6 +595,9 @@ class Board {
         enemyDiagonalSliders = pieceBitboards!![enemyBishop] or pieceBitboards!![enemyQueen]
     }
 
+    /**
+     * Initializes many values
+     */
     private fun initialize() {
         allGameMoves = mutableListOf()
         kingSquare = IntArray(2)

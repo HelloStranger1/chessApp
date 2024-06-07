@@ -60,12 +60,8 @@ class MoveOrdering {
         killerMoves = Array(MAX_KILLER_MOVE_PLY) { Killers() }
     }
 
-    fun clear() {
-        clearKillers()
-        clearHistory()
-    }
 
-    fun orderMoves(hashMove: Move, board: Board, moves : Array<Move>, oppAttacks : ULong, oppPawnAttacks : ULong, inQSearch : Boolean, ply : Int) {
+    fun orderMoves(hashMove: Move, board: Board, moves : Array<Move>, oppAttacks : ULong, oppPawnAttacks : ULong, inQSearch : Boolean, ply : Int) : Array<Move>{
         for (i in moves.indices) {
             val move = moves[i]
             if (Move.sameMove(move, hashMove)) {
@@ -119,8 +115,9 @@ class MoveOrdering {
             }
             moveScores[i] = score
         }
-        quickSort(moves, moveScores, 0, moves.size - 1)
-
+//        quickSort(moves, moveScores, 0, moves.size - 1)
+        val sortedScoresArray = moveScores.indices.sortedBy { moveScores[it] }
+        return sortedScoresArray.map { moves[it] }.toTypedArray()
     }
     private fun quickSort(values : Array<Move>, scores: IntArray, low: Int, high: Int) {
         if (low < high) {

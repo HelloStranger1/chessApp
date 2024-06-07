@@ -49,6 +49,9 @@ import kotlin.random.Random
 private const val TAG = "GameActivity"
 
 @ExperimentalUnsignedTypes
+/**
+ * Activity that handles the main game interface for a chess match. Implements various interfaces for game control and player actions.
+ */
 class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener, Player {
 
     private lateinit var binding : ActivityGameViewBinding
@@ -318,20 +321,16 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         } else {
             GameStartMessage("BOT", currentUser.name, "", currentUser.email, "", currentUser.image, 1800, currentUser.elo)
         }
-        botPlayer = Bot(5_000, 1_00, viewModel)
+        botPlayer = Bot(5_000, 1_000, viewModel)
         if (!isWhite) {
             botPlayer!!.onOpponentMoveChosen()
         }
         if (isWhite) {
             viewModel.whitePlayerInfo = PlayerInfo(currentUser.name, currentUser.email, currentUser.image, currentUser.elo)
             viewModel.blackPlayerInfo = PlayerInfo("BOT", "", "", 1800)
-            viewModel.whitePlayer = this
-            viewModel.blackPlayer = this
         } else {
             viewModel.whitePlayerInfo = PlayerInfo("BOT", "", "", 1800)
             viewModel.blackPlayerInfo = PlayerInfo(currentUser.name, currentUser.email, currentUser.image, currentUser.elo)
-            viewModel.blackPlayer = this
-            viewModel.whitePlayer = this
         }
         viewModel.startGame(startData)
     }
@@ -354,6 +353,9 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
     }
 
 
+    /**
+     * Sets up the action bar for the activity.
+     */
     private fun setUpActionBar(){
         val toolbarUpdateProfileActivity = binding.toolbarGameActivity
         setSupportActionBar(toolbarUpdateProfileActivity)
@@ -372,6 +374,12 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
 
         }
     }
+
+    /**
+     * Plays a move from the ChessView (And checks that it is legal)
+     * @param startCoord: Coord - The starting coordinate of the move.
+     * @param endCoord: Coord - The ending coordinate of the move.
+     */
     override fun playMove(startCoord: Coord, endCoord: Coord) {
         val startIndex  = BoardHelper.indexFromCoord(startCoord)
         val targetIndex = BoardHelper.indexFromCoord(endCoord)
@@ -380,10 +388,12 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         var chosenMove = Move.NullMove
         val moveGenerator = MoveGenerator()
 
+        // Checks that you are moving a piece with your colour
         if (Piece.isWhite(viewModel.board.square[startIndex]) != isPlayingWhite) {
             return
         }
 
+        // Goes over every legal move and compares it
         for (legalMove in moveGenerator.generateMoves(viewModel.board)) {
             if (legalMove.startSquare == startIndex && legalMove.targetSquare == targetIndex) {
                 if (legalMove.isPromotion) {
@@ -407,6 +417,9 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
 
     }
 
+    /**
+     * Sets up the action bar for the activity.
+     */
     private fun setPiecePromotionMenu(){
         val popupMenu = PopupMenu(this@GameActivity, binding.llPlayer2)
         if(viewModel.isWhite){
@@ -418,6 +431,9 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         popupMenu.show()
     }
 
+    /**
+     * Sends a message to the server in the websocket.
+     */
     private fun sendMessageToServer(message: WebSocketMessage) {
         val gson = Gson()
         val messageJson = gson.toJson(message)
@@ -438,8 +454,10 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
 
     }
 
-    /*
-    Sets information for the player at The Bottom
+    /**
+     * Sets information for the player at The Bottom
+     * @param playerInfo - The player's info
+     * @param isWhite - is The player white
      */
     private fun setPlayerOneData(playerInfo: PlayerInfo, isWhite : Boolean) {
         val fullName : String = if (isWhite) {
@@ -457,8 +475,8 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
             .into(binding.ivP1Image)
     }
 
-    /*
-    Sets information for the player at The Top
+    /**
+     * Sets information for the player at The Top
      */
     private fun setPlayerTwoData(playerInfo: PlayerInfo, isWhite : Boolean) {
         val fullName : String = if (isWhite) {
@@ -476,6 +494,12 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
             .into(binding.ivP2Image)
     }
 
+
+    /**
+     * Handles menu item click events for piece promotion.
+     * @param menuItem: MenuItem - The selected menu item.
+     * @return Boolean - Whether the item click was handled.
+     */
     override fun onMenuItemClick(menuItem: MenuItem): Boolean {
         if(heldMoveMessage.isNull){
             Log.e(TAG, "held Move message is null")
@@ -505,8 +529,10 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         return true
     }
 
+    /// Returns the current board
     override fun getBoard(): Board = viewModel.board
 
+    // Updates the UI when a move is player by the opponent
     override fun onOpponentMoveChosen() {
         binding.chessView.invalidate()
     }

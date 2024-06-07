@@ -19,11 +19,17 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @ExperimentalUnsignedTypes
+/**
+ * Activity for displaying and handling notifications, particularly friend requests.
+ */
 class NotificationsActivity : BaseActivity() {
     private lateinit var binding: ActivityNotificationsBinding
     private var tokenManager : TokenManager = MyApp.tokenManager
     private lateinit var friendsAdapter : NotificationAdapter
 
+    /**
+     * Called when the activity is first created. Initializes the activity.
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityNotificationsBinding.inflate(layoutInflater)
@@ -47,21 +53,24 @@ class NotificationsActivity : BaseActivity() {
      * Fetches and updates the friend requests from the server.
      */
     private suspend fun updateRequests(){
-        val response = BackendRetrofitClient.instance.getFriendRequests(tokenManager.getUserEmail())
-        if(!response.isSuccessful || response.body() == null) {
-            Log.e("Notification Activity", "Couldn't fetch friend requests")
-            return
-        }
-        val friendRequests = handleResponse(
+        handleResponse(
             request = {BackendRetrofitClient.instance.getFriendRequests(tokenManager.getUserEmail())},
             errorMessage = "Couldn't fetch friend requests"
-        )
-        friendRequests?.let {
+        )?.let {
             val notificationList : MutableList<Notification> = mutableListOf()
             for(friendRequest : FriendRequest in it){
-                notificationList.add(Notification(friendRequest.id, friendRequest.sender.image, friendRequest.sender.name, friendRequest.sender.email))
+                // Adding each friend request as a notification to the list
+                notificationList.add(
+                    Notification(
+                        friendRequest.id,
+                        friendRequest.sender.image,
+                        friendRequest.sender.name,
+                        friendRequest.sender.email
+                    )
+                )
             }
             runOnUiThread {
+                // Updating the adapter with the new list of notifications
                 friendsAdapter.updateNotificationList(notificationList)
             }
 
@@ -69,25 +78,43 @@ class NotificationsActivity : BaseActivity() {
 
     }
 
+    /**
+     * Initializes the adapter for displaying friend requests and sets up click listeners.
+     * @return NotificationAdapter - The initialized adapter.
+     */
     private fun initializeFriendsAdapter() : NotificationAdapter {
         return NotificationAdapter(
             NotificationAdapter.NotificationOnClickListener(
                 {
                     CoroutineScope(Dispatchers.IO).launch {
+                        // Accepting the friend request
                         BackendRetrofitClient.instance.acceptFriendRequest(tokenManager.getUserEmail(), it.id)
+
+                        // Updating the requests after acceptance
                         updateRequests()
                     }
                 },
                 {
                     CoroutineScope(Dispatchers.IO).launch {
+                        // Rejecting the friend request
                         BackendRetrofitClient.instance.rejectFriendRequest(tokenManager.getUserEmail(), it.id)
+
+                        // Updating the requests after rejection
                         updateRequests()
                     }
                 },
                 {
                     val intent = Intent(this@NotificationsActivity, ProfileActivity::class.java)
-                    intent.putExtra(Constants.GUEST_EMAIL, it.email)
-                    startActivity(intent)
+                    CoroutineScope(Dispatchers.IO).launch {
+                        handleResponse(
+                            {BackendRetrofitClient.instance.getUserByEmail(it.email)},
+                            "Couldn't fetch Guest User"
+                        )?.let { guest ->
+                            // Passing the fetched guest user data to the ProfileActivity
+                            intent.putExtra(Constants.USER, guest)
+                            startActivity(intent)
+                        }
+                    }
                 }
             )
         )

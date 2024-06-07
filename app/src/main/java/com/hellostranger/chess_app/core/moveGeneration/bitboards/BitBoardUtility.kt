@@ -77,6 +77,10 @@ object BitBoardUtility {
         return if (ortho) getRookAttacks(square, blockers) else getBishopAttacks(square, blockers)
     }
 
+    /**
+     * This uses Hyperbola Quintessence and applies the o xor (o - 2r) trick.
+     * You can read more on https://www.chessprogramming.org/Hyperbola_Quintessence
+     */
     fun getRookAttacks(square: Int, blockers: ULong): ULong {
         val binarySquare : ULong = 1UL shl square
         val fileMask = Bits.fileMasks[BoardHelper.fileIndex(square)]
@@ -87,6 +91,11 @@ object BitBoardUtility {
         return (possibleHorizontal and rankMask) or (possibleVertical and fileMask)
     }
 
+
+    /**
+     * This uses Hyperbola Quintessence and applies the o xor (o - 2r) trick.
+     * You can read more on https://www.chessprogramming.org/Hyperbola_Quintessence
+     */
     fun getBishopAttacks(square: Int, blockers: ULong): ULong {
         val binarySquare : ULong = 1UL shl square
         val diagonalMask     = Bits.diagonalMasks[7 + BoardHelper.rankIndex(square) - BoardHelper.fileIndex(square)]

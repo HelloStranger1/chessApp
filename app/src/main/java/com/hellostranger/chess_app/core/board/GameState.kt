@@ -19,11 +19,17 @@ class GameState(
         const val CLEAR_BLACK_QUEENSIDE_MASK : Int = 0b0111
     }
 
+    /**
+     * Checks if the specified colour has king side castling rights
+     */
     fun hasKingSideCastleRights(isWhite: Boolean): Boolean {
         val mask = if (isWhite) 1 else 4
         return (castlingRights and mask) != 0
     }
 
+    /**
+     * Checks if the specified colour has queen side castling rights
+     */
     fun hasQueenSideCastleRights(isWhite: Boolean): Boolean {
         val mask = if (isWhite) 2 else 8
         return (castlingRights and mask) != 0

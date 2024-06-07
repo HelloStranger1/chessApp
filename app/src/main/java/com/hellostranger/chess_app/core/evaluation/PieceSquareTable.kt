@@ -130,6 +130,9 @@ object PieceSquareTable {
         tables[Piece.makePiece(Piece.QUEEN, Piece.BLACK)] = getFlippedTable(queens)
     }
 
+    /**
+     * Gets the flipped version of a table (for black)
+     */
     private fun getFlippedTable(table: IntArray): IntArray {
         val flippedTable = IntArray(table.size)
         for (i in table.indices) {

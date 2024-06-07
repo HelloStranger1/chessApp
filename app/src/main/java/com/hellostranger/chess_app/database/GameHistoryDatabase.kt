@@ -9,7 +9,6 @@ import com.hellostranger.chess_app.models.rvEntities.GameHistory
     version = 1,
     exportSchema = false
 )
-/*@TypeConverters(Converters::class)*/
 abstract class GameHistoryDatabase : RoomDatabase() {
     abstract val dao : GameHistoryDao
 }

@@ -41,6 +41,10 @@ object Arbiter {
     }
 
 
+    /**
+     * Calculates the game state.
+     * Checks for checkmate, fifty move rule, insufficient material and repetition.
+     */
     fun getGameState(board: Board) : GameResult {
         val moveGenerator = MoveGenerator()
         val moves = moveGenerator.generateMoves(board)

@@ -9,7 +9,6 @@ import com.hellostranger.chess_app.core.board.GameResult
 import com.hellostranger.chess_app.core.players.PlayerInfo
 import com.hellostranger.chess_app.core.board.Board
 import com.hellostranger.chess_app.core.board.Move
-import com.hellostranger.chess_app.core.moveGeneration.MoveGenerator
 import com.hellostranger.chess_app.core.players.Player
 import com.hellostranger.chess_app.dto.websocket.DrawOfferMessage
 import com.hellostranger.chess_app.dto.websocket.GameStartMessage

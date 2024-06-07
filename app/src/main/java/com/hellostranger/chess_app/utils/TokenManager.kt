@@ -3,6 +3,10 @@ package com.hellostranger.chess_app.utils
 import android.content.Context
 import android.content.SharedPreferences
 
+/**
+ * This manages the sharedPrefrences.
+ * Specifically, it manages tokens and the user email.
+ */
 class TokenManager(context : Context){
 
     companion object{

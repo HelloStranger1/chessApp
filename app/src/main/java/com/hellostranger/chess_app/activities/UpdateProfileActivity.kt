@@ -30,7 +30,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.IOException
-
+/**
+ * Activity for updating user profile information.
+ */
+@ExperimentalUnsignedTypes
 class UpdateProfileActivity : BaseActivity() {
     private lateinit var binding: ActivityUpdateProfileBinding
 
@@ -40,7 +43,9 @@ class UpdateProfileActivity : BaseActivity() {
 
     private lateinit var currentUser : User
 
-
+    /**
+     * Called when the activity is first created. Initializes the activity.
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityUpdateProfileBinding.inflate(layoutInflater)
@@ -72,6 +77,9 @@ class UpdateProfileActivity : BaseActivity() {
         }
     }
 
+    /**
+     * Sets the current user data in the UI components.
+     */
     private fun setUserDataInUI(){
         Glide
             .with(this@UpdateProfileActivity)
@@ -84,20 +92,20 @@ class UpdateProfileActivity : BaseActivity() {
         binding.etEmail.setText(currentUser.email)
     }
 
+    /**
+     * Updates the user data by sending requests to the backend.
+     */
     private fun updateUserData(){
-
-
-        val coroutineExceptionHandler = CoroutineExceptionHandler{_, throwable ->
-            throwable.printStackTrace()
-        }
+        // Update name
         if(binding.etName.text!!.isNotEmpty() && binding.etName.text!!.toString() != currentUser.name){
-            CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
+            CoroutineScope(Dispatchers.IO).launch {
                 BackendRetrofitClient.instance.updateUserName(tokenManager.getUserEmail(), UpdateRequest(binding.etName.text!!.toString()))
             }
 
         }
+        // Update picture
         if(mProfileImageURL != currentUser.image){
-            CoroutineScope(Dispatchers.IO + coroutineExceptionHandler).launch {
+            CoroutineScope(Dispatchers.IO).launch {
                 BackendRetrofitClient.instance.uploadProfileImage(tokenManager.getUserEmail(), UpdateRequest(mProfileImageURL))
             }
 
@@ -110,6 +118,10 @@ class UpdateProfileActivity : BaseActivity() {
         ).show()
 
     }
+
+    /**
+     * Launcher for opening the gallery to pick an image.
+     */
     private val openGalleryLauncher : ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()){
                 result ->
@@ -130,6 +142,9 @@ class UpdateProfileActivity : BaseActivity() {
             }
         }
 
+    /**
+     * Request permissions for accessing storage.
+     */
     private val requestPermission: ActivityResultLauncher<Array<String>> =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
             permissions.entries.forEach {
@@ -159,6 +174,9 @@ class UpdateProfileActivity : BaseActivity() {
             }
         }
 
+    /**
+     * Requests storage permission from the user.
+     */
     private fun requestStoragePermission(){
         val neededPermission = if(VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
             Manifest.permission.READ_MEDIA_IMAGES else Manifest.permission.READ_EXTERNAL_STORAGE
@@ -177,10 +195,10 @@ class UpdateProfileActivity : BaseActivity() {
         }
     }
     /**
-     * Show a rationale dialog.
-     * @param title: The title
-     * @param message: The message
-     * @param onAccept: The function to be called when user accepts
+     * Shows a rationale dialog to explain why the app needs a certain permission.
+     * @param title: String - The title of the dialog.
+     * @param message: String - The message to be displayed in the dialog.
+     * @param onAccept: () -> Unit - The function to be called when the user accepts.
      */
     @Suppress("SameParameterValue")
     private fun showRationaleDialog(
@@ -198,6 +216,10 @@ class UpdateProfileActivity : BaseActivity() {
             }
         builder.create().show()
     }
+
+    /**
+     * Sets up the action bar for the activity.
+     */
     private fun setUpActionBar() {
         val toolbarUpdateProfileActivity = binding.toolbarMyProfileActivity
         setSupportActionBar(toolbarUpdateProfileActivity)
@@ -211,7 +233,9 @@ class UpdateProfileActivity : BaseActivity() {
         toolbarUpdateProfileActivity.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
     }
 
-
+    /**
+     * Uploads the user image to Firebase storage and gets the downloadable URL.
+     */
     private fun uploadUserImage(){
         showProgressDialog("Please wait...")
         if(mSelectedImageFileUri != null){
@@ -243,6 +267,11 @@ class UpdateProfileActivity : BaseActivity() {
         }
     }
 
+    /**
+     * Gets the file extension of the given URI.
+     * @param uri: Uri? - The URI of the file.
+     * @return String? - The file extension of the URI.
+     */
     private fun getFileExtension(uri : Uri?) : String?{
         return MimeTypeMap.getSingleton().getExtensionFromMimeType(contentResolver.getType(uri!!))
     }

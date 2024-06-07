@@ -14,7 +14,6 @@ object MoveUtility {
     // Name is expected in UCI format, so for example: "e2e4"
     // Promotions can be written as "e7e8=q" or "e7e8q"
     fun getMoveFromUCIName(moveName : String, board: Board) : Move {
-        Log.i("TAG", "moveName: $moveName. moveName start: ${moveName.substring(0,2)} and end: ${moveName.substring(2,4)}")
         val startSquare  = BoardHelper.squareIndexFromName(moveName.substring(0,2))
         val targetSquare = BoardHelper.squareIndexFromName(moveName.substring(2,4))
 

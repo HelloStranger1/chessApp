@@ -74,62 +74,90 @@ class Evaluation {
         return eval * perspective
     }
 
+    /**
+     * Evaluates the king's pawn shield in a given position, providing a score based on factors such as enemy material and pawn shield integrity.
+     *
+     * @param colourIndex The index of the color for which the pawn shield is evaluated.
+     * @param enemyMaterial Information about the enemy material on the board.
+     * @param enemyPieceSquareScore The score of enemy pieces on the board.
+     * @return The evaluated score for the pawn shield.
+     */
     private fun kingPawnShield(colourIndex: Int, enemyMaterial: MaterialInfo, enemyPieceSquareScore : Float) : Int {
         if (enemyMaterial.endgameT >= 1) {
+            // If the enemy is in an endgame phase, we don't care about this
             return 0
         }
-        var penalty = 0
+        var penalty = 0 // Initialize the penalty for the pawn shield.
 
-        val isWhite = colourIndex == Board.WHITE_INDEX
-        val friendlyPawn = Piece.makePiece(Piece.PAWN, isWhite)
-        val kingSquare = board.kingSquare[colourIndex]
-        val kingFile = BoardHelper.fileIndex(kingSquare)
+        val isWhite = colourIndex == Board.WHITE_INDEX // Check if the player is white.
+        val friendlyPawn = Piece.makePiece(Piece.PAWN, isWhite) // Create a friendly pawn piece.
+        val kingSquare = board.kingSquare[colourIndex] // Get the king's square for the specified color.
+        val kingFile = BoardHelper.fileIndex(kingSquare) // Get the file index of the king's square.
 
-        var uncastledKingPenalty  = 0
+        var uncastledKingPenalty = 0 // Initialize the penalty for an uncastled king.
 
+        // Check if the king is castled.
         if (kingFile <= 2 || kingFile >= 5) {
+            // Get the squares forming the pawn shield based on the king's square.
             val squares = if(isWhite) pawnShieldSquaresWhite[kingSquare] else pawnShieldSquaresBlack[kingSquare]
 
+            // Iterate through the shield squares.
             for (i in 0 until squares.size / 2) {
-                val shieldSquareIndex = squares[i]
+                val shieldSquareIndex = squares[i] // Get the index of the shield square.
+                // Check if the square doesn't have a friendly pawn.
                 if (board.square[shieldSquareIndex] != friendlyPawn) {
+                    // Determine the penalty based on pawn shield integrity.
                     penalty += if (squares.size > 3 && board.square[squares[i + 3]] == friendlyPawn) {
-                        kingPawnShieldScores[i+3]
+                        kingPawnShieldScores[i + 3] // Adjust the penalty if the shield is compromised.
                     } else {
-                        kingPawnShieldScores[i]
+                        kingPawnShieldScores[i] // Otherwise, use the regular penalty score.
                     }
                 }
             }
             penalty *= penalty
         } else {
+            // Calculate the penalty for an uncastled king based on enemy development score.
             val enemyDevelopmentScore : Float = ((enemyPieceSquareScore + 10) / 130f).coerceIn(0f..1f)
             uncastledKingPenalty = (50 * enemyDevelopmentScore).toInt()
         }
 
-        var openFileAgainstKingPenalty = 0
+        var openFileAgainstKingPenalty = 0 // Initialize the penalty for open files against the king.
+
+        // Check if there are multiple rooks or rooks and queens present for the enemy. (And if so, we care about an open file)
         if (enemyMaterial.numRooks > 1 || (enemyMaterial.numRooks > 0 && enemyMaterial.numQueens > 0)) {
-            val clampedKingFile = kingFile.coerceIn(1..6)
-            val myPawns = enemyMaterial.enemyPawns
+            val clampedKingFile = kingFile.coerceIn(1..6) // Ensure the king's file is within the board limits.
+            val myPawns = enemyMaterial.enemyPawns // Get the bitboard representing enemy pawns.
+            // Iterate through the attack files around the king.
             for (attackFile in clampedKingFile..clampedKingFile + 1) {
-                val fileMask = Bits.fileMasks[attackFile]
-                val isKingFile = attackFile == kingFile
+                val fileMask = Bits.fileMasks[attackFile] // Get the mask for the file.
+                val isKingFile = attackFile == kingFile // Check if the file is the king's file.
+                // Check if the enemy has no pawns on the file.
                 if ((enemyMaterial.pawns and fileMask) == 0UL) {
-                    openFileAgainstKingPenalty += if (isKingFile) 25 else 15
+                    openFileAgainstKingPenalty += if (isKingFile) 25 else 15 // Add penalty for an open file.
+                    // If the friendly player also has no pawns, add additional penalty.
                     if ((myPawns and fileMask) == 0UL) {
                         openFileAgainstKingPenalty += if (isKingFile) 15 else 10
                     }
                 }
             }
         }
-        var pawnShieldWeight : Float = 1 - enemyMaterial.endgameT
+        var pawnShieldWeight: Float = 1 - enemyMaterial.endgameT // Adjust pawn shield weight based on the endgame phase.
+        // If the opponent's queen is not present, reduce the pawn shield weight.
         if (board.queens[1 - colourIndex].count == 0) {
             pawnShieldWeight *= 0.6f
         }
+        // Calculate the final score for the pawn shield based on penalties and weights.
         return ((-penalty - uncastledKingPenalty - openFileAgainstKingPenalty) *pawnShieldWeight).toInt()
 
 
     }
 
+    /**
+     * Evaluates the pawn structure for a given color, including aspects such as passed pawns and isolated pawns.
+     *
+     * @param colourIndex The index of the color for which pawn structure is evaluated.
+     * @return The evaluated score for the pawn structure.
+     */
     private fun evaluatePawns(colourIndex: Int) : Int{
         val pawns : PieceList = board.pawns[colourIndex]
         val isWhite = colourIndex == Board.WHITE_INDEX

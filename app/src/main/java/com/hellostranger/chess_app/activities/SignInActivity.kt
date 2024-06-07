@@ -22,12 +22,19 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @ExperimentalUnsignedTypes
+/**
+ * Activity for user sign-in.
+ */
 class SignInActivity : BaseActivity() {
 
 
     private var etEmail : EditText? = null
     private var etPass : EditText? = null
     private var btnSignIn : AppCompatButton? = null
+
+    /**
+     * Called when the activity is first created. Initializes the activity
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sign_in)
@@ -54,6 +61,9 @@ class SignInActivity : BaseActivity() {
 
     }
 
+    /**
+     * Sets up the action bar for the activity.
+     */
     private fun setUpActionBar(){
         val toolbarSignIn : Toolbar = findViewById(R.id.toolbar_sign_in_activity)
         setSupportActionBar(toolbarSignIn)
@@ -68,6 +78,9 @@ class SignInActivity : BaseActivity() {
         toolbarSignIn.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
     }
 
+    /**
+     * Signs in the registered user by sending a request to the backend.
+     */
     private fun signInRegisteredUser(){
         val email: String = etEmail!!.text.toString().trim{ it <= ' ' }
         val password: String = etPass!!.text.toString().trim{it <= ' '}
@@ -102,6 +115,12 @@ class SignInActivity : BaseActivity() {
 
     }
 
+    /**
+     * Validates the sign-in form.
+     * @param email: String - The entered email address.
+     * @param password: String - The entered password.
+     * @return Boolean - Returns true if the form is valid, false otherwise.
+     */
     private fun validateForm(email : String, password : String) : Boolean {
         return when {
             TextUtils.isEmpty(email) -> {
