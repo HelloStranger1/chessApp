@@ -35,13 +35,13 @@ import java.io.IOException
  */
 @ExperimentalUnsignedTypes
 class UpdateProfileActivity : BaseActivity() {
-    private lateinit var binding: ActivityUpdateProfileBinding
+    private lateinit var binding: ActivityUpdateProfileBinding // Binding for the UI
 
-    private var mSelectedImageFileUri : Uri? = null
-    private var mProfileImageURL : String = ""
-    private var tokenManager : TokenManager = MyApp.tokenManager
+    private var mSelectedImageFileUri : Uri? = null // The image URI
+    private var mProfileImageURL : String = "" // The URL for the image
+    private var tokenManager : TokenManager = MyApp.tokenManager // Manages tokens and user email
 
-    private lateinit var currentUser : User
+    private lateinit var currentUser : User // The current user
 
     /**
      * Called when the activity is first created. Initializes the activity.

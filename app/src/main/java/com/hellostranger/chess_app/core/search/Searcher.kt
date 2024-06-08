@@ -1,11 +1,11 @@
 package com.hellostranger.chess_app.core.search
 
+import android.util.Log
 import com.hellostranger.chess_app.core.board.Board
 import com.hellostranger.chess_app.core.board.Move
 import com.hellostranger.chess_app.core.board.Piece
 import com.hellostranger.chess_app.core.evaluation.Evaluation
 import com.hellostranger.chess_app.core.helpers.BoardHelper
-import com.hellostranger.chess_app.core.helpers.FenUtility
 import com.hellostranger.chess_app.core.helpers.MoveUtility
 import com.hellostranger.chess_app.core.moveGeneration.MoveGenerator
 import kotlin.math.abs
@@ -44,12 +44,6 @@ class Searcher(val board: Board) {
     private var hasSearchedAtLeastOnMove : Boolean = false
     private var searchCanceled : Boolean = false
 
-    // Diagnostics
-    private var searchDiagnostics = SearchDiagnostics()
-    private var currentIterationDepth : Int = 0
-    private var debugInfo : String = ""
-
-
     // References
     private val transpositionTable : TranspositionTable = TranspositionTable(board)
     private val repetitionTable : RepetitionTable = RepetitionTable()
@@ -76,38 +70,27 @@ class Searcher(val board: Board) {
 
         // Initialize Debug Info
         currentDepth = 0
-        debugInfo = "Starting search with FEN ${FenUtility.currentFen(board)}"
-        searchDiagnostics = SearchDiagnostics()
-
         runIterativeDeepeningSearch()
-
 
         if (bestMove.isNull) {
             bestMove = moveGenerator.generateMoves(board)[0]
+            Log.e("TAG", "Couldn't find a move, taking a random one")
         }
         onSearchComplete?.invoke(bestMove)
-        println("Invoked on searched complete with move $bestMove")
+        println("Invoked on searched complete with move ${MoveUtility.getMoveNameUCI(bestMove)}. our eval is: $bestEval")
         searchCanceled = false
     }
 
     private fun runIterativeDeepeningSearch() {
         for (searchDepth in 1..256) {
             hasSearchedAtLeastOnMove = false
-            debugInfo += "\nStarting Iteration $searchDepth"
-            currentIterationDepth = searchDepth
-
             search(searchDepth, 0, NEGATIVE_INFINITY, POSITIVE_INFINITY)
 
             if (searchCanceled) {
                 if (hasSearchedAtLeastOnMove) {
                     bestMove = bestMoveThisIteration
                     bestEval = bestEvalThisIteration
-                    searchDiagnostics.move = MoveUtility.getMoveNameUCI(bestMove)
-                    searchDiagnostics.eval = bestEval
-                    searchDiagnostics.moveIsFromPartialSearch = true
-                    debugInfo += "\nUsing partial search result: ${searchDiagnostics.move} Eval: $bestEval"
                 }
-                debugInfo += "\nSearch Aborted"
                 break
             }
 
@@ -115,23 +98,12 @@ class Searcher(val board: Board) {
             bestMove = bestMoveThisIteration
             bestEval = bestEvalThisIteration
 
-            debugInfo += "\nIteration result: ${MoveUtility.getMoveNameUCI(bestMove)} Eval: $bestEval"
-            if (isMateScore(bestEval)) {
-                debugInfo += " Mate in ply: ${numPlyToMateScore(bestEval)}"
-            }
-
             bestEvalThisIteration = Int.MIN_VALUE
             bestMoveThisIteration = Move.NullMove
-
-            // Update Diagnostics
-            searchDiagnostics.numCompletedIterations = searchDepth
-            searchDiagnostics.move = MoveUtility.getMoveNameUCI(bestMove)
-            searchDiagnostics.eval = bestEval
 
             // Exit search if found a mate within search depth.
             // A mate found outside of search depth (due to extensions) may not be the fastest mate.
             if (isMateScore(bestEval) && numPlyToMateScore(bestEval) <= searchDepth) {
-                debugInfo += "\nExiting search due to mate found within search depth"
                 break
             }
         }
@@ -248,24 +220,23 @@ class Searcher(val board: Board) {
                         moveOrderer.killerMoves[plyFromRoot].add(move)
                     }
                     val historyScore = plyRemaining * plyRemaining
-                    moveOrderer.history[board.moveColourIndex][move.startSquare][move.targetSquare] += historyScore
+                    moveOrderer.history[board.moveColourIndex][moves[i].startSquare][moves[i].targetSquare] += historyScore
                 }
                 if (plyFromRoot > 0) {
                     repetitionTable.tryPop()
                 }
 
-                searchDiagnostics.numCutOffs++
                 return beta
             }
 
             // Found a new best move in this position
             if (eval > alpha) {
                 evaluationBound = TranspositionTable.EXACT
-                bestMoveInThisPosition = move
+                bestMoveInThisPosition = moves[i]
 
                 alpha = eval
                 if (plyFromRoot == 0) {
-                    bestMoveThisIteration = move
+                    bestMoveThisIteration = moves[i]
                     bestEvalThisIteration = eval
                     hasSearchedAtLeastOnMove = true
                 }
@@ -292,9 +263,7 @@ class Searcher(val board: Board) {
         // when the player might have good non-capture moves available.
 
         var eval : Int = evaluation.evaluate(board)
-        searchDiagnostics.numPositionsEvaluated++
         if (eval >= beta) {
-            searchDiagnostics.numCutOffs++
             return beta
         }
         if (eval > alpha) {
@@ -309,7 +278,6 @@ class Searcher(val board: Board) {
             board.unmakeMove(moves[i], true)
 
             if (eval >= beta) {
-                searchDiagnostics.numCutOffs++
                 return beta
             }
             if (eval > alpha) {
@@ -320,16 +288,4 @@ class Searcher(val board: Board) {
 
         return alpha
     }
-
-    class SearchDiagnostics {
-        var numCompletedIterations : Int = 0
-        var numPositionsEvaluated : Int = 0
-        var numCutOffs : ULong = 0UL
-
-        var move : String = ""
-        var eval : Int = 0
-        var moveIsFromPartialSearch = false
-    }
-
-
 }

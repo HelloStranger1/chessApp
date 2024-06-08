@@ -23,5 +23,12 @@ data class GameHistory @JvmOverloads constructor(
     val gameMoves : String,
     @Ignore
     var isSaved : Boolean = false
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (other is GameHistory) {
+            return other.id == this.id
+        }
+        return false
+    }
+}
   

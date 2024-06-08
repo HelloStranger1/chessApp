@@ -2,7 +2,6 @@ package com.hellostranger.chess_app.dto.websocket
 
 import com.hellostranger.chess_app.core.board.Move
 import com.hellostranger.chess_app.core.helpers.MoveUtility
-import com.hellostranger.chess_app.dto.enums.WebsocketMessageType
 
 @ExperimentalUnsignedTypes
 class MoveMessage(

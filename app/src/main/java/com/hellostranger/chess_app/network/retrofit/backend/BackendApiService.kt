@@ -58,8 +58,4 @@ interface BackendApiService {
 
     @GET("/api/users/keep-alive/{userEmail}")
     suspend fun keepAlive(@Path("userEmail") userEmail: String) : Response<String>
-
-
-
-
 }

@@ -1,6 +1,7 @@
 package com.hellostranger.chess_app.viewModels
 
 import android.util.Log
+import android.view.View
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -19,6 +20,8 @@ class ProfileViewModel(
     private val userRepository: UserRepository,
 ) : ViewModel() {
     val gameHistoryList = MutableLiveData<List<GameHistory>>()
+    private val recentGameHistories = ArrayList<GameHistory>()
+    private val savedGameHistories = ArrayList<GameHistory>()
     val friendsList = MutableLiveData<List<Friend>>()
     val userDetails = MutableLiveData<User>()
     val isFriendsWithUser = MutableLiveData(false)
@@ -75,23 +78,39 @@ class ProfileViewModel(
             userRepository.removeGameHistoryFromFavorites(gameHistory)
         }
     }
-    fun getAllGameHistories(email : String) = viewModelScope.launch(Dispatchers.IO) {
-        val response = userRepository.getAllGameHistoriesByEmail(email)
-        val gameHistories = handleResponse(
-            {userRepository.getAllGameHistoriesByEmail(email)},
-            "Couldn't fetch all game histories."
-        )
-        gameHistories?.let {
-            for (gameHistory in it) {
-                if(userRepository.getFavoriteGameHistoryById(gameHistoryId = gameHistory.id) != null){
-                    gameHistory.isSaved = true
+    fun getAllGameHistories(email : String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val gameHistories = handleResponse(
+                {userRepository.getAllGameHistoriesByEmail(email)},
+                "Couldn't fetch all game histories."
+            )
+            recentGameHistories.clear()
+            gameHistories?.let {
+                recentGameHistories.addAll(it)
+                for (gameHistory in it) {
+                    if(userRepository.getFavoriteGameHistoryById(gameHistory.id) != null){
+                        gameHistory.isSaved = true
+                    }
                 }
+                gameHistoryList.postValue(it)
             }
-            gameHistoryList.postValue(response.body())
+            savedGameHistories.clear()
+            val savedGames = userRepository.getSavedGameHistories().filter {
+                recentGameHistories.contains(it)
+            }
+            savedGames.forEach {
+                it.isSaved = true
+            }
+            savedGameHistories.addAll(savedGames)
         }
     }
 
-
+    fun swapToSavedGameHistories() {
+        gameHistoryList.postValue(savedGameHistories)
+    }
+    fun swapToRecentGameHistories() {
+        gameHistoryList.postValue(recentGameHistories)
+    }
     fun getFriendsList(email: String) {
         viewModelScope.launch(Dispatchers.IO) {
             val userList = handleResponse(
@@ -115,7 +134,7 @@ class ProfileViewModel(
      * @param errorMessage: An error message to be logged out in case on an error
      * @return The response of the request. the type is generic, matching the request. If the request failed, will be null, otherwise it is not null.
      */
-    suspend fun <T> handleResponse(
+    private suspend fun <T> handleResponse(
         request : suspend () -> Response<T>,
         errorMessage : String
     ) : T? {

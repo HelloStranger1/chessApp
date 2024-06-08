@@ -65,4 +65,5 @@
     <string name="flip_board">flip board</string>
     <string name="extra_settings">extra settings</string>
     <string name="go_back">go back</string>
+    <string name="saved_games">Saved Games</string>
 </resources>

@@ -30,11 +30,11 @@ private const val TAG = "PuzzleActivityTag"
  * Activity for playing chess puzzles.
  */
 class PuzzleActivity : BaseActivity(), ChessGameInterface, PopupMenu.OnMenuItemClickListener {
-    private lateinit var binding : ActivityPuzzleBinding
-    private lateinit var board : Board
-    private lateinit var currentPuzzle : Puzzle
-    private var currentMoveShown = 0
-    private var isWhite : Boolean = true
+    private lateinit var binding : ActivityPuzzleBinding // Binding for the UI
+    private lateinit var board : Board // The current board
+    private lateinit var currentPuzzle : Puzzle // the current puzzle show
+    private var currentMoveShown = 0 // The current move shown
+    private var isWhite : Boolean = true // is the user playing white
     private var heldMoveMessage : Move = Move.NullMove //To hold the move message while waiting for the player to chose promotion
 
     override fun onCreate(savedInstanceState: Bundle?) {

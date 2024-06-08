@@ -16,10 +16,10 @@ import kotlinx.coroutines.launch
  * This is a service that sends keep alive requests to the server every minute.
  */
 class KeepAlive : Service() {
-    private val handler =  Handler(Looper.getMainLooper())
-    private val retrofitClient = BackendRetrofitClient.instance
-    private val tokenManager = MyApp.tokenManager
-    private val coroutineScope = CoroutineScope(Dispatchers.IO)
+    private val handler =  Handler(Looper.getMainLooper()) // Handler
+    private val userEmail
+        get() = MyApp.tokenManager.getUserEmail() // The user email
+    private val coroutineScope = CoroutineScope(Dispatchers.IO) // The scope for requests
     companion object {
          var isRunning = false
     }
@@ -29,12 +29,11 @@ class KeepAlive : Service() {
         override fun run() {
             Log.i("KeepAlive", "Running")
             coroutineScope.launch {
-                retrofitClient.keepAlive(tokenManager.getUserEmail())
+                BackendRetrofitClient.instance.keepAlive(userEmail)
             }
-            handler.postDelayed(this, 60000)
+            handler.postDelayed(this, 60000) // Wait 1 minutes
         }
     }
-
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if(!isRunning){
             handler.post(runnable)
@@ -42,17 +41,13 @@ class KeepAlive : Service() {
         }
         return START_STICKY
     }
-
     override fun onDestroy() {
         super.onDestroy()
         handler.removeCallbacks(runnable)
         isRunning = false
 
     }
-
     override fun onBind(intent: Intent?): IBinder? {
         return null
     }
-
-
 }

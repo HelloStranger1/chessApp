@@ -14,6 +14,7 @@ class UserRepository(private val  retrofitService : BackendApiService, val token
     suspend fun removeGameHistoryFromFavorites(gameHistory : GameHistory) = gameHistoryDao.deleteGameHistory(gameHistory.id)
 
     fun getFavoriteGameHistoryById(gameHistoryId: Int) = gameHistoryDao.getSpecificGame(gameHistoryId)
+    suspend fun getSavedGameHistories() = gameHistoryDao.getGames()
 
 
     suspend fun getUserByEmail(email : String) = retrofitService.getUserByEmail(email)

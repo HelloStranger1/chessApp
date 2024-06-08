@@ -1,5 +1,6 @@
 package com.hellostranger.chess_app.activities
 
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -32,13 +33,14 @@ import kotlinx.coroutines.launch
  * Activity for displaying and managing a user's profile.
  */
 class ProfileActivity : BaseActivity() {
-    private lateinit var binding : ActivityProfileBinding
-    private lateinit var currentUser : User
-    private var tokenManager : TokenManager = MyApp.tokenManager
+    private lateinit var binding : ActivityProfileBinding // Binding for the UI
+    private lateinit var currentUser : User // The current user
+    private var tokenManager : TokenManager = MyApp.tokenManager // Manages tokens and user email
 
-    private lateinit var viewModel : ProfileViewModel
-    private lateinit var gamesHistoryAdapter : GamesHistoryAdapter
-    private lateinit var friendsAdapter : FriendsAdapter
+    private lateinit var viewModel : ProfileViewModel // The view model
+    private lateinit var gamesHistoryAdapter : GamesHistoryAdapter // Game History recyclerview adapter
+    private lateinit var friendsAdapter : FriendsAdapter // friends recyclerview adapter
+    private var isShowingRecent = true // To Switch between Recent games and saved games. If guest, we don't care (only recent)
 
     private var isGuestUser : Boolean = false
 
@@ -125,7 +127,18 @@ class ProfileActivity : BaseActivity() {
             viewModel.removeFriend(currentUser.email)
             binding.tvSendFriendRequest.visibility = View.VISIBLE
             binding.tvUnfriend.visibility = View.GONE
+        }
 
+        binding.rbRecentGames.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                isShowingRecent = true
+                binding.tvGamesRvDesc.text = resources.getString(R.string.recent_games)
+                viewModel.swapToRecentGameHistories()
+            } else {
+                isShowingRecent = false
+                binding.tvGamesRvDesc.text = resources.getString(R.string.saved_games)
+                viewModel.swapToSavedGameHistories()
+            }
         }
 
         // Open update profile activity on click if not a guest user.
@@ -172,11 +185,10 @@ class ProfileActivity : BaseActivity() {
                 {
                     if(it.isSaved){
                         Toast.makeText(this@ProfileActivity, "Delete Game from favorites", Toast.LENGTH_LONG).show()
-                        viewModel.saveGame(it)
+                        viewModel.deleteGame(it)
                     } else{
                         Toast.makeText(this@ProfileActivity, "Save Game", Toast.LENGTH_LONG).show()
-                        viewModel.deleteGame(it)
-
+                        viewModel.saveGame(it)
                     }
                 }
             )
@@ -212,6 +224,7 @@ class ProfileActivity : BaseActivity() {
             binding.llGuestExtraOptions.visibility = View.GONE
         } else {
             isGuestUser = true
+            binding.radioGroup.visibility = View.GONE
         }
     }
 

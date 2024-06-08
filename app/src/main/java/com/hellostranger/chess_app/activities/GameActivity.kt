@@ -4,6 +4,8 @@ import android.app.AlertDialog
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.MenuItem
 import android.view.View
@@ -12,6 +14,7 @@ import android.widget.PopupMenu
 import android.widget.PopupMenu.OnMenuItemClickListener
 import android.widget.Toast
 import androidx.annotation.RequiresApi
+import androidx.core.os.postDelayed
 import androidx.fragment.app.commit
 import androidx.lifecycle.ViewModelProvider
 import com.bumptech.glide.Glide
@@ -54,8 +57,7 @@ private const val TAG = "GameActivity"
  */
 class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener, Player {
 
-    private lateinit var binding : ActivityGameViewBinding
-    private var tokenManager : TokenManager = MyApp.tokenManager
+    private lateinit var binding : ActivityGameViewBinding // Binding for the UI
 
     /*              Websocket variables              */
     private var chessWebSocket: WebSocket? = null
@@ -64,14 +66,14 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
     /*              Bot (AI) variables              */
     private var botPlayer : Bot? = null
 
-    private lateinit var viewModel: GameViewModel
-    private lateinit var gameMode : String
+    private lateinit var viewModel: GameViewModel // The view model
+    private lateinit var gameMode : String // hold the game mode. passed in via intent
 
     private var heldMoveMessage : Move = Move.NullMove //To hold the move message while waiting for the player to chose promotion
     private var isDrawOffered : Boolean = false // Holds whether or not the opponent offered a draw. Reset when we make a move
 
-    private val currentPlayerEmail = MyApp.tokenManager.getUserEmail()
-    private var isPlayingWhite = false
+    private val currentPlayerEmail = MyApp.tokenManager.getUserEmail() // The current user email
+    private var isPlayingWhite = false // are we playing white
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -91,7 +93,12 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         viewModel.gameResult.observe(this) {
             Log.e(TAG, "gameStatus changed to: $it")
             if (savedInstanceState == null && Arbiter.isDrawResult(it) || Arbiter.isWinResult(it) && gameMode != Constants.ANALYSIS_MODE) {
-                onGameOver(it)
+                Handler(Looper.getMainLooper()).postDelayed(
+                    {
+                        onGameOver(it)
+                    },
+                    850
+                )
             }
         }
 
@@ -188,7 +195,7 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
                 this
             }
             Constants.AI_MODE -> {
-                this
+                botPlayer!!
             }
             else -> {
                 this
@@ -222,7 +229,7 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         val popupMenu = PopupMenu(this@GameActivity, binding.ibExtraSettings)
         popupMenu.menuInflater.inflate(R.menu.popup_game_options_menu, popupMenu.menu)
         if (isDrawOffered) {
-            popupMenu.menu.getItem(R.id.draw).setTitle(R.string.accept_draw)
+            popupMenu.menu.getItem(1).setTitle(R.string.accept_draw)
         }
         popupMenu.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId){
@@ -273,7 +280,7 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         chessWebSocketListener = ChessWebSocketListener(viewModel, currentPlayerEmail)
         chessWebSocketListener!!.connectWebSocket(
             Game.getInstance()!!.id,
-            tokenManager.getAccessToken()
+            MyApp.tokenManager.getAccessToken()
         )
         chessWebSocket = chessWebSocketListener!!.getWebSocketInstance()
     }
@@ -321,7 +328,7 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         } else {
             GameStartMessage("BOT", currentUser.name, "", currentUser.email, "", currentUser.image, 1800, currentUser.elo)
         }
-        botPlayer = Bot(5_000, 1_000, viewModel)
+        botPlayer = Bot(20_000, 5_000, viewModel)
         if (!isWhite) {
             botPlayer!!.onOpponentMoveChosen()
         }

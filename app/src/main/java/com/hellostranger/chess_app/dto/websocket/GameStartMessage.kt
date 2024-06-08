@@ -2,7 +2,6 @@ package com.hellostranger.chess_app.dto.websocket
 
 import android.os.Parcelable
 import com.google.gson.annotations.SerializedName
-import com.hellostranger.chess_app.dto.enums.WebsocketMessageType
 import kotlinx.parcelize.Parcelize
 
 @Parcelize

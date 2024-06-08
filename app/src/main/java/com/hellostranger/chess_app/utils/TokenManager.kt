@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 
 /**
- * This manages the sharedPrefrences.
+ * This manages the sharedPreferences.
  * Specifically, it manages tokens and the user email.
  */
 class TokenManager(context : Context){
@@ -63,15 +63,9 @@ class TokenManager(context : Context){
     fun isAccessTokenExpired() : Boolean {
         return System.currentTimeMillis() >= getAccessExpiration()
     }
-
-
     private fun getAccessExpiration() : Long{
         return sharedPreferences.getLong(KEY_ACCESS_EXPIRATION, 0)
     }
-    private fun getRefreshExpiration() : Long{
-        return sharedPreferences.getLong(KEY_REFRESH_EXPIRATION, 0)
-    }
-
     fun clearSession() {
         sharedPreferences.edit().clear().apply()
     }

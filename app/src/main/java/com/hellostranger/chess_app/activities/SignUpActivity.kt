@@ -26,7 +26,7 @@ import kotlinx.coroutines.launch
 class SignUpActivity : BaseActivity() {
 
 
-    private var binding: ActivitySignUpBinding? = null
+    private var binding: ActivitySignUpBinding? = null // Binding for the UI
 
     /**
      * Called when the activity is first created. Initializes the activity.

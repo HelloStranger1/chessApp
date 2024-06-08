@@ -1,8 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--TODO (Step 4: Create nav_header_main. xml file and design this as per our requirement.)-->
-<!--START-->
-<!--Here we have add the drawable details to drawable folders and same
-    the String and Dimen values are added in their respective folders and files.-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -41,4 +37,3 @@
         android:layout_height="@dimen/nav_divider_height"
         android:background="@color/colorAccent" />
 </LinearLayout>
-    <!--END-->

@@ -8,7 +8,7 @@ import com.hellostranger.chess_app.core.players.Player
 import com.hellostranger.chess_app.viewModels.GameViewModel
 import com.hellostranger.chess_app.dto.websocket.GameEndMessage
 import com.hellostranger.chess_app.dto.websocket.GameStartMessage
-import com.hellostranger.chess_app.dto.enums.WebsocketMessageType
+import com.hellostranger.chess_app.dto.websocket.WebsocketMessageType
 import com.hellostranger.chess_app.dto.websocket.DrawOfferMessage
 import com.hellostranger.chess_app.dto.websocket.MoveMessage
 import com.hellostranger.chess_app.dto.websocket.WebSocketMessage
@@ -20,13 +20,12 @@ import okhttp3.WebSocketListener
 
 private const val TAG = "ChessWebSocketListener"
 @ExperimentalUnsignedTypes
-class ChessWebSocketListener(private val viewModel: GameViewModel, private val currentUserEmail : String) : WebSocketListener(),
-    Player {
-    private lateinit var webSocket: WebSocket
+class ChessWebSocketListener(private val viewModel: GameViewModel, private val currentUserEmail : String) : WebSocketListener(), Player {
+    private lateinit var webSocket: WebSocket // hold the websocket
 
-
-    private val gson = Gson()
+    private val gson = Gson() // used to convert to/from json
     fun connectWebSocket(path : String, token : String) {
+        // Add the auth token to the request
         val client = OkHttpClient.Builder().build()
         val request = Request.Builder()
             .url("ws://10.0.2.2:8080/chess/$path")
@@ -42,13 +41,9 @@ class ChessWebSocketListener(private val viewModel: GameViewModel, private val c
         viewModel.setStatus(false)
 
     }
-
     override fun onOpen(webSocket: WebSocket, response: Response) {
         viewModel.setStatus(true)
-        Log.e("TAG", "Open, $response")
-
     }
-
     fun getWebSocketInstance(): WebSocket {
         return webSocket
     }
@@ -59,33 +54,26 @@ class ChessWebSocketListener(private val viewModel: GameViewModel, private val c
 
     override fun onMessage(webSocket: WebSocket, text: String) {
         val message : WebSocketMessage = gson.fromJson(text, WebSocketMessage::class.java)
-        Log.i(TAG, "onMessage, text is: $text. msgType is: ${message.websocketMessageType}")
-
         when( message.websocketMessageType){
             WebsocketMessageType.MOVE ->{
                 val moveMessage : MoveMessage = gson.fromJson(text, MoveMessage::class.java)
-                Log.i(TAG, "Move message. move value: ${Move(moveMessage.move.toUShort())}. Move name: ${MoveUtility.getMoveNameUCI(Move(moveMessage.move.toUShort()))}")
                 viewModel.onMoveChosen(Move(moveMessage.move.toUShort()))
             }
             WebsocketMessageType.START ->{
                 val startMessage : GameStartMessage = gson.fromJson(text, GameStartMessage::class.java)
-                Log.i(TAG, "Start Message. text: $text. startMessage: $startMessage")
                 viewModel.startGame(startMessage)
             }
             WebsocketMessageType.END ->{
                 val endMessage : GameEndMessage = gson.fromJson(text, GameEndMessage::class.java)
-                Log.i(TAG, "End Message. state: ${endMessage.state}, message: ${endMessage.message}")
                 viewModel.onGameEnding(endMessage.state, endMessage.whiteElo, endMessage.blackElo)
             }
             WebsocketMessageType.INVALID_MOVE -> {
-                Log.e(TAG, "\n")
                 Log.e(TAG, "Invalid Move, undoing it")
-                Log.e(TAG, "\n")
+                // viewModel.undoMove()
             }
             WebsocketMessageType.DRAW_OFFER -> {
                 viewModel.updateDrawOffer(gson.fromJson(text, DrawOfferMessage::class.java))
             }
-
             else -> {
                 Log.e(TAG, "I have no idea what happened")
             }
@@ -96,10 +84,7 @@ class ChessWebSocketListener(private val viewModel: GameViewModel, private val c
     override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
         viewModel.setStatus(false)
         Log.e(TAG, "CLOSED")
-
     }
-
-
     override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
         viewModel.setStatus(false)
         Log.e(TAG, "Websocket failed. msg: $response and throwable: $t")
@@ -109,9 +94,7 @@ class ChessWebSocketListener(private val viewModel: GameViewModel, private val c
     override fun onOpponentMoveChosen() {
         val move : Move = viewModel.getLastMove()
         val moveMsg = MoveMessage(currentUserEmail, move.moveValue.toInt())
-        val moveJson = gson.toJson(moveMsg)
-        Log.e(TAG, "Sending our move to the server. Move uce name: ${MoveUtility.getMoveNameUCI(move)}, move json is: $moveJson")
-        webSocket.send(moveJson)
+        webSocket.send(gson.toJson(moveMsg))
 
     }
 }

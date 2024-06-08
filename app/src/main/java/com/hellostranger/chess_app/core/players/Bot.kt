@@ -19,29 +19,34 @@ class Bot(private val baseThinkTimeMs : Long, private val extraThinkTimeMs : Lon
     private var isMoveFound = false
     private var move : Move = Move.NullMove
 
-    init {
-        searcher.onSearchComplete = {
-            isMoveFound = true
-            move = it
-        }
-    }
 
 
     override fun onOpponentMoveChosen() {
         Log.i("TAG", "Starting to think")
         searcher = Searcher(Board.createBoard(viewModel.board))
+
+        searcher.onSearchComplete = {
+            isMoveFound = true
+            move = it
+            Log.i("TAG", "Best move is: ${MoveUtility.getMoveNameUCI(move)}")
+            viewModel.onMoveChosen(it)
+        }
         isMoveFound = false
         val timeToThink : Long = (baseThinkTimeMs + extraThinkTimeMs * Random.nextDouble()).toLong()
-        CoroutineScope(Dispatchers.Default).launch {
+        val searchThread = Thread {
             searcher.startSearch()
         }
-        CoroutineScope(Dispatchers.Default).launch {
-            delay(timeToThink)
+        searchThread.start()
+        val delayThread = Thread {
+            try {
+                Thread.sleep(timeToThink)
+            } catch (e : InterruptedException) {
+                e.printStackTrace()
+            }
             searcher.endSearch()
-            val searchResults = searcher.getSearchResult()
-            Log.i("TAG", "Best move is: ${MoveUtility.getMoveNameUCI(searchResults.move)} and the eval is: ${searchResults.eval}")
-            viewModel.onMoveChosen(searchResults.move)
+            Log.i("TAG", "Ending search.")
         }
+        delayThread.start()
     }
 
 

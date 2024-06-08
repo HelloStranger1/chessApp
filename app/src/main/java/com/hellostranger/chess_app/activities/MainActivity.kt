@@ -29,15 +29,16 @@ import com.hellostranger.chess_app.utils.Constants
 import com.hellostranger.chess_app.utils.KeepAlive
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import retrofit2.Response
 
 @ExperimentalUnsignedTypes
 class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedListener {
 
-    private lateinit var binding: ActivityMainBinding
-    private lateinit var currentUser : User
-    private val currentEmail : String
+    private lateinit var binding: ActivityMainBinding // Binding for the UI
+    private lateinit var currentUser : User // Hold the current user
+    private val currentEmail : String // The current user's email
         get() = tokenManager.getUserEmail()
 
     private var tokenManager : TokenManager = MyApp.tokenManager // The token manager, that manages JwtToken and user email.
@@ -67,7 +68,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
             if(binding.drawerLayout.isDrawerOpen(GravityCompat.START)) {
                 binding.drawerLayout.closeDrawer(GravityCompat.START)
             } else {
-                onBackPressedDispatcher.onBackPressed()
+                handleOnBackPressed()
             }
         }
 
@@ -104,16 +105,20 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         // Gets the game code
         val code: String = binding.appBarMain.mainContent.etGameId.text.toString()
         if (code.isBlank()) {
-            showToast("You need to put in a code!")
+            showErrorSnackBar("You need to put in a code!")
             return
         }
         // Joins the game and launches into the activity.
         performActionWithProgressDialog("Joining private game...") {
-            joinOnlineGame(JoinRequest(currentEmail), code)?.let {
+            val joinedGame = joinOnlineGame(JoinRequest(currentEmail), code)
+            joinedGame?.let {
                 Game.setInstance(it)
                 startActivity(Intent(this@MainActivity, GameActivity::class.java).apply {
                     putExtra(Constants.MODE, Constants.ONLINE_MODE)
                 })
+            }
+            if (joinedGame == null) {
+                showErrorSnackBar("Couldn't join private game.")
             }
         }
     }
@@ -143,7 +148,7 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
         // Gets the user email
         val email: String = binding.appBarMain.mainContent.etUserEmail.text.toString()
         if (email.isBlank()) {
-            showToast("Please enter an email.")
+            showErrorSnackBar("Please enter an email.")
             return
         }
 
@@ -158,6 +163,9 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
                 startActivity(Intent(this@MainActivity, ProfileActivity::class.java).apply {
                     putExtra(Constants.USER, it)
                 })
+            }
+            if (guestUser == null) {
+                showErrorSnackBar("Can't find user with email $email")
             }
         }
     }
@@ -195,25 +203,22 @@ class MainActivity : BaseActivity(), NavigationView.OnNavigationItemSelectedList
     }
 
 
-    /**
-     * Used to show a simple toast. Runs on the UI thread
-     * @param message: The message to display in the toast.
-     * Uses The Toast.LENGTH_LONG by default.
-     */
-    private fun showToast(message: String) = runOnUiThread {
-        Toast.makeText(this@MainActivity, message, Toast.LENGTH_LONG).show()
-    }
 
     /**
      * Shows the user a snackbar that they can dismiss. Runs on the UI Thread
      * @param message: The message to display to the user.
      */
     private fun showDismissibleSnackbar(message: String): Unit = runOnUiThread {
-        Snackbar.make(binding.appBarMain.mainContent.mainContent, message, Snackbar.LENGTH_INDEFINITE)
+        val snackbar = Snackbar.make(binding.appBarMain.mainContent.mainContent, message, Snackbar.LENGTH_INDEFINITE)
             .setAction("DISMISS") {}
-            .setActionTextColor(ContextCompat.getColor(applicationContext, R.color.colorPrimary))
-            .setBackgroundTint(ContextCompat.getColor(applicationContext, R.color.greyTint))
-            .show()
+        snackbar.view
+            .setBackgroundColor(
+                ContextCompat.getColor(
+                    this@MainActivity,
+                    R.color.snackbar_error_color
+                )
+            )
+        snackbar.show()
     }
 
     /**

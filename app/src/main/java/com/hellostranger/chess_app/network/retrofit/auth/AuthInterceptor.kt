@@ -21,10 +21,8 @@ class AuthInterceptor(private val authApiService: AuthApiService) : Interceptor 
                 if(response.isSuccessful){
                     tokenManager.saveAccessToken(response.body()!!.accessToken, response.body()!!.accessExpiresIn)
                     response.body()!!.accessToken
-                    Log.i("AuthInterceptor", "Refreshed access token using refresh token")
                 }else{
                     tokenManager.clearSession()
-                    Log.e("AuthInterceptor", "Couldn't refresh token")
                 }
             }
 
@@ -37,15 +35,12 @@ class AuthInterceptor(private val authApiService: AuthApiService) : Interceptor 
             return chain.proceed(newRequest)
         } else if (accessToken != "" && tokenManager.isAccessTokenExpired()) {
             tokenManager.clearSession()
-            Log.e("AuthInterceptor", "Can't refresh token.")
         }
 
         // Add the access token to the request header
         val authorizedRequest = originalRequest.newBuilder()
             .header("Authorization", "Bearer $accessToken")
             .build()
-        Log.i("AuthInterceptor", "Intercepted and corrected. authorizedRequest is: $authorizedRequest ")
-
         return chain.proceed(authorizedRequest)
     }
 }

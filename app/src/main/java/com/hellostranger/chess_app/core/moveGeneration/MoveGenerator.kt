@@ -168,23 +168,6 @@ class MoveGenerator {
             moveMask,
             true
         )
-//        // Ortho
-//        while (orthogonalSliders != 0UL) {
-//            val startSquare = BitBoardUtility.getLSB(orthogonalSliders)
-//            orthogonalSliders = BitBoardUtility.clearLSB(orthogonalSliders)
-//            var moveSquares = BitBoardUtility.getRookAttacks(startSquare, allPieces) and moveMask
-//
-//            // When pinned, can only move along the pin ray
-//            if (isPinned(startSquare)) {
-//                moveSquares = moveSquares and alignMask[startSquare][friendlyKingSquare]
-//            }
-//
-//            while (moveSquares != 0UL) {
-//                val targetSquare = BitBoardUtility.getLSB(moveSquares)
-//                moveSquares = BitBoardUtility.clearLSB(moveSquares)
-//                moves[currentMoveIndex++] = Move(startSquare, targetSquare)
-//            }
-//        }
 
         generatePieceMoves(
             moves,
@@ -193,23 +176,6 @@ class MoveGenerator {
             moveMask,
             true
         )
-//        // Diagonal
-//        while (diagonalSliders != 0UL) {
-//            val startSquare = BitBoardUtility.getLSB(diagonalSliders)
-//            diagonalSliders = BitBoardUtility.clearLSB(diagonalSliders)
-//            var moveSquares = BitBoardUtility.getBishopAttacks(startSquare, allPieces) and moveMask
-//
-//            // When pinned, can only move along the pin ray
-//            if (isPinned(startSquare)) {
-//                moveSquares = moveSquares and alignMask[startSquare][friendlyKingSquare]
-//            }
-//
-//            while (moveSquares != 0UL) {
-//                val targetSquare = BitBoardUtility.getLSB(moveSquares)
-//                moveSquares = BitBoardUtility.clearLSB(moveSquares)
-//                moves[currentMoveIndex++] = Move(startSquare, targetSquare)
-//            }
-//        }
     }
     private fun generatePieceMoves(moves : Array<Move?>, piecesBitboard : ULong, attackFunction : (Int) -> ULong, moveMask : ULong, checkPins : Boolean = false) {
         var pieces = piecesBitboard

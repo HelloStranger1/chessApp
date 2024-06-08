@@ -16,6 +16,7 @@ object BackendRetrofitClient {
 
     private var gson: Gson = Gson()
     val instance: BackendApiService by lazy {
+        // Add interceptor for auth tokens
         val okHttpClient = OkHttpClient.Builder()
             .addInterceptor(AuthInterceptor(AuthRetrofitClient.instance))
             .build()

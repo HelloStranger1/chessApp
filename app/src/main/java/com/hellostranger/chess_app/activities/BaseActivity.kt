@@ -1,11 +1,9 @@
 package com.hellostranger.chess_app.activities
 
-import android.app.AlertDialog
 import android.app.Dialog
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import android.widget.TextView
-import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.google.android.material.snackbar.Snackbar
 import com.hellostranger.chess_app.R
@@ -53,7 +51,7 @@ open class BaseActivity : AppCompatActivity() {
     ) : T? {
         val response = request()
         if (!response.isSuccessful || response.body() == null) {
-            Log.e("TAG", "$errorMessage. error is: ${response.errorBody()?.toString()}")
+            Log.e("TAG", "$errorMessage. error is: ${response.body()}")
             return null
         }
         return response.body()!!
@@ -76,5 +74,7 @@ open class BaseActivity : AppCompatActivity() {
         )
         snackBar.show()
     }
+
+
 
 }

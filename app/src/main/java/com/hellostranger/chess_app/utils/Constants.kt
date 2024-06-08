@@ -3,7 +3,7 @@ package com.hellostranger.chess_app.utils
 import com.hellostranger.chess_app.R
 
 object Constants {
-    const val SCALE_FACTOR = 0.9f
+    const val SCALE_FACTOR = 0.9f // Determines how much of the screen chessView takes (width wise)
 
     //To fetch GameMode from intent
     const val MODE = "MODE"
@@ -23,5 +23,5 @@ object Constants {
 
     const val DEFAULT_PUZZLE_AMOUNT = 4
 
-    const val FAVORITE_GAMES_DB = "favorite-games-database"
+    const val FAVORITE_GAMES_DB = "favorite-games-database" // Room database name
 }

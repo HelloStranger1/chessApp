@@ -16,7 +16,7 @@ interface GameHistoryDao {
     suspend fun deleteGameHistory(gameHistoryId: Int)
 
     @Query("SELECT * FROM GameHistory ORDER BY gameDate ASC")
-    fun getGames() : LiveData<List<GameHistory>>
+    suspend fun getGames() : List<GameHistory>
 
     @Query("SELECT * FROM GameHistory WHERE id = :gameHistoryId")
     fun getSpecificGame(gameHistoryId: Int) : GameHistory?

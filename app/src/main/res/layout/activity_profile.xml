@@ -387,6 +387,39 @@
                 android:layout_height="1dp"
                 android:layout_width="match_parent"
                 />
+            <RadioGroup
+                android:id="@+id/radio_group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <RadioButton
+                    android:id="@+id/rb_recent_games"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginStart="10dp"
+                    android:buttonTint="@color/colorPrimary"
+                    android:layout_weight="1"
+                    android:checked="true"
+                    android:text="@string/recent_games"
+                    />
+                <RadioButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="10dp"
+                    android:layout_gravity="center"
+                    android:id="@+id/rb_saved_games"
+                    android:buttonTint="@color/colorPrimary"
+                    android:layout_weight="1"
+                    android:text="@string/saved_games"/>
+
+            </RadioGroup>
+
+            <com.google.android.material.divider.MaterialDivider
+                android:layout_height="1dp"
+                android:layout_width="match_parent"
+                />
             <androidx.cardview.widget.CardView
                 android:layout_height="50dp"
                 android:layout_width="match_parent"
@@ -410,6 +443,7 @@
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:gravity="center_vertical"
+                    android:id="@+id/tvGamesRvDesc"
                     android:textColor="@color/primary_text_color"/>
 
 <!--                <ImageView-->

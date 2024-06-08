@@ -23,9 +23,10 @@ import kotlinx.coroutines.launch
  * Activity for displaying and handling notifications, particularly friend requests.
  */
 class NotificationsActivity : BaseActivity() {
-    private lateinit var binding: ActivityNotificationsBinding
-    private var tokenManager : TokenManager = MyApp.tokenManager
-    private lateinit var friendsAdapter : NotificationAdapter
+    private lateinit var binding: ActivityNotificationsBinding // Binding for the UI
+    private val currentUserEmail // The users email
+        get() = MyApp.tokenManager.getUserEmail()
+    private lateinit var friendsAdapter : NotificationAdapter // The recycler views adapter
 
     /**
      * Called when the activity is first created. Initializes the activity.
@@ -54,7 +55,7 @@ class NotificationsActivity : BaseActivity() {
      */
     private suspend fun updateRequests(){
         handleResponse(
-            request = {BackendRetrofitClient.instance.getFriendRequests(tokenManager.getUserEmail())},
+            request = {BackendRetrofitClient.instance.getFriendRequests(currentUserEmail)},
             errorMessage = "Couldn't fetch friend requests"
         )?.let {
             val notificationList : MutableList<Notification> = mutableListOf()
@@ -88,7 +89,7 @@ class NotificationsActivity : BaseActivity() {
                 {
                     CoroutineScope(Dispatchers.IO).launch {
                         // Accepting the friend request
-                        BackendRetrofitClient.instance.acceptFriendRequest(tokenManager.getUserEmail(), it.id)
+                        BackendRetrofitClient.instance.acceptFriendRequest(currentUserEmail, it.id)
 
                         // Updating the requests after acceptance
                         updateRequests()
@@ -97,7 +98,7 @@ class NotificationsActivity : BaseActivity() {
                 {
                     CoroutineScope(Dispatchers.IO).launch {
                         // Rejecting the friend request
-                        BackendRetrofitClient.instance.rejectFriendRequest(tokenManager.getUserEmail(), it.id)
+                        BackendRetrofitClient.instance.rejectFriendRequest(currentUserEmail, it.id)
 
                         // Updating the requests after rejection
                         updateRequests()
