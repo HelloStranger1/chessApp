@@ -28,7 +28,7 @@ class ChessWebSocketListener(private val viewModel: GameViewModel, private val c
         // Add the auth token to the request
         val client = OkHttpClient.Builder().build()
         val request = Request.Builder()
-            .url("ws://10.0.2.2:8080/chess/$path")
+            .url("ws://ee1b-185-108-80-158.ngrok-free.app/chess/$path")
             .addHeader("Authorization", "Bearer $token")
             .build()
         Log.e(TAG, "connectToWebSocket")

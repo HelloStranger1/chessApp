@@ -11,7 +11,7 @@ class TranspositionTable(private val board: Board) {
         const val LOOKUP_FAILED = -1
 
         // The value for this position is the exact evaluation
-        const val EXACT = 1
+        const val EXACT = 0
 
         // A move was found during the search that was too good, meaning the opponent will play a different move earlier on,
         // not allowing the position where this move was available to be reached. Because the search cuts off at
@@ -33,7 +33,7 @@ class TranspositionTable(private val board: Board) {
     val index : Int
         get() = (board.currentGameState.zobristKey % count.toUInt()).toInt()
 
-    fun tryToGetStoredMove() : Move? {
+    fun tryToGetStoredMove() : Move {
         return entries[index].move
     }
 
@@ -91,7 +91,7 @@ class TranspositionTable(private val board: Board) {
     data class Entry(
         val key : ULong = 0UL,
         val value : Int = 0,
-        val move : Move? = null,
+        val move : Move = Move.NullMove,
         val depth : Byte = 0, // depth is how many ply were searched ahead from this position
         val nodeType : Byte = 0
     )

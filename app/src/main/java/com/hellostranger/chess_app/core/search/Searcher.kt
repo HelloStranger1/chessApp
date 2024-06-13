@@ -6,6 +6,7 @@ import com.hellostranger.chess_app.core.board.Move
 import com.hellostranger.chess_app.core.board.Piece
 import com.hellostranger.chess_app.core.evaluation.Evaluation
 import com.hellostranger.chess_app.core.helpers.BoardHelper
+import com.hellostranger.chess_app.core.helpers.FenUtility
 import com.hellostranger.chess_app.core.helpers.MoveUtility
 import com.hellostranger.chess_app.core.moveGeneration.MoveGenerator
 import kotlin.math.abs
@@ -17,8 +18,8 @@ class Searcher(val board: Board) {
     companion object {
         const val MAX_EXTENSION = 16
         const val IMMEDIATE_MATE_SCORE = 100_000
-        const val POSITIVE_INFINITY = 999_999
-        const val NEGATIVE_INFINITY = -999_999
+        const val POSITIVE_INFINITY = 9_999_999
+        const val NEGATIVE_INFINITY = -9_999_999
 
         fun isMateScore(score : Int) : Boolean {
             if (score == Int.MIN_VALUE) {
@@ -44,6 +45,11 @@ class Searcher(val board: Board) {
     private var hasSearchedAtLeastOnMove : Boolean = false
     private var searchCanceled : Boolean = false
 
+    // Diagnostics
+    lateinit var searchDiagnostics : SearchDiagnostics
+    private var currentIterationDpeth : Int = 0
+    var debugInfo : String = ""
+
     // References
     private val transpositionTable : TranspositionTable = TranspositionTable(board)
     private val repetitionTable : RepetitionTable = RepetitionTable()
@@ -67,45 +73,69 @@ class Searcher(val board: Board) {
         moveOrderer.clearHistory()
         repetitionTable.initialize(board)
         searchCanceled = false
-
         // Initialize Debug Info
+        debugInfo += "Starting search with FEN" + FenUtility.currentFen(board)
+        searchDiagnostics = SearchDiagnostics()
         currentDepth = 0
         runIterativeDeepeningSearch()
 
         if (bestMove.isNull) {
             bestMove = moveGenerator.generateMoves(board)[0]
-            Log.e("TAG", "Couldn't find a move, taking a random one")
+            Log.e("ChessBot", "Couldn't find a move, taking a random one")
         }
         onSearchComplete?.invoke(bestMove)
-        println("Invoked on searched complete with move ${MoveUtility.getMoveNameUCI(bestMove)}. our eval is: $bestEval")
+        Log.w("ChessBot","Invoked on searched complete with move ${MoveUtility.getMoveNameUCI(bestMove)}. our eval is: $bestEval")
+        Log.w("ChessBot", "Debug info is: $debugInfo")
+        Log.w("ChessBot", "Searched ${searchDiagnostics.numPositionsEvaluated} positions")
+        Log.w("ChessBot", "Num Cutoffs was: ${searchDiagnostics.numCutOffs}")
         searchCanceled = false
     }
 
     private fun runIterativeDeepeningSearch() {
         for (searchDepth in 1..256) {
             hasSearchedAtLeastOnMove = false
+            debugInfo += "\nStarting Iteration: $searchDepth"
+            currentIterationDpeth = searchDepth
             search(searchDepth, 0, NEGATIVE_INFINITY, POSITIVE_INFINITY)
 
             if (searchCanceled) {
                 if (hasSearchedAtLeastOnMove) {
                     bestMove = bestMoveThisIteration
                     bestEval = bestEvalThisIteration
+                    searchDiagnostics.move = MoveUtility.getMoveNameUCI(bestMove)
+                    searchDiagnostics.eval = bestEval
+                    searchDiagnostics.moveIsFromPartialSearch = true
+                    debugInfo += "\nUsing partial search result: " + MoveUtility.getMoveNameUCI(bestMove) + " Eval: " + bestEval;
                 }
+                debugInfo += "\nSearch aborted";
+
                 break
+            } else {
+                currentDepth = searchDepth
+                bestMove = bestMoveThisIteration
+                bestEval = bestEvalThisIteration
+                debugInfo += "\nIteration result: " + MoveUtility.getMoveNameUCI(bestMove) + " Eval: " + bestEval;
+
+                if (isMateScore(bestEval)) {
+                    debugInfo += " Mate in ply: " + numPlyToMateScore(bestEval);
+
+                }
+
+                bestEvalThisIteration = Int.MIN_VALUE
+                bestMoveThisIteration = Move.NullMove
+
+                searchDiagnostics.numCompletedIterations = searchDepth
+                searchDiagnostics.move = MoveUtility.getMoveNameUCI(bestMove)
+                searchDiagnostics.eval = bestEval
+
+                // Exit search if found a mate within search depth.
+                // A mate found outside of search depth (due to extensions) may not be the fastest mate.
+                if (isMateScore(bestEval) && numPlyToMateScore(bestEval) <= searchDepth) {
+                    debugInfo += "\nExitting search due to mate found within search depth";
+                    break
+                }
             }
 
-            currentDepth = searchDepth
-            bestMove = bestMoveThisIteration
-            bestEval = bestEvalThisIteration
-
-            bestEvalThisIteration = Int.MIN_VALUE
-            bestMoveThisIteration = Move.NullMove
-
-            // Exit search if found a mate within search depth.
-            // A mate found outside of search depth (due to extensions) may not be the fastest mate.
-            if (isMateScore(bestEval) && numPlyToMateScore(bestEval) <= searchDepth) {
-                break
-            }
         }
     }
 
@@ -133,7 +163,7 @@ class Searcher(val board: Board) {
             // (and likewise beta can't  possibly be better) than being mated in the current position.
             alpha = max(alpha, -IMMEDIATE_MATE_SCORE + plyFromRoot)
             beta = min(beta, IMMEDIATE_MATE_SCORE - plyFromRoot)
-            if (alpha > beta) {
+            if (alpha >= beta) {
                 return alpha
             }
         }
@@ -144,7 +174,7 @@ class Searcher(val board: Board) {
         val ttVal = transpositionTable.lookupEvaluation(plyRemaining, plyFromRoot, alpha, beta)
         if (ttVal != TranspositionTable.LOOKUP_FAILED) {
             if (plyFromRoot == 0) {
-                bestMoveThisIteration = transpositionTable.tryToGetStoredMove() ?: Move.NullMove
+                bestMoveThisIteration = transpositionTable.tryToGetStoredMove()
                 bestEvalThisIteration = transpositionTable.entries[transpositionTable.index].value
             }
             return ttVal
@@ -154,9 +184,9 @@ class Searcher(val board: Board) {
             return quiescenceSearch(alpha, beta)
         }
 
-        var moves : Array<Move> = moveGenerator.generateMoves(board, arrayOfNulls(256), capturesOnly = false)
-        val prevBestMove : Move = if (plyFromRoot == 0) bestMove else transpositionTable.tryToGetStoredMove() ?: Move.NullMove
-        moves = moveOrderer.orderMoves(prevBestMove, board, moves, moveGenerator.opponentAttackMap, moveGenerator.opponentPawnAttackMap, false, plyFromRoot)
+        val moves : Array<Move> = moveGenerator.generateMoves(board, arrayOfNulls(256), capturesOnly = false)
+        val prevBestMove : Move = if (plyFromRoot == 0) bestMove else transpositionTable.tryToGetStoredMove()
+        moveOrderer.orderMoves(prevBestMove, board, moves, moveGenerator.opponentAttackMap, moveGenerator.opponentPawnAttackMap, false, plyFromRoot)
         if (moves.isEmpty()) {
             return if (moveGenerator.inCheck()) {
                 -(IMMEDIATE_MATE_SCORE - plyFromRoot)
@@ -195,7 +225,7 @@ class Searcher(val board: Board) {
             // Reduce the depth of the search for moves later in the move list as these are less likely to be good
             // (assuming our move ordering isn't terrible)
             if (extension == 0 && plyRemaining >= 3 && i >= 3 && !isCapture) {
-                eval = -search(plyRemaining - 2, plyRemaining + 1, -alpha - 1, -alpha, numExtensions, move, false)
+                eval = -search(plyRemaining - 2, plyFromRoot + 1, -alpha - 1, -alpha, numExtensions, move, isCapture)
                 // If the evaluation is better than expected, we'd better to a full-depth search to get a more accurate evaluation
                 needsFullSearch = eval > alpha
             }
@@ -212,7 +242,7 @@ class Searcher(val board: Board) {
             // (Beta-cutoff / Fail high)
             if (eval >= beta) {
                 transpositionTable.storeEvaluation(plyRemaining, plyFromRoot, beta,
-                    TranspositionTable.LOWER_BOUND, move)
+                    TranspositionTable.LOWER_BOUND, moves[i])
 
                 // Update killer moves and history heuristic
                 if (!isCapture) {
@@ -225,12 +255,13 @@ class Searcher(val board: Board) {
                 if (plyFromRoot > 0) {
                     repetitionTable.tryPop()
                 }
-
+                searchDiagnostics.numCutOffs++
                 return beta
             }
 
             // Found a new best move in this position
             if (eval > alpha) {
+
                 evaluationBound = TranspositionTable.EXACT
                 bestMoveInThisPosition = moves[i]
 
@@ -263,21 +294,24 @@ class Searcher(val board: Board) {
         // when the player might have good non-capture moves available.
 
         var eval : Int = evaluation.evaluate(board)
+        searchDiagnostics.numPositionsEvaluated++
         if (eval >= beta) {
+            searchDiagnostics.numCutOffs++
             return beta
         }
         if (eval > alpha) {
             alpha = eval
         }
 
-        var moves = moveGenerator.generateMoves(board, arrayOfNulls(128), capturesOnly = true)
-        moves = moveOrderer.orderMoves(Move.NullMove, board, moves, moveGenerator.opponentAttackMap, moveGenerator.opponentPawnAttackMap, true , 0)
+        val moves = moveGenerator.generateMoves(board, arrayOfNulls(128), capturesOnly = true)
+        moveOrderer.orderMoves(Move.NullMove, board, moves, moveGenerator.opponentAttackMap, moveGenerator.opponentPawnAttackMap, true , 0)
         for (i in moves.indices) {
             board.makeMove(moves[i], true)
             eval = -quiescenceSearch(-beta, -alpha)
             board.unmakeMove(moves[i], true)
 
             if (eval >= beta) {
+                searchDiagnostics.numCutOffs++
                 return beta
             }
             if (eval > alpha) {
@@ -288,4 +322,17 @@ class Searcher(val board: Board) {
 
         return alpha
     }
+    data class SearchDiagnostics (
+        public var numCompletedIterations : Int = 0,
+        var numPositionsEvaluated : Int = 0,
+        var numCutOffs : ULong = 0UL,
+
+        var moveVal : String = "",
+        var move : String = "",
+        public var eval : Int = 0,
+        var moveIsFromPartialSearch : Boolean = false,
+        var numQChecks : Int = 0,
+        var numQMates : Int = 0,
+        var maxExtentionReachedInSearch : Int = 0
+    )
 }

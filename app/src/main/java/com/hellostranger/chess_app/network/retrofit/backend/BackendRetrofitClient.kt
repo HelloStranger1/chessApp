@@ -12,7 +12,7 @@ import retrofit2.converter.scalars.ScalarsConverterFactory
 
 @ExperimentalUnsignedTypes
 object BackendRetrofitClient {
-    private const val BASE_URL = "http://10.0.2.2:8080"
+    private const val BASE_URL = "http://ee1b-185-108-80-158.ngrok-free.app"
 
     private var gson: Gson = Gson()
     val instance: BackendApiService by lazy {

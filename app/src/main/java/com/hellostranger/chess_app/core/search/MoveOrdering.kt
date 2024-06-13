@@ -61,7 +61,7 @@ class MoveOrdering {
     }
 
 
-    fun orderMoves(hashMove: Move, board: Board, moves : Array<Move>, oppAttacks : ULong, oppPawnAttacks : ULong, inQSearch : Boolean, ply : Int) : Array<Move>{
+    fun orderMoves(hashMove: Move, board: Board, moves : Array<Move>, oppAttacks : ULong, oppPawnAttacks : ULong, inQSearch : Boolean, ply : Int) {
         for (i in moves.indices) {
             val move = moves[i]
             if (Move.sameMove(move, hashMove)) {
@@ -116,9 +116,34 @@ class MoveOrdering {
             moveScores[i] = score
         }
         // Sort moves by moveScores
-        val scoredMoves = moveScores.take(moves.size).zip(moves)
-        val sortedMoveScores = scoredMoves.sortedBy { it.first }
-        return sortedMoveScores.map {it.second}.toTypedArray()
+//        val scoredMoves = moveScores.take(moves.size).zip(moves)
+//        val sortedMoveScores = scoredMoves.sortedBy { it.first }
+//        return sortedMoveScores.map {it.second}.toTypedArray()
+        quickSort(moves, moveScores, 0,  moves.size - 1)
+    }
+
+    private fun quickSort(values : Array<Move>, scores: IntArray, low: Int, high: Int) {
+        if (low < high) {
+            val pivotIndex = partition(values, scores, low, high)
+            quickSort(values, scores, low, pivotIndex - 1)
+            quickSort(values, scores, pivotIndex + 1, high)
+        }
+    }
+
+    private fun partition(values : Array<Move>, scores : IntArray, low : Int, high : Int) : Int {
+        val pivotScore = scores[high]
+        var i = low - 1
+        for (j in low..high) {
+            if (scores[j] > pivotScore) {
+                i++
+                values[i] = values[j].also{values[j] = values[i]}
+                scores[i] = scores[j].also{scores[j] = scores[i]}
+            }
+        }
+        values[i+1] = values[high].also { values[high] = values[i+1]}
+        scores[i+1] = scores[high].also { scores[high] = scores[i+1]}
+
+        return i + 1
     }
     data class Killers(var moveA : Move? = null, var moveB : Move? = null) {
 

@@ -188,18 +188,19 @@ class Evaluation {
     }
 
     private fun mopUpEval(isWhite : Boolean, myMaterial : MaterialInfo, enemyMaterial : MaterialInfo) : Int {
-        if (myMaterial.materialScore <= enemyMaterial.materialScore + PAWN_VALUE * 2 || enemyMaterial.endgameT <= 0f) {
-            return 0
+        if (myMaterial.materialScore > enemyMaterial.materialScore + PAWN_VALUE * 2 && enemyMaterial.endgameT > 0) {
+            var mopUpScore = 0
+            val friendlyIndex = if(isWhite) Board.WHITE_INDEX else Board.BLACK_INDEX
+            val enemyIndex = if (isWhite) Board.BLACK_INDEX else Board.WHITE_INDEX
+
+            val friendlyKingSquare = board.kingSquare[friendlyIndex]
+            val enemyKingSquare = board.kingSquare[enemyIndex]
+
+            mopUpScore += (14 - PrecomputedMoveData.orthogonalDistance[friendlyKingSquare][enemyKingSquare]) * 4
+            mopUpScore += PrecomputedMoveData.centreManhattanDistance[enemyKingSquare] * 10
+            return (mopUpScore * enemyMaterial.endgameT).toInt()
         }
-        val friendlyIndex = if(isWhite) Board.WHITE_INDEX else Board.BLACK_INDEX
-        val enemyIndex = if (isWhite) Board.BLACK_INDEX else Board.WHITE_INDEX
-
-        val friendlyKingSquare = board.kingSquare[friendlyIndex]
-        val enemyKingSquare = board.kingSquare[enemyIndex]
-
-        var mopUpScore = (14 - PrecomputedMoveData.orthogonalDistance[friendlyKingSquare][enemyKingSquare]) * 4
-        mopUpScore += PrecomputedMoveData.centreManhattanDistance[enemyKingSquare] * 10
-        return (mopUpScore * enemyMaterial.endgameT).toInt()
+        return 0
     }
 
     private fun evaluatePieceSquareTables(isWhite: Boolean, endgameT : Float) : Int {
@@ -244,9 +245,10 @@ class Evaluation {
 
         for (fileOffset in -1..1) {
             addIfValid(Coord(file + fileOffset, rank + 1), shieldIndicesWhite)
-            addIfValid(Coord(file + fileOffset, rank + 2), shieldIndicesWhite)
-
-            addIfValid(Coord(file + fileOffset, rank - 1), shieldIndicesBlack)
+            addIfValid(Coord(file + fileOffset, rank - 1), shieldIndicesWhite)
+        }
+        for (fileOffset in -1..1) {
+            addIfValid(Coord(file + fileOffset, rank + 2), shieldIndicesBlack)
             addIfValid(Coord(file + fileOffset, rank - 2), shieldIndicesBlack)
         }
 

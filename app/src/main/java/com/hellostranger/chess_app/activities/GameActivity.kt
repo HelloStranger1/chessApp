@@ -328,7 +328,7 @@ class GameActivity : BaseActivity(), ChessGameInterface, OnMenuItemClickListener
         } else {
             GameStartMessage("BOT", currentUser.name, "", currentUser.email, "", currentUser.image, 1800, currentUser.elo)
         }
-        botPlayer = Bot(20_000, 5_000, viewModel)
+        botPlayer = Bot(5_000, 2_000, viewModel)
         if (!isWhite) {
             botPlayer!!.onOpponentMoveChosen()
         }
